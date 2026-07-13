@@ -46,8 +46,6 @@ const FR_TO_COLOR_KEY: Record<string, ColorKey> = {
   Yellow:'Yellow',
 }
 
-const productRating = 4.8
-
 interface Props {
   product: ProductData | null
 }
@@ -101,6 +99,8 @@ export default function HomeClient({ product }: Props) {
     }, 150)
   }
 
+  const colorStory = t.home.colorStories[selectedVariant.colorName as keyof typeof t.home.colorStories]
+
   const handleCommander = () => {
     addToCart({
       _id:   'wybob-' + selectedVariant._id,
@@ -139,10 +139,7 @@ export default function HomeClient({ product }: Props) {
 
           <h2 className="productName">{productName}</h2>
 
-          <div className="ratingRow">
-            <span className="ratingStars">★★★★★</span>
-            <span className="ratingScore">({productRating})</span>
-          </div>
+          <p className="productTagline">{t.home.tagline}</p>
 
           <div className="priceRow">
             {product?.pricePromo ? (
@@ -170,22 +167,30 @@ export default function HomeClient({ product }: Props) {
             <span className={`featureToggle ${openSection === 'color' ? 'open' : ''}`}>+</span>
           </div>
           {openSection === 'color' && (
-            <div className="swatches">
-              {variants.map((v) => (
-                <button
-                  key={v._id}
-                  className={`swatchDot ${selectedVariant._id === v._id ? 'active' : ''}`}
-                  onClick={(e) => { e.stopPropagation(); handleVariantChange(v) }}
-                  aria-label={v.colorName}
-                  style={{
-                    backgroundColor: v.colorCode,
-                    boxShadow: selectedVariant._id === v._id
-                      ? `0 0 0 1.5px rgba(255,255,255,0.9), 0 0 0 3.5px ${v.colorCode}`
-                      : '0 2px 6px rgba(0,0,0,0.18)'
-                  }}
-                />
-              ))}
-            </div>
+            <>
+              <div className="swatches">
+                {variants.map((v) => (
+                  <button
+                    key={v._id}
+                    className={`swatchDot ${selectedVariant._id === v._id ? 'active' : ''}`}
+                    onClick={(e) => { e.stopPropagation(); handleVariantChange(v) }}
+                    aria-label={v.colorName}
+                    style={{
+                      backgroundColor: v.colorCode,
+                      boxShadow: selectedVariant._id === v._id
+                        ? `0 0 0 1.5px rgba(255,255,255,0.9), 0 0 0 3.5px ${v.colorCode}`
+                        : '0 2px 6px rgba(0,0,0,0.18)'
+                    }}
+                  />
+                ))}
+              </div>
+              {colorStory && (
+                <p className="colorStory">
+                  {colorStory.name && <span className="colorStoryName">{colorStory.name} — </span>}
+                  {colorStory.text}
+                </p>
+              )}
+            </>
           )}
 
           <hr className="productDivider" />

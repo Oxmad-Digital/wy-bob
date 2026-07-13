@@ -20,6 +20,7 @@ export const translations = {
       madeByPrefix: 'Réalisé par ',
     },
     home: {
+      tagline: "Pensé dans les moindres détails, le WYBOB allie caractère, confort et savoir-faire artisanal.",
       description: "Pensé pour les journées lumineuses et les escapades d'été, le WYBOB Soleil apporte une élégance naturelle à toutes vos silhouettes.",
       colors: {
         Blue: 'Bleu',
@@ -27,17 +28,24 @@ export const translations = {
         Yellow: 'Jaune',
         Red: 'Rouge',
       },
+      colorStories: {
+        Jaune: { name: 'MASOSANDRO', text: "La lumière. Une couleur solaire qui attire les regards et apporte une touche de bonne humeur à chaque instant." },
+        Bleu:  { name: 'RANO',       text: "L'horizon. Inspiré du ciel et de l'océan, un bleu qui évoque la liberté, le calme et l'évasion." },
+        Rouge: { name: 'AFO',        text: "L'intensité. Une couleur vibrante qui affirme votre présence avec caractère et confiance." },
+        Blanc: { name: 'RAHONA',     text: "L'essentiel. Une couleur intemporelle qui traverse les saisons et laisse toute la place à votre histoire." },
+        Barea: { name: '',          text: "Une édition signature imaginée pour rendre hommage aux racines de WYBOB et célébrer l'héritage, les couleurs et le savoir-faire artisanal de Madagascar." },
+      },
       colorLabel: 'Couleur actuelle :',
       sectionDescription: 'Description',
       sectionColor: 'Couleur',
       sectionFeatures: 'Caractéristiques',
       sectionCare: 'Entretien et lavage',
       features: [
-        'Matière : 100% coton tissé respirant',
-        'Taille unique ajustable (tour de tête 56–60 cm)',
+        'Matière : 100% coton BIO tissé respirant',
+        'Taille unique, épouse la forme de votre tête',
         'Bords larges pour une protection solaire optimale',
         'Protection UV : indice UPF 40+',
-        'Disponible en 4 coloris exclusifs',
+        'Disponible en 5 coloris exclusifs',
       ],
       care: [
         'Lavage à la main recommandé à 30°C',
@@ -247,6 +255,7 @@ export const translations = {
       madeByPrefix: 'Made by ',
     },
     home: {
+      tagline: "Thought through down to the smallest detail, the WYBOB blends character, comfort and artisanal craftsmanship.",
       description: 'Designed for bright days and summer escapes, the WYBOB Soleil brings a natural elegance to every outfit.',
       colors: {
         Blue: 'Blue',
@@ -254,17 +263,24 @@ export const translations = {
         Yellow: 'Yellow',
         Red: 'Red',
       },
+      colorStories: {
+        Jaune: { name: 'MASOSANDRO', text: "Light. A sunny color that catches the eye and brings a touch of good mood to every moment." },
+        Bleu:  { name: 'RANO',       text: "The horizon. Inspired by the sky and the ocean, a blue that evokes freedom, calm and escape." },
+        Rouge: { name: 'AFO',        text: "Intensity. A vibrant color that asserts your presence with character and confidence." },
+        Blanc: { name: 'RAHONA',     text: "The essential. A timeless color that transcends seasons and leaves room for your story." },
+        Barea: { name: '',          text: "A signature edition created to honor WYBOB's roots and celebrate the heritage, colors and artisanal craftsmanship of Madagascar." },
+      },
       colorLabel: 'Current color:',
       sectionDescription: 'Description',
       sectionColor: 'Color',
       sectionFeatures: 'Features',
       sectionCare: 'Care instructions',
       features: [
-        'Material: 100% breathable woven cotton',
-        'One size fits all adjustable (head circumference 56–60 cm)',
+        'Material: 100% organic cotton, breathable weave',
+        'One size, shapes to the form of your head',
         'Wide brim for optimal sun protection',
         'UV protection: UPF 40+ rating',
-        'Available in 4 exclusive colors',
+        'Available in 5 exclusive colors',
       ],
       care: [
         'Hand wash recommended at 30°C',

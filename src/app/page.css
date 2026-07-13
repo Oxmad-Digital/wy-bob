@@ -206,15 +206,14 @@ html:has(.privacyZone) {
   line-height: 1.15;
 }
 
-/* Note — étoiles or + score entre parenthèses, style NOSTRA */
-.ratingRow {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.productTagline {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  font-style: italic;
+  color: rgba(27, 24, 67, 0.7);
+  line-height: 1.5;
   margin: 0;
 }
-.ratingStars { font-size: 15px; color: #F59E0B; letter-spacing: 1px; }
-.ratingScore { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: rgba(27, 24, 67, 0.55); }
 
 /* Prix — mis en avant comme un heading */
 .priceRow {
@@ -255,6 +254,20 @@ html:has(.privacyZone) {
 .colorNameInline {
   font-weight: 400;
   color: rgba(27, 24, 67, 0.6);
+}
+
+.colorStory {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: rgba(27, 24, 67, 0.75);
+  line-height: 1.6;
+  margin: 10px 0 0;
+}
+
+.colorStoryName {
+  font-weight: 700;
+  color: #1B1843;
+  letter-spacing: 0.3px;
 }
 
 /* CTA : sélecteur quantité + bouton commander */
@@ -472,7 +485,7 @@ html:has(.privacyZone) {
   }
 
   .productName { font-size: 36px; margin-bottom: 10px; }
-  .ratingRow { margin-bottom: 10px; }
+  .productTagline { margin-bottom: 10px; }
   .priceRow { margin-bottom: 14px; }
   .priceTag { font-size: 24px; }
   .productDesc { font-size: 14px; line-height: 1.65; margin: 10px 0; }
@@ -550,13 +563,14 @@ html:has(.privacyZone) {
   }
 
   .productName { font-size: 24px; margin-bottom: 6px; }
-  .ratingRow   { margin-bottom: 10px; }
+  .productTagline { font-size: 12px; margin-bottom: 10px; }
   .priceRow    { margin-bottom: 14px; }
   .priceTag    { font-size: 20px; }
   .productDivider { margin: 10px 0; }
   .productFeature { font-size: 14px; margin-bottom: 4px; }
   .productDesc { font-size: 12px; line-height: 1.5; margin: 6px 0 4px; }
   .swatches    { margin: 8px 0 4px; }
+  .colorStory  { font-size: 12px; margin: 8px 0 4px; }
   .featureList { margin: 8px 0 4px; }
   .ctaRow      { margin-top: 20px; }
   .commanderBtn { font-size: 12px; }
