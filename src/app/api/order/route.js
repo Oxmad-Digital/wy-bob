@@ -30,18 +30,22 @@ export async function POST(req) {
 
     const body = await req.json();
     // 'total' is intentionally NOT destructured from body — it is calculated server-side below
-    const { customer, cartItems, payment, delivery, promoCode, promoDiscount } = body;
+    const { customer, cartItems, payment, delivery, promoCode, promoDiscount, relayPoint, recipientPickupName } = body;
 
     if (!customer) {
       return NextResponse.json({ message: "Client manquant" }, { status: 400 });
     }
 
-    const { firstname, lastname, city, address, phone } = customer;
+    const { firstname, lastname, city, address, phone, company, postalCode, country } = customer;
     // Si l'utilisateur est connecté, on force son email de compte pour la correspondance dashboard
     const email = session?.user?.email ?? customer.email;
 
     if (!firstname || !lastname || !email || !city || !address) {
       return NextResponse.json({ message: "Informations client manquantes" }, { status: 400 });
+    }
+
+    if (delivery === "relais" && !relayPoint?.id) {
+      return NextResponse.json({ message: "Veuillez sélectionner un point relais" }, { status: 400 });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -155,9 +159,13 @@ export async function POST(req) {
         lastname,
         email: email.toLowerCase(),
         phone: phone || "",
+        company: company || "",
         city,
         address,
+        postalCode: postalCode || "",
+        country: country || "",
       },
+      recipientPickupName: recipientPickupName || "",
       products,
       total: finalTotal,
       promoCode: validatedPromoCode,
@@ -165,6 +173,20 @@ export async function POST(req) {
       payment: payment || "cash",
       delivery: delivery || "colissimo",
       status: "pending",
+      ...(delivery === "relais" && relayPoint?.id
+        ? {
+            shipping: {
+              relayPoint: {
+                id: relayPoint.id,
+                name: relayPoint.name || "",
+                address1: relayPoint.address1 || "",
+                zipCode: relayPoint.zipCode || "",
+                city: relayPoint.city || "",
+                country: relayPoint.country || country || "FR",
+              },
+            },
+          }
+        : {}),
     });
 
     console.log("✅ Commande créée:", order._id, "N°", order.orderNumber);

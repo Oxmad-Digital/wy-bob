@@ -9,9 +9,13 @@ const OrderSchema = new mongoose.Schema(
       lastname: String,
       email: String,
       phone: String,
+      company: String,
       city: String,
       address: String,
+      postalCode: String,
+      country: String,
     },
+    recipientPickupName: { type: String, default: "" }, // personne habilitée à retirer le colis (livraison en point relais)
     products: [
       {
         product: {
@@ -39,6 +43,30 @@ const OrderSchema = new mongoose.Schema(
       type: String,
       enum: ["pending", "confirmed", "processing", "paid", "shipped", "delivered", "cancelled"],
       default: "pending",
+    },
+    shipping: {
+      carrier: { type: String, default: "chronopost" },
+      productCode: String,
+      productKey: String,
+      service: String,
+      skybillNumber: String,
+      labelBase64: String,
+      labelGeneratedAt: Date,
+      weightKg: Number,
+      relayPoint: {
+        id: String,
+        name: String,
+        address1: String,
+        zipCode: String,
+        city: String,
+        country: String,
+      },
+      trackingStatus: String,
+      trackingEvents: { type: [mongoose.Schema.Types.Mixed], default: [] },
+      lastTrackedAt: Date,
+      podBase64: String,
+      shippingError: String,
+      cancelledAt: Date,
     },
   },
   { timestamps: true }

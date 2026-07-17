@@ -14,6 +14,8 @@ const ProductSchema = new mongoose.Schema({
   stock:      { type: Number, default: 0 },
   visible:    { type: Boolean, default: true },
   variants:   { type: [VariantSchema], default: [] },
+  weight:     { type: Number, default: 100 }, // grammes — utilisé pour calculer le poids total des colis Chronopost
+  customsDescriptionEn: { type: String, default: "" }, // description anglaise pour <content1> (envois internationaux)
 }, { timestamps: true });
 
 export default mongoose.models.Product || mongoose.model("Product", ProductSchema);

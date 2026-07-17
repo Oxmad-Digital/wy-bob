@@ -37,6 +37,9 @@ env.local
 # vercel
 .vercel
 
+# logs Chronopost (XML brut requêtes/réponses, contient les identifiants de compte)
+/chronopost-logs/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

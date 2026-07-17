@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import "./order-detail.css";
 import { TOAST_DURATION } from "../../_constants";
+import { FR_PRODUCTS, INTL_PRODUCTS } from "@/app/lib/chronopost/constants";
 
 const STATUS_OPTIONS = [
   { value: "pending",    label: "En attente"     },
@@ -30,6 +31,15 @@ export default function AdminOrderDetailPage() {
   const [loading, setLoading]   = useState(true);
   const [updating, setUpdating] = useState(false);
   const [toast, setToast]       = useState(null);
+  const [shipGenerating, setShipGenerating] = useState(false);
+  const [tracking, setTracking] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [shipOverrides, setShipOverrides] = useState({
+    saturday: false,
+    businessType: "BtoC",
+    productKeyOverride: "",
+    weightKgOverride: "",
+  });
 
   const showToast = (msg, type = "success") => {
     setToast({ message: msg, type });
@@ -68,6 +78,56 @@ export default function AdminOrderDetailPage() {
       showToast("Erreur serveur", "error");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const generateShipment = async () => {
+    setShipGenerating(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${id}/shipping`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(shipOverrides),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur Chronopost", "error"); return; }
+      setOrder(data);
+      showToast("Étiquette générée");
+    } catch {
+      showToast("Erreur serveur", "error");
+    } finally {
+      setShipGenerating(false);
+    }
+  };
+
+  const refreshTracking = async () => {
+    setTracking(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${id}/track`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur de suivi", "error"); return; }
+      setOrder(data);
+      showToast("Suivi actualisé");
+    } catch {
+      showToast("Erreur serveur", "error");
+    } finally {
+      setTracking(false);
+    }
+  };
+
+  const cancelShipmentAction = async () => {
+    if (!confirm("Annuler cette étiquette Chronopost ? Cette action n'est pas testable avec le compte de test.")) return;
+    setCancelling(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${id}/shipping/cancel`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur d'annulation", "error"); return; }
+      setOrder(data);
+      showToast("Étiquette annulée");
+    } catch {
+      showToast("Erreur serveur", "error");
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -132,7 +192,18 @@ export default function AdminOrderDetailPage() {
             <div className="od-address-block">
               <div className="od-address-label">Adresse de livraison</div>
               {c.address && <div className="od-address-line">{c.address}</div>}
-              {c.city    && <div className="od-address-city">{c.city}</div>}
+              {c.city    && <div className="od-address-city">{[c.postalCode, c.city].filter(Boolean).join(" ")}</div>}
+              {c.country && <div className="od-address-line">{c.country}</div>}
+            </div>
+          )}
+          {order.shipping?.relayPoint?.id && (
+            <div className="od-address-block">
+              <div className="od-address-label">Point relais</div>
+              <div className="od-address-line">{order.shipping.relayPoint.name}</div>
+              <div className="od-address-city">{order.shipping.relayPoint.zipCode} {order.shipping.relayPoint.city}</div>
+              {order.recipientPickupName && (
+                <div className="od-client-phone">Retrait par : {order.recipientPickupName}</div>
+              )}
             </div>
           )}
         </div>
@@ -175,6 +246,153 @@ export default function AdminOrderDetailPage() {
           </div>
         </div>
 
+      </div>
+
+      {/* ── Expédition Chronopost ── */}
+      <div className="od-card od-ship-card">
+        <h2 className="od-card-title">Expédition Chronopost</h2>
+
+        {order.shipping?.shippingError && (
+          <div className="od-ship-error">⚠️ {order.shipping.shippingError}</div>
+        )}
+
+        {order.shipping?.skybillNumber && (
+          <>
+            <div className="od-ship-summary">
+              <div className="od-ship-field">
+                <div className="od-ship-field-label">N° de suivi</div>
+                <div className="od-ship-field-value">{order.shipping.skybillNumber}</div>
+              </div>
+              <div className="od-ship-field">
+                <div className="od-ship-field-label">Produit</div>
+                <div className="od-ship-field-value">{order.shipping.productKey || "—"}</div>
+              </div>
+              <div className="od-ship-field">
+                <div className="od-ship-field-label">Service</div>
+                <div className="od-ship-field-value">{order.shipping.service ?? "—"}</div>
+              </div>
+              <div className="od-ship-field">
+                <div className="od-ship-field-label">Poids</div>
+                <div className="od-ship-field-value">{order.shipping.weightKg ?? "—"} kg</div>
+              </div>
+            </div>
+            <div className="od-ship-actions-row">
+              <a
+                href={`/api/admin/orders/${id}/label`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="od-ship-download-btn"
+              >
+                📄 Télécharger l&apos;étiquette
+              </a>
+              <button type="button" className="od-ship-track-btn" onClick={refreshTracking} disabled={tracking}>
+                {tracking ? "Actualisation…" : "🔄 Actualiser le suivi"}
+              </button>
+              <a
+                href={`/api/admin/orders/${id}/pod`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="od-ship-track-btn"
+              >
+                🧾 Preuve de livraison
+              </a>
+              {!order.shipping.cancelledAt && (
+                <button type="button" className="od-ship-cancel-btn" onClick={cancelShipmentAction} disabled={cancelling}>
+                  {cancelling ? "Annulation…" : "✕ Annuler l'étiquette"}
+                </button>
+              )}
+            </div>
+
+            {order.shipping.cancelledAt ? (
+              <p className="od-ship-cancelled-hint">
+                Étiquette annulée le {new Date(order.shipping.cancelledAt).toLocaleString("fr-FR")}
+              </p>
+            ) : (
+              <p className="od-ship-cancel-warning">
+                ⚠️ L&apos;annulation n&apos;est pas testable avec le compte de test Chronopost.
+              </p>
+            )}
+
+            {order.shipping.trackingStatus && (
+              <div className="od-ship-tracking">
+                <div className="od-ship-field-label">Statut de suivi</div>
+                <div className="od-ship-field-value">{order.shipping.trackingStatus}</div>
+                {order.shipping.lastTrackedAt && (
+                  <div className="od-ship-tracking-date">
+                    Actualisé le {new Date(order.shipping.lastTrackedAt).toLocaleString("fr-FR")}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="od-ship-form">
+          <div className="od-ship-form-field">
+            <label className="od-ship-form-label">Forcer le produit</label>
+            <select
+              className="od-ship-select"
+              value={shipOverrides.productKeyOverride}
+              onChange={(e) => setShipOverrides(o => ({ ...o, productKeyOverride: e.target.value }))}
+            >
+              <option value="">Automatique</option>
+              <optgroup label="France">
+                {Object.entries(FR_PRODUCTS).map(([key, p]) => (
+                  <option key={key} value={key}>{p.label}</option>
+                ))}
+              </optgroup>
+              <optgroup label="International">
+                {Object.entries(INTL_PRODUCTS).map(([key, p]) => (
+                  <option key={key} value={key}>{p.label}</option>
+                ))}
+              </optgroup>
+            </select>
+          </div>
+
+          <div className="od-ship-form-field">
+            <label className="od-ship-form-label">Type destinataire (intl.)</label>
+            <select
+              className="od-ship-select"
+              value={shipOverrides.businessType}
+              onChange={(e) => setShipOverrides(o => ({ ...o, businessType: e.target.value }))}
+            >
+              <option value="BtoC">Particulier (BtoC)</option>
+              <option value="BtoB">Entreprise (BtoB)</option>
+            </select>
+          </div>
+
+          <div className="od-ship-form-field">
+            <label className="od-ship-form-label">Poids (kg)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              placeholder="Auto"
+              className="od-ship-input"
+              value={shipOverrides.weightKgOverride}
+              onChange={(e) => setShipOverrides(o => ({ ...o, weightKgOverride: e.target.value }))}
+            />
+          </div>
+
+          <div className="od-ship-form-field">
+            <label className="od-ship-checkbox">
+              <input
+                type="checkbox"
+                checked={shipOverrides.saturday}
+                onChange={(e) => setShipOverrides(o => ({ ...o, saturday: e.target.checked }))}
+              />
+              Livraison le samedi
+            </label>
+          </div>
+
+          <button
+            className="od-ship-generate-btn"
+            disabled={shipGenerating}
+            onClick={generateShipment}
+          >
+            {shipGenerating ? "Génération…" : order.shipping?.skybillNumber ? "Régénérer l'étiquette" : "Générer l'étiquette"}
+          </button>
+        </div>
       </div>
 
       {/* ── Produits ── */}

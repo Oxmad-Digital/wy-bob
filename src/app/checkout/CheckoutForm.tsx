@@ -5,7 +5,22 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 import { useCart } from "@/components/panier-context";
+import RelayPointPicker, { type RelayPoint } from "./RelayPointPicker";
 import "./checkout.css";
+
+// Codes pays ISO2 — requis par l'API Chronopost (domicile FR vs international,
+// recherche de points relais). Le pays déterminait auparavant un simple texte libre.
+const COUNTRY_OPTIONS = [
+  { code: "MG", label: "Madagascar" },
+  { code: "FR", label: "France" },
+  { code: "BE", label: "Belgique" },
+  { code: "CH", label: "Suisse" },
+  { code: "DE", label: "Allemagne" },
+  { code: "ES", label: "Espagne" },
+  { code: "IT", label: "Italie" },
+  { code: "GB", label: "Royaume-Uni" },
+  { code: "US", label: "États-Unis" },
+];
 
 export default function CheckoutForm({ total }: { total: number }) {
   const stripe = useStripe();
@@ -22,8 +37,10 @@ export default function CheckoutForm({ total }: { total: number }) {
   const [address, setAddress] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [city, setCity] = useState("");
-  const [country, setCountry] = useState("Madagascar");
+  const [country, setCountry] = useState("MG");
   const [shipping, setShipping] = useState("colissimo");
+  const [relayPoint, setRelayPoint] = useState<RelayPoint | null>(null);
+  const [recipientPickupName, setRecipientPickupName] = useState("");
   const [loading, setLoading] = useState(false);
 
   const TVA_RATE = 0.20;
@@ -42,6 +59,10 @@ export default function CheckoutForm({ total }: { total: number }) {
 
   if (!firstname || !lastname || !email || !city || !address) {
     alert("Veuillez remplir tous les champs obligatoires");
+    return;
+  }
+  if (shipping === "relais" && !relayPoint) {
+    alert("Veuillez sélectionner un point relais");
     return;
   }
   if (!cartItems || cartItems.length === 0) {
@@ -101,6 +122,8 @@ export default function CheckoutForm({ total }: { total: number }) {
         total: finalTotal,
         payment: "card",
         delivery: shipping,
+        relayPoint: shipping === "relais" ? relayPoint : null,
+        recipientPickupName: shipping === "relais" ? (recipientPickupName || `${firstname} ${lastname}`) : "",
         promoCode: appliedPromo?.code ?? null,
         promoDiscount: appliedPromo?.discount ?? 0,
       }),
@@ -141,7 +164,11 @@ export default function CheckoutForm({ total }: { total: number }) {
 
           <div className="checkout-section">
             <h3 className="checkout-section-title">Livraison</h3>
-            <input type="text" placeholder="Pays / région" value={country} onChange={(e) => setCountry(e.target.value)} className="checkout-input" />
+            <select value={country} onChange={(e) => setCountry(e.target.value)} className="checkout-input">
+              {COUNTRY_OPTIONS.map((c) => (
+                <option key={c.code} value={c.code}>{c.label}</option>
+              ))}
+            </select>
             <div className="checkout-row">
               <input type="text" placeholder="Prénom" value={firstname} onChange={(e) => setFirstname(e.target.value)} className="checkout-input" required />
               <input type="text" placeholder="Nom" value={lastname} onChange={(e) => setLastname(e.target.value)} className="checkout-input" required />
@@ -164,6 +191,26 @@ export default function CheckoutForm({ total }: { total: number }) {
               <input type="radio" name="shipping" value="relais" checked={shipping === "relais"} onChange={() => setShipping("relais")} />
               <span>Livraison en point relais Colissimo 2 à 4 jours</span>
             </label>
+
+            {shipping === "relais" && (
+              <>
+                <RelayPointPicker
+                  address={address}
+                  zipCode={postalCode}
+                  city={city}
+                  country={country}
+                  value={relayPoint}
+                  onChange={setRelayPoint}
+                />
+                <input
+                  type="text"
+                  placeholder="Personne habilitée à retirer le colis (optionnel)"
+                  value={recipientPickupName}
+                  onChange={(e) => setRecipientPickupName(e.target.value)}
+                  className="checkout-input"
+                />
+              </>
+            )}
           </div>
 
           <div className="checkout-section">

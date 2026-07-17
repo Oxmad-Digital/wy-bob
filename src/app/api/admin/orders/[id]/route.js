@@ -8,6 +8,7 @@ import { auth } from "@/auth";
 import mongoose from "mongoose";
 import { sendEmail } from "@/app/lib/mailer";
 import { getOrderStatusUpdateEmailTemplate } from "@/app/lib/emailTemplates";
+import { generateShipmentForOrder, markShippingError } from "@/app/lib/chronopost/orderShipment";
 
 // ✅ GET - Récupérer les détails d'une commande
 
@@ -85,6 +86,22 @@ export async function PATCH(req, { params }) {
     }
 
     /* ======================
+       📦 ÉTIQUETTE CHRONOPOST
+       Générée automatiquement au passage en "payée"/"en préparation" si elle n'existe
+       pas déjà. Un échec (ex: pas de point relais choisi) ne bloque jamais le
+       changement de statut — il est journalisé dans shipping.shippingError et un
+       bouton "Régénérer" reste disponible dans l'admin.
+    ====================== */
+    if (["paid", "processing"].includes(status) && !order.shipping?.skybillNumber) {
+      try {
+        await generateShipmentForOrder(order._id.toString());
+      } catch (shippingErr) {
+        console.error("CHRONOPOST SHIPPING ERROR:", shippingErr);
+        await markShippingError(order._id.toString(), shippingErr.message || "Erreur inconnue Chronopost");
+      }
+    }
+
+    /* ======================
        📧 EMAIL AU CLIENT
     ====================== */
     const statusLabels = {
@@ -130,7 +147,8 @@ export async function PATCH(req, { params }) {
       });
     }
 
-    return NextResponse.json(order);
+    const freshOrder = await Order.findById(order._id);
+    return NextResponse.json(freshOrder);
   } catch (error) {
     console.error("PATCH ORDER ERROR:", error);
     return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
