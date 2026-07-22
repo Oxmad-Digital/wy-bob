@@ -152,6 +152,9 @@ export default function CheckoutForm({ total }: { total: number }) {
   return (
     <>
       <button className="checkout-back" onClick={() => router.back()}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
         Retour
       </button>
 
@@ -226,20 +229,22 @@ export default function CheckoutForm({ total }: { total: number }) {
         </div>
 
         <div className="checkout-right">
-          <div className="checkout-items">
-            {cartItems.map((item: any) => (
-              <div key={item._id} className="checkout-item">
-                <div className="checkout-item-image">
-                  {item.image && <img src={item.image} alt={item.name} />}
+          {cartItems.length > 0 && (
+            <div className="checkout-items">
+              {cartItems.map((item: any) => (
+                <div key={item._id} className="checkout-item">
+                  <div className="checkout-item-image">
+                    {item.image && <img src={item.image} alt={item.name} />}
+                  </div>
+                  <div className="checkout-item-info">
+                    <strong>{item.name}</strong>
+                    <p>{item.description}</p>
+                  </div>
+                  <span className="checkout-item-price">{item.promoPrice ?? item.price} €</span>
                 </div>
-                <div className="checkout-item-info">
-                  <strong>{item.name}</strong>
-                  <p>{item.description}</p>
-                </div>
-                <span className="checkout-item-price">{item.promoPrice ?? item.price} €</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           <div className="checkout-summary">
             <h3 className="checkout-summary-title">Résumé de la commande</h3>

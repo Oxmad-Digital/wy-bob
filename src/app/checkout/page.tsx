@@ -23,8 +23,8 @@ export default function CheckoutPage() {
     return (
       <div className="container">
         <Navbar />
-        <div className="checkoutZone" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "400px" }}>
-          <p>Chargement...</p>
+        <div className="checkoutZone">
+          <p className="checkout-loading">Chargement...</p>
         </div>
         <Footer />
       </div>
