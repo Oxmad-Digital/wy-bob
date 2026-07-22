@@ -32,6 +32,7 @@
 
 /* WRAPPER — Frame 4591 : horizontal, 1072px, radius 10px, padding 40px, gap 80px */
 .checkout-wrapper {
+  width: 100%;
   max-width: 1745px;
   margin: 0 auto;
   display: flex;
