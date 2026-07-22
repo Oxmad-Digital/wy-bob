@@ -6,8 +6,15 @@ import { connectDB } from "@/app/lib/db";
 import Order from "@/app/models/Order";
 import { auth } from "@/auth";
 import mongoose from "mongoose";
-import { trackParcel } from "@/app/lib/chronopost/tracking";
+import { trackParcel, searchPOD } from "@/app/lib/chronopost/tracking";
 import { ChronopostError } from "@/app/lib/chronopost/client";
+import { applyOrderStatusChange } from "@/app/lib/orderStatusChange";
+
+// Libellés de suivi Chronopost (fr_FR) qui suggèrent une livraison — sert uniquement de
+// déclencheur pour vérifier via searchPOD (signal Chronopost non ambigu) avant de
+// basculer automatiquement le statut, jamais pour décider seul.
+const DELIVERED_HINT = /livr/i;
+const DELIVERED_EXCLUDE = /non[\s-]?livr|refus|absent|litige|attente/i;
 
 // ✅ POST - Actualiser le suivi Chronopost d'une commande
 export async function POST(req, { params }) {
@@ -34,19 +41,39 @@ export async function POST(req, { params }) {
       return NextResponse.json({ message: "Aucune étiquette générée pour cette commande" }, { status: 400 });
     }
 
+    let resultOrder = order;
+
     try {
       const tracking = await trackParcel(order.shipping.skybillNumber);
       order.shipping.trackingStatus = tracking.statusLabel || tracking.statusCode || "";
       order.shipping.trackingEvents = tracking.events;
       order.shipping.lastTrackedAt = new Date();
       await order.save();
+
+      const label = tracking.statusLabel || "";
+      const looksDelivered = DELIVERED_HINT.test(label) && !DELIVERED_EXCLUDE.test(label);
+
+      if (looksDelivered && !["delivered", "cancelled"].includes(order.status)) {
+        try {
+          const pod = await searchPOD(order.shipping.skybillNumber);
+          if (pod.available && pod.base64) {
+            order.shipping.podBase64 = pod.base64;
+            await order.save();
+            resultOrder = (await applyOrderStatusChange(order._id.toString(), "delivered")) || order;
+          }
+        } catch (podErr) {
+          // Vérification best-effort : un échec ici ne doit pas faire échouer le
+          // rafraîchissement du suivi, qui a déjà réussi.
+          console.error("CHRONOPOST AUTO-POD CHECK ERROR (non bloquant):", podErr);
+        }
+      }
     } catch (trackErr) {
       console.error("CHRONOPOST TRACK ERROR:", trackErr);
       const message = trackErr instanceof ChronopostError ? trackErr.message : "Suivi Chronopost indisponible";
       return NextResponse.json({ message }, { status: 502 });
     }
 
-    return NextResponse.json(order);
+    return NextResponse.json(resultOrder);
   } catch (error) {
     console.error("POST TRACK ERROR:", error);
     return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });

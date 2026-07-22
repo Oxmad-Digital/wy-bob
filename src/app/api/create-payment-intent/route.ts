@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { auth } from "@/auth";
 import { connectDB } from "@/app/lib/db";
 import Product from "@/app/models/Product";
+import { computeOrderTotals } from "@/app/lib/pricing";
+import { resolvePromoDiscount } from "@/app/lib/promo";
 
 export async function POST(req: Request) {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -9,7 +12,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { cartItems } = await req.json();
+    const { cartItems, promoCode } = await req.json();
 
     if (!Array.isArray(cartItems) || cartItems.length === 0) {
       return NextResponse.json({ error: "Panier vide" }, { status: 400 });
@@ -18,19 +21,27 @@ export async function POST(req: Request) {
     await connectDB();
 
     // Recalculate total strictly server-side — never trust client-supplied prices
-    let totalCents = 0;
+    let subtotal = 0;
     for (const item of cartItems) {
+      if (!item.productId) {
+        return NextResponse.json({ error: "Panier obsolète, veuillez le vider et réajouter vos articles" }, { status: 400 });
+      }
       const product = await Product.findById(item.productId).select("price");
       if (!product) {
         return NextResponse.json({ error: `Produit introuvable: ${item.productId}` }, { status: 404 });
       }
       const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
-      totalCents += Math.round(product.price * 100) * qty;
+      subtotal += product.price * qty;
     }
 
-    if (totalCents <= 0) {
+    if (subtotal <= 0) {
       return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
     }
+
+    const session = await auth();
+    const { discount } = await resolvePromoDiscount(promoCode, subtotal, session?.user?.id ?? null);
+    const { total } = computeOrderTotals(subtotal - discount);
+    const totalCents = Math.round(total * 100);
 
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2026-04-22.dahlia",

@@ -12,6 +12,8 @@ import ReferralConfig from "@/app/models/ReferralConfig";
 import User from "@/app/models/User";
 import { sendEmail } from "@/app/lib/mailer";
 import Customer from "@/app/models/Customer";
+import { computeOrderTotals } from "@/app/lib/pricing";
+import { resolvePromoDiscount } from "@/app/lib/promo";
 
 function generateRewardCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -85,71 +87,57 @@ export async function POST(req) {
       { new: true, upsert: true }
     );
 
-    // Apply promo discount — re-validate server-side for safety
-    let appliedDiscount = 0;
-    let validatedPromoCode = null;
+    // Apply promo discount — re-validate server-side for safety (même logique que
+    // /api/create-payment-intent, via resolvePromoDiscount, pour que le montant facturé
+    // via Stripe et le total enregistré sur la commande soient toujours identiques)
     let referralRewardData = null;
+    const userId = session?.user?.id ?? null;
+    const { discount: appliedDiscount, validatedCode: validatedPromoCode, promo } = await resolvePromoDiscount(
+      promoCode,
+      total,
+      userId
+    );
 
-    if (promoCode) {
-      const promo = await PromoCode.findOne({ code: promoCode.toUpperCase().trim(), active: true });
-      if (
-        promo &&
-        (!promo.expiresAt || new Date(promo.expiresAt) >= new Date()) &&
-        (promo.maxUses === null || promo.usedCount < promo.maxUses)
-      ) {
-        if (promo.isReferral) {
-          const userId = session?.user?.id;
-          const selfReferral = userId && String(promo.referrerId) === String(userId);
-          const alreadyUsed = userId && promo.usedByUserIds.some((id) => String(id) === String(userId));
+    if (promo && validatedPromoCode) {
+      if (promo.isReferral) {
+        await PromoCode.findByIdAndUpdate(promo._id, {
+          $inc: { usedCount: 1 },
+          $push: { usedByUserIds: userId },
+        });
 
-          if (userId && !selfReferral && !alreadyUsed) {
-            const effectivePercent = promo.filleulPercent ?? 0;
-            appliedDiscount = Math.round(total * (effectivePercent / 100) * 100) / 100;
-            validatedPromoCode = promo.code;
+        if (promo.parrainPercent > 0) {
+          const referralConfig = await ReferralConfig.findOne();
+          const validityDays = referralConfig?.rewardValidityDays ?? 30;
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + validityDays);
 
-            await PromoCode.findByIdAndUpdate(promo._id, {
-              $inc: { usedCount: 1 },
-              $push: { usedByUserIds: userId },
-            });
+          let rewardCode;
+          let attempts = 0;
+          do {
+            rewardCode = generateRewardCode();
+            attempts++;
+          } while (attempts < 10 && (await PromoCode.exists({ code: rewardCode })));
 
-            if (promo.parrainPercent > 0) {
-              const referralConfig = await ReferralConfig.findOne();
-              const validityDays = referralConfig?.rewardValidityDays ?? 30;
-              const expiresAt = new Date();
-              expiresAt.setDate(expiresAt.getDate() + validityDays);
+          await PromoCode.create({
+            code: rewardCode,
+            type: "percent",
+            value: promo.parrainPercent,
+            maxUses: 1,
+            active: true,
+            expiresAt,
+          });
 
-              let rewardCode;
-              let attempts = 0;
-              do {
-                rewardCode = generateRewardCode();
-                attempts++;
-              } while (attempts < 10 && (await PromoCode.exists({ code: rewardCode })));
-
-              await PromoCode.create({
-                code: rewardCode,
-                type: "percent",
-                value: promo.parrainPercent,
-                maxUses: 1,
-                active: true,
-                expiresAt,
-              });
-
-              const parrain = await User.findById(promo.referrerId).select("email name");
-              if (parrain) {
-                referralRewardData = { email: parrain.email, name: parrain.name, rewardCode, parrainPercent: promo.parrainPercent, validityDays };
-              }
-            }
+          const parrain = await User.findById(promo.referrerId).select("email name");
+          if (parrain) {
+            referralRewardData = { email: parrain.email, name: parrain.name, rewardCode, parrainPercent: promo.parrainPercent, validityDays };
           }
-        } else {
-          appliedDiscount = promo.type === "percent"
-            ? Math.round(total * (promo.value / 100) * 100) / 100
-            : Math.min(promo.value, total);
-          validatedPromoCode = promo.code;
-          await PromoCode.findByIdAndUpdate(promo._id, { $inc: { usedCount: 1 } });
         }
+      } else {
+        await PromoCode.findByIdAndUpdate(promo._id, { $inc: { usedCount: 1 } });
       }
     }
-    const finalTotal = Math.max(0, Math.round((total - appliedDiscount) * 100) / 100);
+
+    const { tva, shipping, total: finalTotal } = computeOrderTotals(total - appliedDiscount);
 
     const order = await Order.create({
       orderNumber: counter.seq,

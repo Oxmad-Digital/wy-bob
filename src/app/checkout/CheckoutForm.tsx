@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 import { useCart } from "@/components/panier-context";
 import RelayPointPicker, { type RelayPoint } from "./RelayPointPicker";
+import { computeOrderTotals } from "@/app/lib/pricing";
 import "./checkout.css";
 
 // Codes pays ISO2 — requis par l'API Chronopost (domicile FR vs international,
@@ -22,12 +23,12 @@ const COUNTRY_OPTIONS = [
   { code: "US", label: "États-Unis" },
 ];
 
-export default function CheckoutForm({ total }: { total: number }) {
+export default function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
   const { data: session } = useSession();
-  const { cartItems, cartTotal, appliedPromo, finalTotal, setAppliedPromo } = useCart();
+  const { cartItems, cartTotal, appliedPromo, finalTotal, setAppliedPromo, clearCart } = useCart();
 
   const [firstname, setFirstname] = useState("");
   const [lastname, setLastname] = useState("");
@@ -43,14 +44,12 @@ export default function CheckoutForm({ total }: { total: number }) {
   const [recipientPickupName, setRecipientPickupName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const TVA_RATE = 0.20;
-  const livraison = 25;
   const totalQty = useMemo(
     () => cartItems.reduce((acc, i) => acc + i.quantity, 0),
     [cartItems]
   );
-  const tva = useMemo(
-    () => Math.round(finalTotal * TVA_RATE),
+  const { tva, shipping: livraison, total } = useMemo(
+    () => computeOrderTotals(finalTotal),
     [finalTotal]
   );
 
@@ -137,9 +136,8 @@ export default function CheckoutForm({ total }: { total: number }) {
       return;
     }
 
-    setAppliedPromo(null);
+    clearCart();
     alert("✅ Commande confirmée !");
-    localStorage.removeItem("cart");
     router.push("/");
 
   } catch (error) {

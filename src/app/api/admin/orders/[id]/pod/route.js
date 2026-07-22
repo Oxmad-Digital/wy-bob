@@ -8,6 +8,7 @@ import { auth } from "@/auth";
 import mongoose from "mongoose";
 import { searchPOD } from "@/app/lib/chronopost/tracking";
 import { ChronopostError } from "@/app/lib/chronopost/client";
+import { applyOrderStatusChange } from "@/app/lib/orderStatusChange";
 
 // ✅ GET - Récupérer (et mettre en cache) la preuve de livraison Chronopost d'une commande
 export async function GET(req, { params }) {
@@ -32,6 +33,13 @@ export async function GET(req, { params }) {
     }
 
     if (order.shipping?.podBase64) {
+      // La preuve de livraison existe déjà — s'assure que le statut a bien suivi,
+      // au cas où elle aurait été mise en cache avant l'ajout de ce basculement auto.
+      if (!["delivered", "cancelled"].includes(order.status)) {
+        await applyOrderStatusChange(order._id.toString(), "delivered").catch((err) =>
+          console.error("AUTO STATUS DELIVERED ERROR (non bloquant):", err)
+        );
+      }
       const pdfBuffer = Buffer.from(order.shipping.podBase64, "base64");
       return new NextResponse(pdfBuffer, {
         status: 200,
@@ -50,6 +58,14 @@ export async function GET(req, { params }) {
       }
       order.shipping.podBase64 = pod.base64;
       await order.save();
+
+      // Une preuve de livraison disponible est un signal Chronopost non ambigu —
+      // on fait suivre le statut automatiquement (email client inclus).
+      if (!["delivered", "cancelled"].includes(order.status)) {
+        await applyOrderStatusChange(order._id.toString(), "delivered").catch((err) =>
+          console.error("AUTO STATUS DELIVERED ERROR (non bloquant):", err)
+        );
+      }
 
       const pdfBuffer = Buffer.from(pod.base64, "base64");
       return new NextResponse(pdfBuffer, {

@@ -17,7 +17,7 @@ export default function StripeWrapper({ total }: { total: number }) {
 
   return (
     <Elements stripe={stripePromise} options={{ mode: "payment", amount: Math.round(total * 100), currency: "eur" }}>
-      <CheckoutForm total={total} />
+      <CheckoutForm />
     </Elements>
   );
 }

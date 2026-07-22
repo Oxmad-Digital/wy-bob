@@ -37,6 +37,7 @@ interface PanierContextType {
   increaseQty: (id: string) => void;
   decreaseQty: (id: string) => void;
   removeFromCart: (id: string) => void;
+  clearCart: () => void;
   cartTotal: number;
   appliedPromo: AppliedPromo | null;
   setAppliedPromo: (promo: AppliedPromo | null) => void;
@@ -69,7 +70,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     if (typeof window !== 'undefined') {
       const savedCart = localStorage.getItem(storageKey);
-      setCartItems(savedCart ? JSON.parse(savedCart) : []);
+      // Filtre les paniers persistés avant l'ajout du champ productId (voir commit
+      // d0480a2) — sans quoi /api/create-payment-intent échoue avec "Produit introuvable: undefined"
+      const parsed: PanierItem[] = savedCart ? JSON.parse(savedCart) : [];
+      setCartItems(parsed.filter((item) => !!item.productId));
     } else {
       setCartItems([]);
     }
@@ -133,6 +137,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setAppliedPromo(null);
   };
 
+  /* 🗑️ Vider le panier (ex: après une commande confirmée) */
+  const clearCart = () => {
+    setCartItems([]);
+    setAppliedPromo(null);
+  };
+
   /* 💰 Sous-total */
   const cartTotal = useMemo(
     () => cartItems.reduce((total, item) => {
@@ -158,6 +168,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         increaseQty,
         decreaseQty,
         removeFromCart,
+        clearCart,
         cartTotal,
         appliedPromo,
         setAppliedPromo,
