@@ -211,6 +211,16 @@
   margin: 0;
 }
 
+.checkout-form-error {
+  font-size: 13px;
+  color: #c0392b;
+  background: #fdecea;
+  border: 1px solid #f5c6c0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0;
+}
+
 .relay-list {
   display: flex;
   flex-direction: column;
