@@ -43,6 +43,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
       amount: totalCents,
     });
   } catch (error: any) {

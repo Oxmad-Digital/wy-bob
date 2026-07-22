@@ -5,28 +5,20 @@ import StripeWrapper from "./StripeWrapper";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import "../page.css";
 import "./checkout.css";
 
 export default function CheckoutPage() {
   const { cartTotal } = useCart();
-  const { data: session, status } = useSession();
-  const router = useRouter();
+  const { status } = useSession();
 
   const TVA_RATE = 0.20;
   const tva = Math.round(cartTotal * TVA_RATE);
   const livraison = 25;
   const total = cartTotal + tva + livraison;
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/login?redirect=/checkout");
-    }
-  }, [status, router]);
-
-  // Chargement en cours
+  // Chargement de la session — on attend avant d'afficher le formulaire (pré-remplissage
+  // de l'email si connecté), mais la connexion n'est jamais obligatoire pour commander.
   if (status === "loading") {
     return (
       <div className="container">
@@ -38,9 +30,6 @@ export default function CheckoutPage() {
       </div>
     );
   }
-
-  // Non connecté
-  if (status === "unauthenticated") return null;
 
   return (
     <div className="container">

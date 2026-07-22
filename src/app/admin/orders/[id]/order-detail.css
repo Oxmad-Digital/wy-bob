@@ -206,6 +206,8 @@
 .od-status-btn:hover:not(:disabled) { filter: brightness(0.9); }
 .od-status-btn:disabled { cursor: not-allowed; }
 .od-status-btn.od-status-current { outline: 2px solid #0f172a; outline-offset: 2px; }
+.od-status-btn.od-status-muted   { opacity: 0.5; }
+.od-status-btn.od-status-muted:hover:not(:disabled) { opacity: 1; }
 
 .od-status-check { font-size: 11px; }
 
@@ -306,6 +308,8 @@
 .od-ship-field { min-width: 140px; }
 .od-ship-field-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a8a29e; margin-bottom: 4px; }
 .od-ship-field-value { font-size: 14px; font-weight: 600; color: #0f172a; font-family: monospace; }
+.od-ship-field-value-plain { font-family: inherit; }
+.od-ship-field-sub   { font-size: 11px; color: #a8a29e; font-family: monospace; margin-top: 1px; }
 
 .od-ship-error {
   background: #fef2f2;
@@ -385,6 +389,22 @@
 
 .od-ship-cancel-warning { font-size: 11px; color: #b45309; margin: -8px 0 16px; }
 .od-ship-cancelled-hint { font-size: 12px; color: #78716c; margin: -8px 0 16px; }
+
+.od-ship-toggle-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 0;
+  border: none;
+  border-top: 1px solid #f5f5f4;
+  background: none;
+  color: #57534e;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.od-ship-toggle-btn:hover { color: #0f172a; }
 
 .od-ship-form {
   display: grid;

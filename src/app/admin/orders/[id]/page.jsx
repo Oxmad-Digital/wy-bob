@@ -24,6 +24,42 @@ const PAYMENT_LABELS = {
   bank_transfer: "Virement bancaire",
 };
 
+// Ordre "naturel" du cycle de vie d'une commande — sert à repérer les retours en arrière.
+// "cancelled" est volontairement exclu : c'est une sortie de cycle, pas une étape.
+const STATUS_SEQUENCE = ["pending", "confirmed", "processing", "paid", "shipped", "delivered"];
+
+function isSensitiveTransition(from, to) {
+  if (to === "cancelled" || from === "cancelled") return true;
+  const fromIdx = STATUS_SEQUENCE.indexOf(from);
+  const toIdx   = STATUS_SEQUENCE.indexOf(to);
+  return fromIdx !== -1 && toIdx !== -1 && toIdx < fromIdx;
+}
+
+function describeShipping(shipping) {
+  const key = shipping?.productKey;
+  if (!key) return { product: "—", service: "—" };
+
+  if (key in FR_PRODUCTS) {
+    const product = FR_PRODUCTS[key];
+    const service = String(shipping.service) === "6" ? "Livraison samedi" : "Standard";
+    return { product: product.label, service };
+  }
+
+  if (key in INTL_PRODUCTS) {
+    const product = INTL_PRODUCTS[key];
+    let service = String(shipping.service ?? "—");
+    if ("service" in product) {
+      service = "Standard";
+    } else if ("serviceLight" in product) {
+      if (String(shipping.service) === String(product.serviceLight)) service = "Léger (≤3kg)";
+      else if (String(shipping.service) === String(product.serviceHeavy)) service = "Lourd (>3kg)";
+    }
+    return { product: product.label, service };
+  }
+
+  return { product: key, service: String(shipping.service ?? "—") };
+}
+
 export default function AdminOrderDetailPage() {
   const { id }   = useParams();
   const router   = useRouter();
@@ -34,6 +70,7 @@ export default function AdminOrderDetailPage() {
   const [shipGenerating, setShipGenerating] = useState(false);
   const [tracking, setTracking] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [shipFormOpen, setShipFormOpen] = useState(true);
   const [shipOverrides, setShipOverrides] = useState({
     saturday: false,
     businessType: "BtoC",
@@ -53,6 +90,7 @@ export default function AdminOrderDetailPage() {
         if (!res.ok) { router.push("/admin/orders"); return; }
         const data = await res.json();
         setOrder(data);
+        if (data.shipping?.skybillNumber) setShipFormOpen(false);
       } catch {
         router.push("/admin/orders");
       } finally {
@@ -147,6 +185,7 @@ export default function AdminOrderDetailPage() {
   const orderNumber = order.orderNumber
     ? String(order.orderNumber).padStart(4, "0")
     : order._id.toString().slice(-8).toUpperCase();
+  const shipInfo = describeShipping(order.shipping);
 
   return (
     <div className="od-page">
@@ -232,17 +271,25 @@ export default function AdminOrderDetailPage() {
           <h2 className="od-card-title">Changer le statut</h2>
           <p className="od-status-hint">Un email est envoyé automatiquement au client.</p>
           <div className="od-status-grid">
-            {STATUS_OPTIONS.map(s => (
-              <button
-                key={s.value}
-                disabled={updating || order.status === s.value}
-                onClick={() => updateStatus(s.value)}
-                className={`od-status-btn ao-status-${s.value} ${order.status === s.value ? "od-status-current" : ""}`}
-              >
-                {s.label}
-                {order.status === s.value && <span className="od-status-check" aria-hidden="true">✓</span>}
-              </button>
-            ))}
+            {STATUS_OPTIONS.map(s => {
+              const isCurrent = order.status === s.value;
+              const sensitive = !isCurrent && isSensitiveTransition(order.status, s.value);
+              const muted = sensitive && s.value !== "cancelled";
+              return (
+                <button
+                  key={s.value}
+                  disabled={updating || isCurrent}
+                  onClick={() => {
+                    if (sensitive && !confirm(`Passer la commande en "${s.label}" ? Un email sera envoyé au client.`)) return;
+                    updateStatus(s.value);
+                  }}
+                  className={`od-status-btn ao-status-${s.value} ${isCurrent ? "od-status-current" : ""} ${muted ? "od-status-muted" : ""}`}
+                >
+                  {s.label}
+                  {isCurrent && <span className="od-status-check" aria-hidden="true">✓</span>}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -265,11 +312,13 @@ export default function AdminOrderDetailPage() {
               </div>
               <div className="od-ship-field">
                 <div className="od-ship-field-label">Produit</div>
-                <div className="od-ship-field-value">{order.shipping.productKey || "—"}</div>
+                <div className="od-ship-field-value od-ship-field-value-plain">{shipInfo.product}</div>
+                <div className="od-ship-field-sub">{order.shipping.productKey}</div>
               </div>
               <div className="od-ship-field">
                 <div className="od-ship-field-label">Service</div>
-                <div className="od-ship-field-value">{order.shipping.service ?? "—"}</div>
+                <div className="od-ship-field-value od-ship-field-value-plain">{shipInfo.service}</div>
+                <div className="od-ship-field-sub">{order.shipping.service ?? "—"}</div>
               </div>
               <div className="od-ship-field">
                 <div className="od-ship-field-label">Poids</div>
@@ -327,6 +376,17 @@ export default function AdminOrderDetailPage() {
           </>
         )}
 
+        {order.shipping?.skybillNumber && (
+          <button
+            type="button"
+            className="od-ship-toggle-btn"
+            onClick={() => setShipFormOpen(o => !o)}
+          >
+            {shipFormOpen ? "▾ Masquer les options de régénération" : "▸ Modifier / régénérer l'étiquette"}
+          </button>
+        )}
+
+        {(!order.shipping?.skybillNumber || shipFormOpen) && (
         <div className="od-ship-form">
           <div className="od-ship-form-field">
             <label className="od-ship-form-label">Forcer le produit</label>
@@ -393,6 +453,7 @@ export default function AdminOrderDetailPage() {
             {shipGenerating ? "Génération…" : order.shipping?.skybillNumber ? "Régénérer l'étiquette" : "Générer l'étiquette"}
           </button>
         </div>
+        )}
       </div>
 
       {/* ── Produits ── */}

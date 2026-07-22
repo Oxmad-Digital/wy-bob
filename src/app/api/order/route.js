@@ -30,7 +30,7 @@ export async function POST(req) {
 
     const body = await req.json();
     // 'total' is intentionally NOT destructured from body — it is calculated server-side below
-    const { customer, cartItems, payment, delivery, promoCode, promoDiscount, relayPoint, recipientPickupName } = body;
+    const { customer, cartItems, payment, paymentIntentId, delivery, promoCode, promoDiscount, relayPoint, recipientPickupName } = body;
 
     if (!customer) {
       return NextResponse.json({ message: "Client manquant" }, { status: 400 });
@@ -171,6 +171,7 @@ export async function POST(req) {
       promoCode: validatedPromoCode,
       promoDiscount: appliedDiscount,
       payment: payment || "cash",
+      paymentIntentId: paymentIntentId || null,
       delivery: delivery || "colissimo",
       status: "pending",
       ...(delivery === "relais" && relayPoint?.id

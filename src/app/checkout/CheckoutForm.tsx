@@ -97,7 +97,7 @@ export default function CheckoutForm({ total }: { total: number }) {
       setLoading(false);
       return;
     }
-    const { clientSecret } = await res.json();
+    const { clientSecret, paymentIntentId } = await res.json();
 
     // 3 — Confirmer le paiement
     const { error: stripeError } = await stripe.confirmPayment({
@@ -112,7 +112,8 @@ export default function CheckoutForm({ total }: { total: number }) {
       return;
     }
 
-    // 4 — Créer la commande
+    // 4 — Créer la commande, reliée au PaymentIntent (le webhook Stripe s'en sert pour
+    // confirmer le paiement côté serveur et déclencher automatiquement l'étiquette Chronopost)
     const orderRes = await fetch("/api/order", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -121,6 +122,7 @@ export default function CheckoutForm({ total }: { total: number }) {
         cartItems,
         total: finalTotal,
         payment: "card",
+        paymentIntentId,
         delivery: shipping,
         relayPoint: shipping === "relais" ? relayPoint : null,
         recipientPickupName: shipping === "relais" ? (recipientPickupName || `${firstname} ${lastname}`) : "",
