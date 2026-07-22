@@ -62,15 +62,15 @@ export async function POST(req) {
     let total = 0;
 
     for (const item of cartItems) {
-      if (!mongoose.Types.ObjectId.isValid(item._id)) continue;
+      if (!mongoose.Types.ObjectId.isValid(item.productId)) continue;
 
-      const product = await Product.findById(item._id).select("price name");
+      const product = await Product.findById(item.productId).select("price name");
       if (!product) continue;
 
       const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
       total += product.price * qty;
       products.push({
-        product: new mongoose.Types.ObjectId(item._id),
+        product: new mongoose.Types.ObjectId(item.productId),
         quantity: qty,
       });
     }

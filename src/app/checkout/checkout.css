@@ -1,9 +1,13 @@
-/* BOUTON RETOUR */
+/* BOUTON RETOUR — aligné à gauche de la modal, au même niveau que son bord haut
+   (position absolue pour ne pas consommer d'espace vertical dans le flux et garder
+   le cadre haut/bas de la modal symétrique) */
 .checkout-back {
+  position: absolute;
+  top: 60px;
+  left: 60px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  align-self: flex-start;
   background: transparent;
   border: 1px solid #E5E7EB;
   border-radius: 12px;
@@ -11,7 +15,6 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  margin-bottom: 24px;
   color: #111;
 }
 
@@ -20,9 +23,16 @@
   border-color: #ccc;
 }
 
+@media (max-width: 1200px) {
+  .checkout-back {
+    position: static;
+    margin-bottom: 16px;
+  }
+}
+
 /* WRAPPER — Frame 4591 : horizontal, 1072px, radius 10px, padding 40px, gap 80px */
 .checkout-wrapper {
-  max-width: 1072px;
+  max-width: 1745px;
   margin: 0 auto;
   display: flex;
   flex-direction: row;
@@ -247,6 +257,7 @@
 }
 
 .checkout-item-info strong {
+  font-family: 'DM Sans', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: #111;
@@ -337,12 +348,15 @@
   cursor: not-allowed;
 }
 .checkoutZone {
+  position: relative;
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 20px;
+  overscroll-behavior: contain;
+  padding: 60px;
   scrollbar-width: none;
   width: 100%;
 }
@@ -350,12 +364,6 @@
 .checkoutZone::-webkit-scrollbar {
   display: none;
 }
-.container:has(.checkoutZone) {
-  overflow: visible !important;
-  height: auto !important;
-  min-height: 95dvh !important;
-}
-
 
 /* RESPONSIVE */
 @media (max-width: 768px) {

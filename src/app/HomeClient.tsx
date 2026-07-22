@@ -102,12 +102,14 @@ export default function HomeClient({ product }: Props) {
   const colorStory = t.home.colorStories[selectedVariant.colorName as keyof typeof t.home.colorStories]
 
   const handleCommander = () => {
+    if (!product?._id) return
     addToCart({
-      _id:   'wybob-' + selectedVariant._id,
-      name:  productName,
-      price: productPrice,
-      image: selectedVariant.image,
-      color: selectedVariant.colorName,
+      _id:       'wybob-' + selectedVariant._id,
+      productId: product._id,
+      name:      productName,
+      price:     productPrice,
+      image:     selectedVariant.image,
+      color:     selectedVariant.colorName,
     }, quantity)
     router.push('/panier')
   }

@@ -20,9 +20,9 @@ export async function POST(req: Request) {
     // Recalculate total strictly server-side — never trust client-supplied prices
     let totalCents = 0;
     for (const item of cartItems) {
-      const product = await Product.findById(item._id).select("price");
+      const product = await Product.findById(item.productId).select("price");
       if (!product) {
-        return NextResponse.json({ error: `Produit introuvable: ${item._id}` }, { status: 404 });
+        return NextResponse.json({ error: `Produit introuvable: ${item.productId}` }, { status: 404 });
       }
       const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
       totalCents += Math.round(product.price * 100) * qty;

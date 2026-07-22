@@ -87,7 +87,7 @@ export default function CheckoutForm({ total }: { total: number }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        cartItems: cartItems.map((i: any) => ({ _id: i._id, quantity: i.quantity })),
+        cartItems: cartItems.map((i: any) => ({ productId: i.productId, quantity: i.quantity })),
         promoCode: appliedPromo?.code ?? null,
       }),
     });
@@ -152,7 +152,7 @@ export default function CheckoutForm({ total }: { total: number }) {
   return (
     <>
       <button className="checkout-back" onClick={() => router.back()}>
-        ← Retour
+        Retour
       </button>
 
       <div className="checkout-wrapper">
@@ -245,30 +245,27 @@ export default function CheckoutForm({ total }: { total: number }) {
             <h3 className="checkout-summary-title">Résumé de la commande</h3>
             <div className="checkout-summary-row">
               <span>Sous-total ({totalQty})</span>
-              <span>{cartTotal} Ar</span>
+              <span>{cartTotal} €</span>
             </div>
             {appliedPromo && (
               <div className="checkout-summary-row checkout-summary-discount">
                 <span>Réduction ({appliedPromo.code})</span>
-                <span>−{appliedPromo.discount} Ar</span>
+                <span>−{appliedPromo.discount} €</span>
               </div>
             )}
             <div className="checkout-summary-row">
               <span>TVA (20%)</span>
-              <span>{tva} Ar</span>
+              <span>{tva} €</span>
             </div>
             <div className="checkout-summary-row">
               <span>Livraison</span>
-              <span>{livraison} Ar</span>
+              <span>{livraison} €</span>
             </div>
             <div className="checkout-summary-divider" />
             <div className="checkout-summary-row checkout-summary-total">
               <span>Total</span>
-              <span>{total} Ar</span>
+              <span>{total} €</span>
             </div>
-            <button className="checkout-pay-btn" onClick={handleSubmit} disabled={loading}>
-              {loading ? "Envoi..." : "Procéder au paiement"}
-            </button>
           </div>
         </div>
 

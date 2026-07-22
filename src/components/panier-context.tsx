@@ -15,6 +15,7 @@ import { useSession } from "next-auth/react";
    =========================== */
 interface PanierItem {
   _id: string;
+  productId: string;
   name: string;
   price: number;
   promoPrice?: number;
