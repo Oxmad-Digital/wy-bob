@@ -18,7 +18,7 @@ const DEFAULT_PRODUCT = {
 export async function GET() {
   await connectDB();
 
-  let product = await Product.findOne({}).lean() as any;
+  let product = await Product.findOne({}).sort({ _id: 1 }).lean() as any;
 
   if (!product) {
     product = (await Product.create(DEFAULT_PRODUCT)).toObject();

@@ -37,7 +37,7 @@ export function getPasswordResetEmailTemplate(name, resetUrl) {
       <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
 
       <p style="color: #888; font-size: 12px; text-align: center;">
-        © 2026 WYBOB — Créé avec âme. Porté avec lumière.
+        © 2026 WYBOB
       </p>
 
     </div>
@@ -77,7 +77,7 @@ export function getOrderStatusUpdateEmailTemplate({ firstname, orderNumber, stat
       <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
 
       <p style="color: #888; font-size: 12px; text-align: center;">
-        © 2026 WYBOB — Créé avec âme. Porté avec lumière.
+        © 2026 WYBOB
       </p>
 
     </div>
@@ -118,7 +118,7 @@ export function getVerificationEmailTemplate(name, dashboardUrl) {
       <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
 
       <p style="color: #888; font-size: 12px; text-align: center;">
-        © 2026 WYBOB — Créé avec âme. Porté avec lumière.
+        © 2026 WYBOB
       </p>
 
     </div>
