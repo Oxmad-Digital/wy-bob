@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
@@ -27,7 +27,7 @@ export default function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { cartItems, cartTotal, appliedPromo, finalTotal, setAppliedPromo, clearCart } = useCart();
 
   const [firstname, setFirstname] = useState("");
@@ -44,6 +44,36 @@ export default function CheckoutForm() {
   const [recipientPickupName, setRecipientPickupName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressIndex, setSelectedAddressIndex] = useState("");
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    fetch("/api/user/addresses")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setSavedAddresses(data?.addresses ?? []))
+      .catch(() => {});
+  }, [status]);
+
+  const handleSelectSavedAddress = (indexStr: string) => {
+    setSelectedAddressIndex(indexStr);
+    if (indexStr === "") return;
+
+    const addr = savedAddresses[Number(indexStr)];
+    if (!addr) return;
+
+    const [first, ...rest] = (addr.fullName ?? "").trim().split(" ");
+    setFirstname(first ?? "");
+    setLastname(rest.join(" "));
+    setAddress(addr.street ?? "");
+    setPostalCode(addr.zip ?? "");
+    setCity(addr.city ?? "");
+
+    const match = COUNTRY_OPTIONS.find(
+      (c) => c.label.toLowerCase() === (addr.country ?? "").toLowerCase()
+    );
+    if (match) setCountry(match.code);
+  };
 
   const totalQty = useMemo(
     () => cartItems.reduce((acc, i) => acc + i.quantity, 0),
@@ -178,6 +208,20 @@ export default function CheckoutForm() {
 
           <div className="checkout-section">
             <h3 className="checkout-section-title">Livraison</h3>
+            {savedAddresses.length > 0 && (
+              <select
+                value={selectedAddressIndex}
+                onChange={(e) => handleSelectSavedAddress(e.target.value)}
+                className="checkout-input"
+              >
+                <option value="">Utiliser une adresse enregistrée…</option>
+                {savedAddresses.map((addr, i) => (
+                  <option key={i} value={i}>
+                    {addr.label || `Adresse ${i + 1}`} — {addr.street}, {addr.city}
+                  </option>
+                ))}
+              </select>
+            )}
             <select value={country} onChange={(e) => setCountry(e.target.value)} className="checkout-input">
               {COUNTRY_OPTIONS.map((c) => (
                 <option key={c.code} value={c.code}>{c.label}</option>

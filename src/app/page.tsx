@@ -20,11 +20,12 @@ export default async function Home() {
         stock:      doc.stock,
         visible:    doc.visible,
         variants:   (doc.variants ?? []).map((v: any) => ({
-          _id:       v._id?.toString() ?? '',
-          colorName: v.colorName,
-          colorCode: v.colorCode,
-          textColor: v.textColor,
-          image:     v.image,
+          _id:         v._id?.toString() ?? '',
+          colorName:   v.colorName,
+          colorCode:   v.colorCode,
+          textColor:   v.textColor,
+          description: v.description,
+          image:       v.image,
         })),
       }
     }

@@ -29,10 +29,11 @@ const TOAST_DURATION = 3000;
 function VariantModal({ variant, onClose, onSave }) {
   const isEdit = Boolean(variant?._id);
   const [form, setForm] = useState({
-    colorName: variant?.colorName ?? "",
-    colorCode: variant?.colorCode ?? "#000000",
-    textColor: variant?.textColor ?? "#ffffff",
-    image:     variant?.image     ?? "",
+    colorName:   variant?.colorName   ?? "",
+    colorCode:   variant?.colorCode   ?? "#000000",
+    textColor:   variant?.textColor   ?? "#ffffff",
+    description: variant?.description ?? "",
+    image:       variant?.image       ?? "",
   });
   const [imageFile,  setImageFile]  = useState(null);
   const [uploading,  setUploading]  = useState(false);
@@ -151,6 +152,17 @@ function VariantModal({ variant, onClose, onSave }) {
                 />
               </div>
             </div>
+          </div>
+
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>DESCRIPTION DE LA COULEUR</label>
+            <textarea
+              placeholder="Ex : L'horizon. Inspiré du ciel et de l'océan, un bleu qui évoque la liberté, le calme et l'évasion."
+              value={form.description}
+              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              className={styles.fieldTextarea}
+              rows={3}
+            />
           </div>
 
           <div className={styles.fieldGroup}>

@@ -3,6 +3,16 @@ import { auth } from "@/auth";
 import { connectDB } from "@/app/lib/db";
 import User from "@/app/models/User";
 
+export async function GET() {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+
+  await connectDB();
+
+  const user = await User.findOne({ email: session.user.email }).lean();
+  return NextResponse.json({ addresses: user?.addresses ?? [] });
+}
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });

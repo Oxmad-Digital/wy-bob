@@ -14,6 +14,7 @@ interface Variant {
   colorName: string
   colorCode: string
   textColor: string
+  description?: string
   image: string
 }
 
@@ -186,11 +187,13 @@ export default function HomeClient({ product }: Props) {
                   />
                 ))}
               </div>
-              {colorStory && (
+              {colorStory ? (
                 <p className="colorStory">
                   {colorStory.name && <span className="colorStoryName">{colorStory.name} — </span>}
                   {colorStory.text}
                 </p>
+              ) : selectedVariant.description && (
+                <p className="colorStory">{selectedVariant.description}</p>
               )}
             </>
           )}

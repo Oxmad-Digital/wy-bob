@@ -40,11 +40,12 @@ export async function PATCH(req: Request, { params }: Ctx) {
       stock:      product.stock,
       visible:    product.visible,
       variants:   product.variants.map((v: any) => ({
-        _id:       v._id?.toString(),
-        colorName: v.colorName,
-        colorCode: v.colorCode,
-        textColor: v.textColor,
-        image:     v.image,
+        _id:         v._id?.toString(),
+        colorName:   v.colorName,
+        colorCode:   v.colorCode,
+        textColor:   v.textColor,
+        description: v.description,
+        image:       v.image,
       })),
     },
   });

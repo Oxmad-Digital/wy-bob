@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 
 const VariantSchema = new mongoose.Schema({
-  colorName: { type: String, required: true },   // "Bleu"
-  colorCode: { type: String, required: true },   // "#1B2D5E"
-  textColor: { type: String, default: "#ffffff" }, // couleur du texte du bouton commander
-  image:     { type: String, default: "" },
+  colorName:  { type: String, required: true },   // "Bleu"
+  colorCode:  { type: String, required: true },   // "#1B2D5E"
+  textColor:  { type: String, default: "#ffffff" }, // couleur du texte du bouton commander
+  description: { type: String, default: "" }, // texte affiché sous le sélecteur de couleur sur la fiche produit
+  image:      { type: String, default: "" },
 }, { _id: true });
 
 const ProductSchema = new mongoose.Schema({

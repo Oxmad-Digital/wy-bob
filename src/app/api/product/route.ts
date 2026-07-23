@@ -39,11 +39,12 @@ export async function GET() {
       stock:      p.stock,
       visible:    p.visible,
       variants:   (p.variants ?? []).map((v: any) => ({
-        _id:       v._id?.toString(),
-        colorName: v.colorName,
-        colorCode: v.colorCode,
-        textColor: v.textColor,
-        image:     v.image,
+        _id:         v._id?.toString(),
+        colorName:   v.colorName,
+        colorCode:   v.colorCode,
+        textColor:   v.textColor,
+        description: v.description,
+        image:       v.image,
       })),
     },
   });
