@@ -137,7 +137,7 @@ export async function POST(req) {
       }
     }
 
-    const { tva, shipping, total: finalTotal } = computeOrderTotals(total - appliedDiscount);
+    const { total: finalTotal } = computeOrderTotals(total - appliedDiscount);
 
     const order = await Order.create({
       orderNumber: counter.seq,

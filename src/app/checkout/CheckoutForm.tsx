@@ -49,7 +49,7 @@ export default function CheckoutForm() {
     () => cartItems.reduce((acc, i) => acc + i.quantity, 0),
     [cartItems]
   );
-  const { tva, shipping: livraison, total } = useMemo(
+  const { shipping: livraison, total } = useMemo(
     () => computeOrderTotals(finalTotal),
     [finalTotal]
   );
@@ -160,14 +160,14 @@ export default function CheckoutForm() {
 };
   return (
     <>
-      <button className="checkout-back" onClick={() => router.back()}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Retour
-      </button>
-
       <div className="checkout-wrapper">
+
+        <button className="checkout-back" onClick={() => router.back()}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Retour
+        </button>
 
         <div className="checkout-left">
           <div className="checkout-section">
@@ -269,10 +269,6 @@ export default function CheckoutForm() {
                 <span>−{appliedPromo.discount} €</span>
               </div>
             )}
-            <div className="checkout-summary-row">
-              <span>TVA (20%)</span>
-              <span>{tva} €</span>
-            </div>
             <div className="checkout-summary-row">
               <span>Livraison</span>
               <span>{livraison} €</span>
