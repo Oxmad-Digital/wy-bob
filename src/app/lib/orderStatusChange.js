@@ -7,8 +7,8 @@ import { generateShipmentForOrder, markShippingError } from "@/app/lib/chronopos
 export const STATUS_LABELS = {
   pending: { label: "En attente", icon: "⏳", color: "#f59e0b" },
   confirmed: { label: "Confirmée", icon: "✔️", color: "#3b82f6" },
-  processing: { label: "En préparation", icon: "📦", color: "#8b5cf6" },
   paid: { label: "Payée", icon: "💰", color: "#10b981" },
+  processing: { label: "En préparation", icon: "📦", color: "#8b5cf6" },
   shipped: { label: "Expédiée", icon: "🚚", color: "#06b6d4" },
   delivered: { label: "Livrée", icon: "✅", color: "#22c55e" },
   cancelled: { label: "Annulée", icon: "❌", color: "#ef4444" },
@@ -17,8 +17,8 @@ export const STATUS_LABELS = {
 const STATUS_MESSAGES = {
   pending: "Votre commande est en attente de traitement.",
   confirmed: "Bonne nouvelle ! Votre commande a été confirmée.",
-  processing: "Votre commande est en cours de préparation.",
   paid: "Votre paiement a été reçu. Merci !",
+  processing: "Votre commande est en cours de préparation.",
   shipped: "Votre commande a été expédiée ! Elle arrivera bientôt.",
   delivered: "Votre commande a été livrée. Merci pour votre achat !",
   cancelled: "Votre commande a été annulée. Contactez-nous pour plus d'informations.",

@@ -17,6 +17,7 @@ export default async function OrdersPage() {
     ],
   })
     .sort({ createdAt: -1 })
+    .populate("products.product", "name image")
     .lean() as any[];
 
   const orders = raw.map((o) => ({
@@ -26,7 +27,11 @@ export default async function OrdersPage() {
     total: Number(o.total) || 0,
     delivery: o.delivery ?? null,
     payment: o.payment ?? null,
-    products: o.products ?? [],
+    products: (o.products ?? []).map((item: any) => ({
+      name: item.product?.name ?? null,
+      image: item.product?.image ?? null,
+      quantity: item.quantity ?? 1,
+    })),
     customer: o.customer ? {
       address: o.customer.address ?? undefined,
       city: o.customer.city ?? undefined,

@@ -2,7 +2,7 @@
 
 import { useLanguage } from "@/contexts/LanguageContext";
 
-type Product = { quantity?: number };
+type Product = { name?: string | null; image?: string | null; quantity?: number };
 type Order = {
   _id: string;
   status: string;
@@ -14,7 +14,7 @@ type Order = {
   customer?: { address?: string; city?: string };
 };
 
-const STEP_KEYS = ["pending", "confirmed", "processing", "paid", "shipped", "delivered"] as const;
+const STEP_KEYS = ["pending", "confirmed", "paid", "processing", "shipped", "delivered"] as const;
 
 export default function OrdersListClient({ orders }: { orders: Order[] }) {
   const { t, locale } = useLanguage();
@@ -52,8 +52,8 @@ export default function OrdersListClient({ orders }: { orders: Order[] }) {
               const timelineLabels = [
                 o.timeline.pending,
                 o.timeline.confirmed,
-                o.timeline.processing,
                 o.timeline.paid,
+                o.timeline.processing,
                 o.timeline.shipped,
                 o.timeline.delivered,
               ];
@@ -117,6 +117,21 @@ export default function OrdersListClient({ orders }: { orders: Order[] }) {
                             </div>
                           );
                         })}
+                      </div>
+                    )}
+
+                    {order.products && order.products.length > 0 && (
+                      <div className="order-products">
+                        {order.products.map((p, i) => (
+                          <div key={i} className="order-product">
+                            {p.image
+                              ? <img src={p.image} alt={p.name ?? ""} className="order-product-image" />
+                              : <div className="order-product-image order-product-image-empty" />
+                            }
+                            <span className="order-product-name">{p.name ?? o.productRemoved}</span>
+                            <span className="order-product-qty">× {p.quantity ?? 1}</span>
+                          </div>
+                        ))}
                       </div>
                     )}
 

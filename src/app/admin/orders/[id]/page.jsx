@@ -10,8 +10,8 @@ import { FR_PRODUCTS, INTL_PRODUCTS } from "@/app/lib/chronopost/constants";
 const STATUS_OPTIONS = [
   { value: "pending",    label: "En attente"     },
   { value: "confirmed",  label: "Confirmée"      },
-  { value: "processing", label: "En préparation" },
   { value: "paid",       label: "Payée"          },
+  { value: "processing", label: "En préparation" },
   { value: "shipped",    label: "Expédiée"       },
   { value: "delivered",  label: "Livrée"         },
   { value: "cancelled",  label: "Annulée"        },
@@ -26,7 +26,7 @@ const PAYMENT_LABELS = {
 
 // Ordre "naturel" du cycle de vie d'une commande — sert à repérer les retours en arrière.
 // "cancelled" est volontairement exclu : c'est une sortie de cycle, pas une étape.
-const STATUS_SEQUENCE = ["pending", "confirmed", "processing", "paid", "shipped", "delivered"];
+const STATUS_SEQUENCE = ["pending", "confirmed", "paid", "processing", "shipped", "delivered"];
 
 function isSensitiveTransition(from, to) {
   if (to === "cancelled" || from === "cancelled") return true;
