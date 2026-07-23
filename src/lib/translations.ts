@@ -1,5 +1,15 @@
 export type Locale = 'fr' | 'en'
 
+export type HistoireSection = {
+  kicker?: string
+  title?: string
+  paragraphs: string[]
+  quote?: string
+  paragraphsAfterQuote?: string[]
+  closing?: string
+  cta?: string
+}
+
 export const translations = {
   fr: {
     nav: {
@@ -58,7 +68,65 @@ export const translations = {
     },
     histoire: {
       title: 'Notre histoire',
-      p1: "WYBOB est née d'une envie simple : créer des pièces intemporelles porteuses de sens, de soleil et d'âme. Fondée autour de l'amour de l'été, du voyage et de l'élégance naturelle, c'est bien plus qu'une marque de chapeaux — c'est un lien entre le style et l'artisanat, entre un mode de vie moderne et des racines authentiques. Chaque pièce est fabriquée à la main à Madagascar, une île riche de culture, de créativité et d'un savoir-faire exceptionnel. Nous croyons que le luxe n'est pas l'excès : c'est le temps, le soin, la qualité et l'histoire.",
+      sections: [
+        {
+          title: 'Notre histoire',
+          paragraphs: [
+            "WYBOB est avant tout une histoire de famille. Tout a commencé par un cadeau. Mon frère a imaginé et dessiné un chapeau unique pour que nous le portions ensemble lors d'un festival. Un objet pensé pour être remarqué, faire sourire et rassembler.",
+            "Très vite, nous avons compris que ce chapeau ne passait jamais inaperçu. Il attirait les regards, lançait les conversations et créait des rencontres. Plus qu'un simple accessoire, il incarnait déjà un état d'esprit : la joie de vivre.",
+          ],
+        },
+        {
+          kicker: "À l'origine de WYBOB",
+          title: 'Pénélope Wybo',
+          paragraphs: [
+            "Je m'appelle Pénélope Wybo, fondatrice de WYBOB. J'ai grandi entre deux univers qui me définissent profondément : la mode et Madagascar. Issue d'une famille évoluant dans le textile depuis plus de 25 ans, j'ai développé très tôt une passion pour les matières, le savoir-faire artisanal et les créations qui racontent une histoire.",
+            "Avec WYBOB, j'ai voulu créer bien plus qu'un chapeau. J'ai voulu donner vie à une marque qui célèbre la joie de vivre, met en lumière l'artisanat malgache et rassemble une communauté de personnes partageant les mêmes valeurs : l'authenticité, la liberté et le voyage.",
+          ],
+        },
+        {
+          kicker: 'Un savoir-faire qui a du sens',
+          paragraphs: [
+            "J'ai grandi dans l'univers du textile. Depuis toujours, je suis entourée de fils, de mailles, de crochet et de tricot. Cet héritage m'a appris à reconnaître la valeur d'un véritable savoir-faire artisanal et le temps nécessaire pour créer une pièce d'exception.",
+          ],
+          quote: "Nous croyons que le vrai luxe n'est pas celui qui fait du bruit. C'est celui qui possède une âme.",
+          paragraphsAfterQuote: [
+            "C'est naturellement qu'est née l'envie de faire vivre cette création. Mais WYBOB avait besoin d'une mission plus grande.",
+          ],
+        },
+        {
+          kicker: 'Fabriqué à Madagascar',
+          paragraphs: [
+            "Mes racines sont profondément liées à Madagascar, une terre dont le talent artisanal est immense et encore trop méconnu.",
+            "Derrière chaque WYBOB se cachent des mains passionnées, des heures de travail minutieux et un savoir-faire transmis de génération en génération. À travers chaque création, nous voulons mettre en lumière ces artisans extraordinaires et faire rayonner Madagascar bien au-delà de ses frontières. Chaque WYBOB raconte l'histoire d'un artisan, d'une famille, d'un pays et d'une passion commune pour les belles choses.",
+          ],
+        },
+        {
+          kicker: 'Plus qu\'un chapeau',
+          paragraphs: [
+            "Le nom WYBOB n'a pas été choisi par hasard. Il représente ce lien familial qui est à l'origine de tout, mais aussi notre envie de créer une grande famille où chacun trouve sa place.",
+            "Porter un WYBOB, ce n'est pas seulement porter un chapeau. C'est affirmer sa personnalité sans avoir besoin de parler. C'est choisir l'optimisme, la spontanéité et l'audace. C'est célébrer les festivals, les voyages, les couchers de soleil, les éclats de rire et tous ces instants qui rendent la vie plus belle.",
+          ],
+        },
+        {
+          kicker: 'Bienvenue dans la famille WYBOB',
+          paragraphs: [
+            "Aujourd'hui, notre ambition va bien au-delà de créer des chapeaux. Nous voulons construire une véritable communauté de personnes qui partagent les mêmes valeurs : la créativité, la liberté, le voyage, le partage et la joie de vivre.",
+            "Chaque nouveau membre de la famille WYBOB participe à cette aventure et contribue à faire voyager l'artisanat malgache à travers le monde. Parce que les plus belles histoires sont celles qui se construisent ensemble.",
+          ],
+          closing: 'Bienvenue dans la famille WYBOB.',
+        },
+        {
+          kicker: 'Notre concept',
+          paragraphs: [
+            'Chez WYBOB, nous avons choisi de faire les choses autrement. Nous croyons au slow fashion : produire moins, mais produire mieux. Chaque chapeau est fabriqué en édition limitée, au rythme de notre communauté, sans surproduction.',
+            "Plutôt que de multiplier les modèles, nous avons fait le choix d'une seule silhouette. Un design intemporel, pensé pour traverser les années et devenir instantanément reconnaissable.",
+            "Notre collection évolue à travers les couleurs. Chaque nouvelle édition ouvre un nouveau chapitre de l'histoire WYBOB, tandis que les précédentes deviennent des pièces uniques qui ne seront plus reproduites.",
+            'Au-delà d\'un chapeau, WYBOB est une invitation à rejoindre une communauté de voyageurs, de créatifs et d\'optimistes qui partagent une même philosophie : vivre pleinement, créer des souvenirs et célébrer les moments qui comptent.',
+          ],
+          cta: 'Découvrir la collection',
+        },
+      ] as HistoireSection[],
     },
     galerie: {
       title: 'Notre Galerie',
@@ -294,7 +362,65 @@ export const translations = {
     },
     histoire: {
       title: 'Our story',
-      p1: "WYBOB was born from a simple desire: to create timeless pieces full of meaning, sunshine, and soul. Built around a love of summer, travel, and natural elegance, it's far more than a hat brand — it's a link between style and craftsmanship, between a modern lifestyle and authentic roots. Every piece is handcrafted in Madagascar, an island rich in culture, creativity, and exceptional know-how. We believe luxury is not excess: it's time, care, quality, and story.",
+      sections: [
+        {
+          title: 'Our story',
+          paragraphs: [
+            "WYBOB is, above all, a family story. It all began with a gift. My brother imagined and designed a one-of-a-kind hat for us to wear together at a festival. An object made to be noticed, to spark smiles and bring people together.",
+            "We quickly realised this hat never went unnoticed. It turned heads, started conversations, created encounters. More than a simple accessory, it already embodied a state of mind: joie de vivre.",
+          ],
+        },
+        {
+          kicker: 'The origin of WYBOB',
+          title: 'Pénélope Wybo',
+          paragraphs: [
+            "My name is Pénélope Wybo, founder of WYBOB. I grew up between two worlds that define me deeply: fashion and Madagascar. Coming from a family that has worked in textiles for over 25 years, I developed an early passion for materials, artisanal know-how and creations that tell a story.",
+            "With WYBOB, I wanted to create far more than a hat. I wanted to bring to life a brand that celebrates joie de vivre, shines a light on Malagasy craftsmanship, and brings together a community sharing the same values: authenticity, freedom and travel.",
+          ],
+        },
+        {
+          kicker: 'A craft that means something',
+          paragraphs: [
+            "I grew up surrounded by thread, stitches, crochet and knitting. This heritage taught me to recognise true artisanal know-how and the time it takes to create an exceptional piece.",
+          ],
+          quote: "We believe real luxury isn't loud. It has a soul.",
+          paragraphsAfterQuote: [
+            "That's how the desire to bring this creation to life naturally came about. But WYBOB needed a bigger mission.",
+          ],
+        },
+        {
+          kicker: 'Made in Madagascar',
+          paragraphs: [
+            'My roots run deep in Madagascar, a land of immense — and still largely unknown — artisanal talent.',
+            "Behind every WYBOB are passionate hands, hours of meticulous work, and know-how passed down through generations. Through every creation, we want to shine a light on these extraordinary artisans and let Madagascar shine far beyond its borders. Every WYBOB tells the story of an artisan, a family, a country, and a shared passion for beautiful things.",
+          ],
+        },
+        {
+          kicker: 'More than a hat',
+          paragraphs: [
+            "The name WYBOB wasn't chosen by chance. It represents the family bond at the origin of everything — and our wish to build one big family where everyone finds their place.",
+            "Wearing a WYBOB isn't just wearing a hat. It's asserting your personality without having to speak. It's choosing optimism, spontaneity and boldness. It's celebrating festivals, travels, sunsets, laughter — all the moments that make life more beautiful.",
+          ],
+        },
+        {
+          kicker: 'Welcome to the WYBOB family',
+          paragraphs: [
+            'Today, our ambition goes far beyond making hats. We want to build a true community of people who share the same values: creativity, freedom, travel, sharing and joie de vivre.',
+            "Every new member of the WYBOB family takes part in this adventure and helps Malagasy craftsmanship travel the world. Because the most beautiful stories are the ones we build together.",
+          ],
+          closing: 'Welcome to the WYBOB family.',
+        },
+        {
+          kicker: 'Our concept',
+          paragraphs: [
+            'At WYBOB, we chose to do things differently. We believe in slow fashion: producing less, but producing better. Every hat is made in a limited edition, at the pace of our community, without overproduction.',
+            'Rather than multiplying models, we chose a single silhouette — a timeless design, made to last through the years and become instantly recognisable.',
+            'Our collection evolves through colour. Each new edition opens a new chapter in the WYBOB story, while previous ones become unique pieces that will never be reproduced again.',
+            'Beyond a hat, WYBOB is an invitation to join a community of travellers, creatives and optimists who share one philosophy: living fully, creating memories, and celebrating the moments that matter.',
+          ],
+          cta: 'Discover the collection',
+        },
+      ] as HistoireSection[],
     },
     galerie: {
       title: 'Our Gallery',

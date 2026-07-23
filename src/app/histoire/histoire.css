@@ -1,5 +1,6 @@
 /* ===== GLASS RENFORCÉ PAGE HISTOIRE ===== */
-.container:has(.histoireZone) {
+.container:has(.histoireScroll) {
+  position: relative;
   background: linear-gradient(
     -45deg,
     rgba(255, 255, 255, 0.42) 0%,
@@ -9,33 +10,130 @@
   -webkit-backdrop-filter: blur(100px) brightness(1.08);
 }
 
-/* Zone principale */
-.histoireZone {
+/* ===== CONTENEUR SCROLL-SNAP (1 écran = 1 chapitre) ===== */
+.histoireScroll {
   width: 100%;
   flex: 1;
+  min-height: 0;
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+}
+
+.histoireScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.histoireSection {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 20px 40px;
+}
+
+/* ---- Placeholders image (à remplacer par les vraies photos) ---- */
+.histoirePlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(135deg, #1B1843 0%, #4a4590 55%, #F9C464 130%);
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: 'Quicksand', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.histoirePlaceholder--split {
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  align-self: center;
+  max-height: 100%;
+}
+
+.histoirePlaceholder--full {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+
+.histoireOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(27, 24, 67, 0.2) 0%, rgba(27, 24, 67, 0.78) 100%);
+  pointer-events: none;
+}
+
+/* ---- Layout "full" (hero / chapitres de clôture) ---- */
+.histoireSection--full .histoireContent {
+  position: relative;
+  z-index: 2;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.histoireSection--full .histoireTitre,
+.histoireSection--full .histoireKicker,
+.histoireSection--full .histoireTexte p,
+.histoireSection--full .histoireClosing {
+  color: #ffffff;
+}
+
+.histoireSection--full .histoireTexte {
+  align-items: center;
+}
+
+/* ---- Layout "split" (texte + image placeholder) ---- */
+.histoireSection--split .histoireContent {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: row;
   align-items: stretch;
   justify-content: center;
   gap: 64px;
-  padding: 60px 40px;
-  box-sizing: border-box;
-  overflow: hidden;
 }
 
-
-/* Bloc texte gauche */
-.histoireBloc {
-  flex: 1;
+.histoireText {
   min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 24px 32px;
-  box-sizing: border-box;
-  overflow: hidden;
 }
 
+.histoireSection--split .histoireText {
+  flex: 1;
+  padding: 24px 32px;
+}
+
+/* Kicker */
+.histoireKicker {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(27, 24, 67, 0.55);
+  margin-bottom: 14px;
+}
 
 /* Titre */
 .histoireTitre {
@@ -43,21 +141,14 @@
   font-size: 36px;
   font-weight: 700;
   color: #1B1843;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 }
 
-/* Div texte */
+/* Texte */
 .histoireTexte {
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #1B1843 transparent;
-}
-
-
-.histoireTexte::-webkit-scrollbar {
-  display: none;
+  gap: 16px;
 }
 
 .histoireTexte p {
@@ -69,17 +160,97 @@
   margin: 0;
 }
 
-/* Image droite */
-.histoireImage {
-  flex: 1;
-  min-width: 0;
-  aspect-ratio: 1 / 1;
-  align-self: center;
-  max-height: 100%;
-  border-radius: 16px;
-  overflow: hidden;
+.histoireQuote {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  font-style: italic;
+  color: #1B1843;
+  border-left: 3px solid #F9C464;
+  padding-left: 20px;
+  margin: 4px 0;
 }
 
+.histoireClosing {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.histoireCta {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-top: 32px;
+  padding: 14px 32px;
+  background: #1B1843;
+  color: #ffffff;
+  border-radius: 12px;
+  font-family: 'Quicksand', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.histoireSection--full .histoireCta {
+  align-self: center;
+}
+
+.histoireCta:hover {
+  background: #2d2970;
+  transform: translateY(-1px);
+}
+
+/* ---- Animation d'apparition au scroll ---- */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.histoireSection.inView .reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---- Navigation par points ---- */
+.histoireDots {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 20;
+}
+
+.histoireDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: rgba(27, 24, 67, 0.25);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.histoireDot:hover {
+  background: rgba(27, 24, 67, 0.5);
+}
+
+.histoireDot.active {
+  background: #1B1843;
+  transform: scale(1.3);
+}
+
+/* ===========================
+   TABLETTE PORTRAIT / MOBILE
+   → on repasse en scroll de page classique, sections empilées
+   =========================== */
 @media (max-width: 1024px) and (orientation: portrait) {
 
   html {
@@ -100,7 +271,7 @@
     padding: 20px 20px 0;
   }
 
-  .container {
+  .container:has(.histoireScroll) {
     width: 100%;
     height: auto;
     min-height: calc(100dvh - 20px);
@@ -110,24 +281,74 @@
     overflow: visible;
   }
 
-  .histoireZone {
-    width: 100%;
-    flex: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 60px;
-    padding: 0 16px;
-    margin-block: 60px;
-    box-sizing: border-box;
+  .histoireDots {
+    display: none;
   }
 
-  .histoireBloc {
+  .histoireScroll {
     width: 100%;
-    height: auto;
+    flex: none;
+    overflow: visible;
+    scroll-snap-type: none;
     display: flex;
     flex-direction: column;
+    gap: 40px;
+    padding: 20px 16px 0;
+  }
+
+  .histoireSection {
+    height: auto;
+    min-height: 0;
+    scroll-snap-align: none;
+    padding: 0;
+  }
+
+  .histoireSection.inView .reveal,
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .histoireSection--split .histoireContent,
+  .histoireSection--full .histoireContent {
+    width: 100%;
+    height: auto;
+    flex-direction: column;
+    max-width: none;
+  }
+
+  .histoirePlaceholder--full {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 280px;
+    border-radius: 16px;
+    flex-shrink: 0;
+  }
+
+  .histoireOverlay {
+    display: none;
+  }
+
+  .histoireSection--full .histoireTitre,
+  .histoireSection--full .histoireKicker,
+  .histoireSection--full .histoireTexte p,
+  .histoireSection--full .histoireClosing {
+    color: #1B1843;
+  }
+
+  .histoirePlaceholder--split {
+    width: 100%;
+    aspect-ratio: auto;
+    height: 240px;
+    order: -1;
+  }
+
+  .histoireText,
+  .histoireSection--split .histoireText {
+    width: 100%;
+    flex: none;
     padding: 24px;
     box-sizing: border-box;
     backdrop-filter: blur(60px) brightness(1.08);
@@ -138,28 +359,11 @@
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.6),
       0 4px 30px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-
-  .histoireImage {
-    width: 100%;
-    height: 360px;
-    max-height: 600px;
-    border-radius: 16px;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-
-  .histoireImage img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
   }
 
   .histoireTitre {
     font-size: 30px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
   }
 
   .histoireTexte p {
@@ -167,10 +371,14 @@
     line-height: 1.85;
   }
 
+  .histoireCta {
+    align-self: center;
+  }
 }
+
 @media (max-width: 767px) {
 
-  .container {
+  .container:has(.histoireScroll) {
     width: 100%;
     height: auto;
     min-height: calc(100dvh - 40px);
@@ -180,64 +388,55 @@
     overflow: visible;
   }
 
-  .histoireZone {
-    width: 100%;
-    flex: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
+  .histoireScroll {
     gap: 20px;
-    padding: 40px 10px;
-    box-sizing: border-box;
+    padding: 20px 10px 0;
   }
 
-  .histoireBloc {
-    width: 100%;
-    height: auto;
-    min-height: 300px;
-    display: flex;
-    flex-direction: column;
+  .histoirePlaceholder--full {
+    height: 200px;
+  }
+
+  .histoirePlaceholder--split {
+    height: 200px;
+  }
+
+  .histoireText,
+  .histoireSection--split .histoireText {
+    min-height: 0;
     padding: 20px;
-    box-sizing: border-box;
-    backdrop-filter: blur(60px) brightness(1.08);
-    -webkit-backdrop-filter: blur(60px) brightness(1.08);
-    background-color: rgba(255, 255, 255, 0.48);
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    border-radius: 16px;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.6),
-      0 4px 30px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    flex-shrink: 0;
   }
 
-  .histoireImage {
-    width: 100%;
-    height: 250px;
-    border-radius: 16px;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-
-  .histoireImage img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  .histoireKicker {
+    font-size: 11px;
+    margin-bottom: 8px;
   }
 
   .histoireTitre {
     font-size: 24px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
   .histoireTexte {
-    gap: 8px;
+    gap: 10px;
   }
 
   .histoireTexte p {
-    font-size: 12px;
-    line-height: 1.4;
+    font-size: 13px;
+    line-height: 1.6;
   }
 
+  .histoireQuote {
+    font-size: 17px;
+  }
+
+  .histoireClosing {
+    font-size: 20px;
+  }
+
+  .histoireCta {
+    margin-top: 20px;
+    font-size: 11px;
+    padding: 12px 24px;
+  }
 }
