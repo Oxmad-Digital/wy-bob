@@ -61,6 +61,7 @@ export async function POST(req) {
 
     // Calculate total strictly server-side — fetch each product price from the database
     const products = [];
+    const productPriceById = new Map();
     let total = 0;
 
     for (const item of cartItems) {
@@ -75,6 +76,7 @@ export async function POST(req) {
         product: new mongoose.Types.ObjectId(item.productId),
         quantity: qty,
       });
+      productPriceById.set(item.productId, product.price);
     }
 
     if (products.length === 0) {
@@ -232,15 +234,21 @@ export async function POST(req) {
     };
 
     const productListHtml = cartItems
-      .map(
-        (item) => `
+      .map((item) => {
+        const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
+        const unitPrice = productPriceById.get(item.productId);
+        const lineTotal =
+          unitPrice !== undefined
+            ? `${Number(unitPrice * qty).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
+            : "-";
+        return `
         <tr>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${item.name || "Produit"}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">-</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center;">${qty}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">${lineTotal}</td>
         </tr>
-      `
-      )
+      `;
+      })
       .join("");
 
     const adminEmailHtml = `
