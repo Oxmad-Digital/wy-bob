@@ -28,7 +28,7 @@ const DELIVERY_LABELS = {
   standard:  "Standard",
   express:   "Express",
   pickup:    "Retrait",
-  colissimo: "Colissimo",
+  colissimo: "Chronopost",
   relais:    "Point relais",
 };
 

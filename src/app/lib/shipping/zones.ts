@@ -5,19 +5,59 @@
 export type ShippingZone = "FR" | "EU_PROCHE" | "EUROPE_LARGE" | "INTERNATIONAL";
 export type ShippingMode = "home" | "relay";
 
-// Mapping pays ISO2 → zone (mêmes pays que COUNTRY_OPTIONS dans CheckoutForm.tsx).
-// Fallback "INTERNATIONAL" (palier le plus prudent) pour tout pays non listé ici,
-// par exemple un futur ajout à COUNTRY_OPTIONS oublié dans cette table.
+// Mapping pays ISO2 → zone. COUNTRY_OPTIONS (CheckoutForm.tsx) est volontairement restreint
+// à l'Europe (UE + hors UE géographique) pour éviter de proposer des destinations dont la
+// desserte Chronopost réelle n'est pas confirmée — cette table couvre exactement les mêmes
+// pays, à tenir synchronisée avec CheckoutForm.tsx si la liste évolue. Le palier
+// "INTERNATIONAL" reste défini comme filet de sécurité pur (ex: ancienne adresse enregistrée
+// hors Europe avant ce changement), mais n'est plus atteignable depuis le sélecteur du site.
 export const ZONE_BY_COUNTRY: Record<string, ShippingZone> = {
   FR: "FR",
+
+  // Union européenne
+  AT: "EU_PROCHE",
   BE: "EU_PROCHE",
+  BG: "EU_PROCHE",
+  HR: "EU_PROCHE",
+  CY: "EU_PROCHE",
+  CZ: "EU_PROCHE",
+  DK: "EU_PROCHE",
+  EE: "EU_PROCHE",
+  FI: "EU_PROCHE",
   DE: "EU_PROCHE",
-  ES: "EU_PROCHE",
+  GR: "EU_PROCHE",
+  HU: "EU_PROCHE",
+  IE: "EU_PROCHE",
   IT: "EU_PROCHE",
+  LV: "EU_PROCHE",
+  LT: "EU_PROCHE",
+  LU: "EU_PROCHE",
+  MT: "EU_PROCHE",
+  NL: "EU_PROCHE",
+  PL: "EU_PROCHE",
+  PT: "EU_PROCHE",
+  RO: "EU_PROCHE",
+  SK: "EU_PROCHE",
+  SI: "EU_PROCHE",
+  ES: "EU_PROCHE",
+  SE: "EU_PROCHE",
+
+  // Reste de l'Europe géographique (hors UE)
+  AD: "EUROPE_LARGE",
+  AL: "EUROPE_LARGE",
+  BA: "EUROPE_LARGE",
   CH: "EUROPE_LARGE",
   GB: "EUROPE_LARGE",
-  MG: "INTERNATIONAL",
-  US: "INTERNATIONAL",
+  IS: "EUROPE_LARGE",
+  LI: "EUROPE_LARGE",
+  MK: "EUROPE_LARGE",
+  MC: "EUROPE_LARGE",
+  ME: "EUROPE_LARGE",
+  NO: "EUROPE_LARGE",
+  SM: "EUROPE_LARGE",
+  RS: "EUROPE_LARGE",
+  UA: "EUROPE_LARGE",
+  VA: "EUROPE_LARGE",
 };
 
 export function resolveZone(country: string): ShippingZone {
@@ -111,3 +151,32 @@ export const RATE_TABLE: Record<ShippingZone, Record<ShippingMode, RateBracket[]
 // Filet de sécurité si la résolution zone/palier échoue (ne devrait jamais arriver
 // avec le fallback de resolveZone, mais évite de bloquer une commande le cas échéant).
 export const FALLBACK_SHIPPING_FEE = 10;
+
+export interface DeliveryEstimate {
+  carrier: string; // nom du produit Chronopost réellement utilisé (voir chronopost/constants.ts)
+  delay: string;
+}
+
+// Délais Chronopost par zone/mode. Le délai France (Chrono 13 / Chrono Relais 13 : J+1
+// avant 13h) est une caractéristique publique du produit, fiable telle quelle. Les délais
+// international (Chrono Classic / Chronorelais Europe) varient selon la destination exacte
+// et le niveau de service du contrat — TODO(chronopost-contrat-17895404): à confirmer/affiner
+// avec les délais réels annoncés par Chronopost pour ces zones avant mise en production.
+export const DELIVERY_ESTIMATES: Record<ShippingZone, Record<ShippingMode, DeliveryEstimate>> = {
+  FR: {
+    home: { carrier: "Chronopost Chrono 13", delay: "livraison en 24h (J+1 avant 13h)" },
+    relay: { carrier: "Chronopost Relais 13", delay: "retrait en point relais sous 24 à 48h" },
+  },
+  EU_PROCHE: {
+    home: { carrier: "Chronopost Classic", delay: "livraison en 2 à 4 jours ouvrés" },
+    relay: { carrier: "Chronorelais Europe", delay: "retrait en point relais en 2 à 4 jours ouvrés" },
+  },
+  EUROPE_LARGE: {
+    home: { carrier: "Chronopost Classic", delay: "livraison en 3 à 6 jours ouvrés" },
+    relay: { carrier: "Chronorelais Europe", delay: "retrait en point relais en 3 à 6 jours ouvrés" },
+  },
+  INTERNATIONAL: {
+    home: { carrier: "Chronopost Classic", delay: "livraison en 5 à 10 jours ouvrés" },
+    relay: { carrier: "Chronorelais Europe", delay: "retrait en point relais en 5 à 10 jours ouvrés" },
+  },
+};

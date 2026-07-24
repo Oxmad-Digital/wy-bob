@@ -114,7 +114,7 @@ export const translations = {
       ] as HistoireSection[],
     },
     concept: {
-      title: 'Notre concept',
+      title: 'Produire moins, mais produire mieux',
       paragraphs: [
         'Chez WYBOB, nous avons choisi de faire les choses autrement. Nous croyons au slow fashion : produire moins, mais produire mieux. Chaque chapeau est fabriqué en édition limitée, au rythme de notre communauté, sans surproduction.',
         "Plutôt que de multiplier les modèles, nous avons fait le choix d'une seule silhouette. Un design intemporel, pensé pour traverser les années et devenir instantanément reconnaissable.",
@@ -253,8 +253,8 @@ export const translations = {
           standard: "Livraison standard",
           express: "Livraison express",
           pickup: "Retrait en magasin",
-          colissimo: "Colissimo",
-          relais: "Point relais Colissimo",
+          colissimo: "Chronopost",
+          relais: "Point relais Chronopost",
         },
       },
       profile: {
@@ -542,8 +542,8 @@ export const translations = {
           standard: "Standard delivery",
           express: "Express delivery",
           pickup: "In-store pickup",
-          colissimo: "Colissimo",
-          relais: "Colissimo relay point",
+          colissimo: "Chronopost",
+          relais: "Chronopost relay point",
         },
       },
       profile: {

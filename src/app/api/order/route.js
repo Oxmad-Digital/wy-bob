@@ -16,6 +16,7 @@ import { computeOrderTotals } from "@/app/lib/pricing";
 import { resolvePromoDiscount } from "@/app/lib/promo";
 import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
 import { computeShippingFee } from "@/app/lib/shipping/pricing";
+import { formatDeliveryLabel } from "@/app/lib/shipping/delivery";
 
 function generateRewardCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -237,8 +238,8 @@ export async function POST(req) {
       standard: "🚚 Livraison standard",
       express: "⚡ Livraison express",
       pickup: "🏪 Retrait en magasin",
-      colissimo: "📦 Colissimo - Signature International (2 à 8 jours)",
-      relais: "📍 Livraison en point relais Colissimo (2 à 4 jours)",
+      colissimo: `📦 ${formatDeliveryLabel({ country, deliveryMethod: "home" })}`,
+      relais: `📍 ${formatDeliveryLabel({ country, deliveryMethod: "relay" })}`,
     };
 
     const productListHtml = cartItems
