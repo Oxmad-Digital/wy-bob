@@ -14,6 +14,8 @@ import { sendEmail } from "@/app/lib/mailer";
 import Customer from "@/app/models/Customer";
 import { computeOrderTotals } from "@/app/lib/pricing";
 import { resolvePromoDiscount } from "@/app/lib/promo";
+import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
+import { computeShippingFee } from "@/app/lib/shipping/pricing";
 
 function generateRewardCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -62,12 +64,13 @@ export async function POST(req) {
     // Calculate total strictly server-side — fetch each product price from the database
     const products = [];
     const productPriceById = new Map();
+    const weighableLines = [];
     let total = 0;
 
     for (const item of cartItems) {
       if (!mongoose.Types.ObjectId.isValid(item.productId)) continue;
 
-      const product = await Product.findById(item.productId).select("price name");
+      const product = await Product.findById(item.productId).select("price name weight");
       if (!product) continue;
 
       const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
@@ -77,6 +80,7 @@ export async function POST(req) {
         quantity: qty,
       });
       productPriceById.set(item.productId, product.price);
+      weighableLines.push({ product: { weight: product.weight }, quantity: qty });
     }
 
     if (products.length === 0) {
@@ -139,7 +143,10 @@ export async function POST(req) {
       }
     }
 
-    const { total: finalTotal } = computeOrderTotals(total - appliedDiscount);
+    const weightKg = computeTotalWeightKg(weighableLines);
+    const deliveryMethod = delivery === "relais" ? "relay" : "home";
+    const shippingFee = computeShippingFee({ country, weightKg, deliveryMethod });
+    const { total: finalTotal } = computeOrderTotals(total - appliedDiscount, shippingFee);
 
     const order = await Order.create({
       orderNumber: counter.seq,
@@ -158,6 +165,7 @@ export async function POST(req) {
       recipientPickupName: recipientPickupName || "",
       products,
       total: finalTotal,
+      shippingFee,
       promoCode: validatedPromoCode,
       promoDiscount: appliedDiscount,
       payment: payment || "cash",

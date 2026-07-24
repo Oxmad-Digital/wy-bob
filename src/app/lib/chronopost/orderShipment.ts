@@ -3,6 +3,7 @@ import "@/app/models/Product";
 import { createShipment } from "./shipping";
 import { ChronopostError } from "./client";
 import type { BusinessType, DeliveryMethod, ShipmentParty } from "./types";
+import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
 
 interface GenerateOverrides {
   saturday?: boolean;
@@ -29,11 +30,6 @@ function pickContent1(products: PopulatedProductLine[]): string {
     }
   }
   return (best?.desc || "").slice(0, 45);
-}
-
-function computeTotalWeightKg(products: PopulatedProductLine[]): number {
-  const grams = products.reduce((sum, line) => sum + (line.product?.weight ?? 100) * (line.quantity || 1), 0);
-  return Math.max(0.1, Math.round((grams / 1000) * 100) / 100);
 }
 
 /**

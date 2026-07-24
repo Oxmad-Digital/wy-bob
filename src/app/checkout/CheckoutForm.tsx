@@ -79,10 +79,49 @@ export default function CheckoutForm() {
     () => cartItems.reduce((acc, i) => acc + i.quantity, 0),
     [cartItems]
   );
+
+  const deliveryMethod = shipping === "relais" ? "relay" : "home";
+  // null tant qu'aucune estimation n'est encore arrivée (état initial / cas d'erreur réseau) —
+  // sert à la fois d'indicateur de chargement et de garde-fou avant soumission.
+  const [shippingFee, setShippingFee] = useState<number | null>(null);
+
+  // Estimation live du frais de livraison (poids réel du panier + zone du pays choisi) —
+  // recalculée à chaque changement de panier, de pays ou de mode d'expédition. Purement
+  // informatif : le montant définitif est toujours recalculé côté serveur au paiement.
+  useEffect(() => {
+    if (!cartItems || cartItems.length === 0) return;
+    let cancelled = false;
+    fetch("/api/shipping/estimate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        cartItems: cartItems.map((i: any) => ({ productId: i.productId, quantity: i.quantity })),
+        country,
+        deliveryMethod,
+      }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        setShippingFee(data.shippingFee);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [cartItems, country, deliveryMethod]);
+
   const { shipping: livraison, total } = useMemo(
-    () => computeOrderTotals(finalTotal),
-    [finalTotal]
+    () => computeOrderTotals(finalTotal, shippingFee ?? 0),
+    [finalTotal, shippingFee]
   );
+
+  // Synchronise le montant du Payment Element (cartes, Apple/Google Pay) avec l'estimation
+  // dès qu'elle change, pour ne jamais afficher/facturer un montant obsolète.
+  useEffect(() => {
+    if (!elements || shippingFee === null) return;
+    elements.update({ amount: Math.round(total * 100) });
+  }, [elements, total, shippingFee]);
 
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -120,6 +159,8 @@ export default function CheckoutForm() {
       body: JSON.stringify({
         cartItems: cartItems.map((i: any) => ({ productId: i.productId, quantity: i.quantity })),
         promoCode: appliedPromo?.code ?? null,
+        country,
+        deliveryMethod,
       }),
     });
     if (!res.ok) {
@@ -278,7 +319,7 @@ export default function CheckoutForm() {
 
           {error && <p className="checkout-form-error">{error}</p>}
 
-          <button className="checkout-submit" onClick={handleSubmit} disabled={loading}>
+          <button className="checkout-submit" onClick={handleSubmit} disabled={loading || shippingFee === null}>
             {loading ? "Envoi..." : "Vérifier la commande"}
           </button>
         </div>
@@ -315,7 +356,7 @@ export default function CheckoutForm() {
             )}
             <div className="checkout-summary-row">
               <span>Livraison</span>
-              <span>{livraison} €</span>
+              <span>{shippingFee === null ? "…" : `${livraison} €`}</span>
             </div>
             <div className="checkout-summary-divider" />
             <div className="checkout-summary-row checkout-summary-total">

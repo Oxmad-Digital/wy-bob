@@ -27,6 +27,7 @@ const OrderSchema = new mongoose.Schema(
       },
     ],
     total: Number,
+    shippingFee: { type: Number, default: 0 },
     promoCode: { type: String, default: null },
     promoDiscount: { type: Number, default: 0 },
     payment: {

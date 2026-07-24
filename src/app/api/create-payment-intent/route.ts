@@ -5,6 +5,8 @@ import { connectDB } from "@/app/lib/db";
 import Product from "@/app/models/Product";
 import { computeOrderTotals } from "@/app/lib/pricing";
 import { resolvePromoDiscount } from "@/app/lib/promo";
+import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
+import { computeShippingFee } from "@/app/lib/shipping/pricing";
 
 export async function POST(req: Request) {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -12,7 +14,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { cartItems, promoCode } = await req.json();
+    const { cartItems, promoCode, country, deliveryMethod } = await req.json();
 
     if (!Array.isArray(cartItems) || cartItems.length === 0) {
       return NextResponse.json({ error: "Panier vide" }, { status: 400 });
@@ -22,16 +24,18 @@ export async function POST(req: Request) {
 
     // Recalculate total strictly server-side — never trust client-supplied prices
     let subtotal = 0;
+    const productLines = [];
     for (const item of cartItems) {
       if (!item.productId) {
         return NextResponse.json({ error: "Panier obsolète, veuillez le vider et réajouter vos articles" }, { status: 400 });
       }
-      const product = await Product.findById(item.productId).select("price");
+      const product = await Product.findById(item.productId).select("price weight");
       if (!product) {
         return NextResponse.json({ error: `Produit introuvable: ${item.productId}` }, { status: 404 });
       }
       const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
       subtotal += product.price * qty;
+      productLines.push({ product: { weight: product.weight }, quantity: qty });
     }
 
     if (subtotal <= 0) {
@@ -40,7 +44,10 @@ export async function POST(req: Request) {
 
     const session = await auth();
     const { discount } = await resolvePromoDiscount(promoCode, subtotal, session?.user?.id ?? null);
-    const { total } = computeOrderTotals(subtotal - discount);
+    const weightKg = computeTotalWeightKg(productLines);
+    const method = deliveryMethod === "relay" ? "relay" : "home";
+    const shippingFee = computeShippingFee({ country, weightKg, deliveryMethod: method });
+    const { total } = computeOrderTotals(subtotal - discount, shippingFee);
     const totalCents = Math.round(total * 100);
 
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
