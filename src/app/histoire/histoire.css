@@ -104,7 +104,8 @@
 .histoireSection--full .histoireTitre,
 .histoireSection--full .histoireKicker,
 .histoireSection--full .histoireTexte p,
-.histoireSection--full .histoireClosing {
+.histoireSection--full .histoireClosing,
+.histoireSection--full .histoireSunIcon {
   color: #ffffff;
 }
 
@@ -116,8 +117,18 @@
 .histoireSection--plain .histoireTitre,
 .histoireSection--plain .histoireKicker,
 .histoireSection--plain .histoireTexte p,
-.histoireSection--plain .histoireClosing {
+.histoireSection--plain .histoireClosing,
+.histoireSection--plain .histoireSunIcon {
   color: #1B1843;
+}
+
+/* Icône soleil au-dessus du titre du chapitre d'ouverture */
+.histoireSunIcon {
+  margin-bottom: 40px;
+}
+
+.histoireSection--full .histoireSunIcon {
+  align-self: center;
 }
 
 /* ---- Layout "split" (texte + image placeholder) ---- */
@@ -414,6 +425,12 @@
     margin-bottom: 20px;
   }
 
+  .histoireSunIcon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 24px;
+  }
+
   .histoireTexte p {
     font-size: 16px;
     line-height: 1.85;
@@ -463,6 +480,12 @@
   .histoireTitre {
     font-size: 24px;
     margin-bottom: 12px;
+  }
+
+  .histoireSunIcon {
+    width: 26px;
+    height: 26px;
+    margin-bottom: 16px;
   }
 
   .histoireTexte {
