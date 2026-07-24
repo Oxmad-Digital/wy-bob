@@ -30,6 +30,16 @@
   overflow: hidden !important;
 }
 
+.container:has(.conceptZone) {
+  background: linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.42) 0%,
+    rgba(255, 255, 255, 0.58) 100%
+  );
+  backdrop-filter: blur(100px) brightness(1.08);
+  -webkit-backdrop-filter: blur(100px) brightness(1.08);
+}
+
 .container:has(.conceptZone) .navbar {
   margin-bottom: 40px;
 }
