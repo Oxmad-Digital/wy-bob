@@ -104,8 +104,7 @@
 .histoireSection--full .histoireTitre,
 .histoireSection--full .histoireKicker,
 .histoireSection--full .histoireTexte p,
-.histoireSection--full .histoireClosing,
-.histoireSection--full .histoireSunIcon {
+.histoireSection--full .histoireClosing {
   color: #ffffff;
 }
 
@@ -117,14 +116,14 @@
 .histoireSection--plain .histoireTitre,
 .histoireSection--plain .histoireKicker,
 .histoireSection--plain .histoireTexte p,
-.histoireSection--plain .histoireClosing,
-.histoireSection--plain .histoireSunIcon {
+.histoireSection--plain .histoireClosing {
   color: #1B1843;
 }
 
 /* Icône soleil au-dessus du titre du chapitre d'ouverture */
 .histoireSunIcon {
   margin-bottom: 40px;
+  color: #F9C464;
 }
 
 .histoireSection--full .histoireSunIcon {
@@ -249,25 +248,32 @@
 .histoireScrollHint {
   position: absolute;
   left: 50%;
-  bottom: 32px;
+  bottom: 36px;
   transform: translateX(-50%);
   z-index: 5;
-  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #F9C464;
   border: none;
-  padding: 8px;
+  color: #1B1843;
   cursor: pointer;
-  color: rgba(27, 24, 67, 0.5);
+  box-shadow: 0 8px 24px rgba(27, 24, 67, 0.24);
   animation: histoireScrollHintBounce 2s ease-in-out infinite;
-  transition: color 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .histoireScrollHint:hover {
-  color: #1B1843;
+  background: #f5b83d;
+  box-shadow: 0 10px 28px rgba(27, 24, 67, 0.32);
 }
 
 @keyframes histoireScrollHintBounce {
   0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(10px); }
+  50% { transform: translateX(-50%) translateY(8px); }
 }
 
 /* ---- Navigation par points ---- */
@@ -377,30 +383,27 @@
     max-width: none;
   }
 
-  .histoirePlaceholder--full {
-    position: relative;
-    inset: auto;
-    width: 100%;
-    height: 280px;
-    border-radius: 16px;
-    flex-shrink: 0;
+  /* Chapitres "full" avec photo : on garde le système desktop (photo
+     plein cadre + overlay + texte blanc par-dessus), juste avec une
+     hauteur explicite puisque la section n'est plus calée sur 100dvh. */
+  .histoireSection--full:has(.histoirePlaceholder--full) {
+    min-height: 60vh;
   }
 
+  .histoirePlaceholder--full,
   .histoireOverlay {
-    display: none;
+    inset: 0;
   }
 
-  .histoireSection--full .histoireTitre,
-  .histoireSection--full .histoireKicker,
-  .histoireSection--full .histoireTexte p,
-  .histoireSection--full .histoireClosing {
-    color: #1B1843;
+  .histoireSection--full:has(.histoirePlaceholder--full) .histoireContent {
+    padding: 32px 24px;
   }
 
   .histoirePlaceholder--split {
     width: 100%;
     aspect-ratio: auto;
     height: 240px;
+    flex: none;
     order: -1;
   }
 
@@ -426,8 +429,8 @@
   }
 
   .histoireSunIcon {
-    width: 32px;
-    height: 32px;
+    width: 64px;
+    height: 64px;
     margin-bottom: 24px;
   }
 
@@ -458,10 +461,6 @@
     padding: 20px 10px 0;
   }
 
-  .histoirePlaceholder--full {
-    height: 200px;
-  }
-
   .histoirePlaceholder--split {
     height: 200px;
   }
@@ -483,8 +482,8 @@
   }
 
   .histoireSunIcon {
-    width: 26px;
-    height: 26px;
+    width: 52px;
+    height: 52px;
     margin-bottom: 16px;
   }
 
