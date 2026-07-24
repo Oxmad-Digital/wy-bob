@@ -57,6 +57,7 @@
   text-align: center;
   background: linear-gradient(135deg, #1B1843 0%, #4a4590 55%, #F9C464 130%);
   border-radius: 16px;
+  overflow: hidden;
   color: rgba(255, 255, 255, 0.85);
   font-family: 'Quicksand', sans-serif;
   font-size: 14px;
@@ -66,6 +67,7 @@
 }
 
 .histoirePlaceholder--split {
+  position: relative;
   flex: 1;
   min-width: 0;
   aspect-ratio: 1 / 1;
@@ -75,13 +77,14 @@
 
 .histoirePlaceholder--full {
   position: absolute;
-  inset: 0;
-  border-radius: 0;
+  inset: 0 64px;
+  border-radius: 16px;
 }
 
 .histoireOverlay {
   position: absolute;
-  inset: 0;
+  inset: 0 64px;
+  border-radius: 16px;
   background: linear-gradient(180deg, rgba(27, 24, 67, 0.2) 0%, rgba(27, 24, 67, 0.78) 100%);
   pointer-events: none;
 }
