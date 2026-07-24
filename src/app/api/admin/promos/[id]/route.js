@@ -15,12 +15,35 @@ export async function PATCH(request, { params }) {
     await connectDB();
 
     const body = await request.json();
-    const { active } = body;
+    const { active, code, type, value, minOrderAmount, maxUses, expiresAt } = body;
+
+    const update = {};
+    if (active !== undefined) update.active = active;
+    if (code !== undefined) update.code = code.toUpperCase().trim();
+    if (type !== undefined) {
+      if (!["percent", "fixed"].includes(type)) {
+        return NextResponse.json({ message: "Type invalide" }, { status: 400 });
+      }
+      update.type = type;
+    }
+    if (value !== undefined) {
+      const effectiveType = type !== undefined ? type : (await PromoCode.findById(params.id))?.type;
+      if (effectiveType === "percent" && (value <= 0 || value > 100)) {
+        return NextResponse.json({ message: "La réduction en % doit être entre 1 et 100" }, { status: 400 });
+      }
+      if (value < 0) {
+        return NextResponse.json({ message: "La valeur doit être positive" }, { status: 400 });
+      }
+      update.value = value;
+    }
+    if (minOrderAmount !== undefined) update.minOrderAmount = minOrderAmount || 0;
+    if (maxUses !== undefined) update.maxUses = maxUses || null;
+    if (expiresAt !== undefined) update.expiresAt = expiresAt || null;
 
     const promo = await PromoCode.findByIdAndUpdate(
       params.id,
-      { active },
-      { new: true }
+      update,
+      { new: true, runValidators: true }
     );
 
     if (!promo) {
@@ -29,6 +52,9 @@ export async function PATCH(request, { params }) {
 
     return NextResponse.json({ success: true, promo });
   } catch (error) {
+    if (error.code === 11000) {
+      return NextResponse.json({ message: "Ce code promo existe déjà" }, { status: 409 });
+    }
     console.error("ADMIN PROMOS PATCH ERROR:", error);
     return NextResponse.json({ message: error.message }, { status: 500 });
   }

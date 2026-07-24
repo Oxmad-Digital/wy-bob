@@ -12,6 +12,7 @@ export default function PromosPage() {
   const [toast, setToast]                 = useState(null);
   const [confirmModal, setConfirmModal]   = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
   const [form, setForm] = useState({
     code: "",
@@ -23,6 +24,27 @@ export default function PromosPage() {
   });
   const [formError, setFormError] = useState("");
   const [creating, setCreating]   = useState(false);
+
+  const closeFormModal = () => {
+    setShowCreateModal(false);
+    setEditingId(null);
+    setFormError("");
+    setForm({ code: "", type: "percent", value: "", minOrderAmount: "", maxUses: "", expiresAt: "" });
+  };
+
+  const openEditModal = (promo) => {
+    setEditingId(promo._id);
+    setForm({
+      code: promo.code,
+      type: promo.type,
+      value: String(promo.value),
+      minOrderAmount: promo.minOrderAmount ? String(promo.minOrderAmount) : "",
+      maxUses: promo.maxUses !== null && promo.maxUses !== undefined ? String(promo.maxUses) : "",
+      expiresAt: promo.expiresAt ? promo.expiresAt.slice(0, 10) : "",
+    });
+    setFormError("");
+    setShowCreateModal(true);
+  };
 
   const showToast = (msg, type = "success") => {
     setToast({ message: msg, type });
@@ -47,7 +69,7 @@ export default function PromosPage() {
 
   useEffect(() => { loadPromos(); }, []);
 
-  const handleCreate = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
 
@@ -58,26 +80,30 @@ export default function PromosPage() {
 
     setCreating(true);
     try {
-      const res = await fetch("/api/admin/promos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: form.code,
-          type: form.type,
-          value: parseFloat(form.value),
-          minOrderAmount: form.minOrderAmount ? parseFloat(form.minOrderAmount) : 0,
-          maxUses: form.maxUses ? parseInt(form.maxUses) : null,
-          expiresAt: form.expiresAt || null,
-        }),
-      });
+      const payload = {
+        code: form.code,
+        type: form.type,
+        value: parseFloat(form.value),
+        minOrderAmount: form.minOrderAmount ? parseFloat(form.minOrderAmount) : 0,
+        maxUses: form.maxUses ? parseInt(form.maxUses) : null,
+        expiresAt: form.expiresAt || null,
+      };
+
+      const res = await fetch(
+        editingId ? `/api/admin/promos/${editingId}` : "/api/admin/promos",
+        {
+          method: editingId ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
       const data = await res.json();
       if (!res.ok) {
-        setFormError(data.message || "Erreur lors de la création");
+        setFormError(data.message || (editingId ? "Erreur lors de la modification" : "Erreur lors de la création"));
         return;
       }
-      showToast("Code promo créé avec succès !");
-      setShowCreateModal(false);
-      setForm({ code: "", type: "percent", value: "", minOrderAmount: "", maxUses: "", expiresAt: "" });
+      showToast(editingId ? "Code promo modifié avec succès !" : "Code promo créé avec succès !");
+      closeFormModal();
       loadPromos();
     } catch (err) {
       setFormError("Erreur serveur");
@@ -157,7 +183,7 @@ export default function PromosPage() {
       {showCreateModal && (
         <div
           className={styles.overlay}
-          onClick={(e) => { if (e.target === e.currentTarget) { setShowCreateModal(false); setFormError(""); } }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeFormModal(); }}
         >
           <div className={styles.modal}>
 
@@ -170,12 +196,14 @@ export default function PromosPage() {
                 </svg>
               </div>
               <div className={styles.modalHeaderText}>
-                <h3 className={styles.modalTitle}>Nouveau code promo</h3>
-                <p className={styles.modalSubtitle}>Créez un code de réduction personnalisé</p>
+                <h3 className={styles.modalTitle}>{editingId ? "Modifier le code promo" : "Nouveau code promo"}</h3>
+                <p className={styles.modalSubtitle}>
+                  {editingId ? "Mettez à jour les paramètres du code" : "Créez un code de réduction personnalisé"}
+                </p>
               </div>
               <button
                 className={styles.modalClose}
-                onClick={() => { setShowCreateModal(false); setFormError(""); }}
+                onClick={closeFormModal}
                 aria-label="Fermer"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -186,7 +214,7 @@ export default function PromosPage() {
 
             {/* Body */}
             <div className={styles.modalBody}>
-              <form onSubmit={handleCreate}>
+              <form onSubmit={handleSubmit}>
                 <div className={styles.formGrid}>
 
                   <div className={styles.formRowFull}>
@@ -271,12 +299,14 @@ export default function PromosPage() {
                   <button
                     type="button"
                     className={styles.btnGhost}
-                    onClick={() => { setShowCreateModal(false); setFormError(""); }}
+                    onClick={closeFormModal}
                   >
                     Annuler
                   </button>
                   <button type="submit" className={`${styles.btn} ${styles.btnPrimary}`} disabled={creating}>
-                    {creating ? "Création…" : "Créer le code"}
+                    {creating
+                      ? (editingId ? "Modification…" : "Création…")
+                      : (editingId ? "Enregistrer" : "Créer le code")}
                   </button>
                 </div>
               </form>
@@ -349,6 +379,13 @@ export default function PromosPage() {
                       </span>
                     </td>
                     <td className={styles.actions}>
+                      <button
+                        className={`${styles.actionBtn} ${styles.actionEdit}`}
+                        onClick={() => openEditModal(p)}
+                        title="Modifier"
+                      >
+                        Modifier
+                      </button>
                       <button
                         className={`${styles.actionBtn} ${p.active ? styles.actionDeactivate : styles.actionActivate}`}
                         onClick={() => handleToggle(p)}
