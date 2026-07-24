@@ -9,10 +9,12 @@ export default function Footer() {
     <footer className="footer">
       <div className="footerLeft">
         <span>© 2026, Wybob</span>
+        <span>{t.footer.madeByPrefix}<a href="https://oxmad-digital.mg" rel="nofollow" target="_blank">Oxmad-Digital</a></span>
+      </div>
+      <div className="footerLegal">
         <a href="/mentions-legales">{t.footer.legal}</a>
         <a href="/cgv">{t.footer.cgv}</a>
         <a href="/politique-confidentialite">{t.footer.privacy}</a>
-        <span>{t.footer.madeByPrefix}<a href="https://oxmad-digital.mg" rel="nofollow" target="_blank">Oxmad-Digital</a></span>
       </div>
       <div className="footerRight">
         <a href="#" aria-label="Instagram">
