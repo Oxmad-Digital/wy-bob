@@ -15,6 +15,7 @@ export const translations = {
     nav: {
       home: 'Notre bob',
       histoire: 'Notre Histoire',
+      concept: 'Notre concept',
       galerie: 'Gallerie',
       contact: 'Contacts',
       panier: 'Panier',
@@ -85,48 +86,42 @@ export const translations = {
           ],
         },
         {
-          kicker: 'Un savoir-faire qui a du sens',
+          title: 'Un savoir-faire qui a du sens',
           paragraphs: [
             "J'ai grandi dans l'univers du textile. Depuis toujours, je suis entourée de fils, de mailles, de crochet et de tricot. Cet héritage m'a appris à reconnaître la valeur d'un véritable savoir-faire artisanal et le temps nécessaire pour créer une pièce d'exception.",
           ],
           quote: "Nous croyons que le vrai luxe n'est pas celui qui fait du bruit. C'est celui qui possède une âme.",
           paragraphsAfterQuote: [
-            "C'est naturellement qu'est née l'envie de faire vivre cette création. Mais WYBOB avait besoin d'une mission plus grande.",
-          ],
-        },
-        {
-          kicker: 'Fabriqué à Madagascar',
-          paragraphs: [
-            "Mes racines sont profondément liées à Madagascar, une terre dont le talent artisanal est immense et encore trop méconnu.",
+            "C'est naturellement qu'est née l'envie de faire vivre cette création. Mais WYBOB avait besoin d'une mission plus grande. Mes racines sont profondément liées à Madagascar, une terre dont le talent artisanal est immense et encore trop méconnu.",
             "Derrière chaque WYBOB se cachent des mains passionnées, des heures de travail minutieux et un savoir-faire transmis de génération en génération. À travers chaque création, nous voulons mettre en lumière ces artisans extraordinaires et faire rayonner Madagascar bien au-delà de ses frontières. Chaque WYBOB raconte l'histoire d'un artisan, d'une famille, d'un pays et d'une passion commune pour les belles choses.",
           ],
         },
         {
-          kicker: 'Plus qu\'un chapeau',
+          title: 'Plus qu\'un chapeau',
           paragraphs: [
             "Le nom WYBOB n'a pas été choisi par hasard. Il représente ce lien familial qui est à l'origine de tout, mais aussi notre envie de créer une grande famille où chacun trouve sa place.",
             "Porter un WYBOB, ce n'est pas seulement porter un chapeau. C'est affirmer sa personnalité sans avoir besoin de parler. C'est choisir l'optimisme, la spontanéité et l'audace. C'est célébrer les festivals, les voyages, les couchers de soleil, les éclats de rire et tous ces instants qui rendent la vie plus belle.",
           ],
         },
         {
-          kicker: 'Bienvenue dans la famille WYBOB',
+          title: 'Bienvenue dans la famille WYBOB',
           paragraphs: [
             "Aujourd'hui, notre ambition va bien au-delà de créer des chapeaux. Nous voulons construire une véritable communauté de personnes qui partagent les mêmes valeurs : la créativité, la liberté, le voyage, le partage et la joie de vivre.",
             "Chaque nouveau membre de la famille WYBOB participe à cette aventure et contribue à faire voyager l'artisanat malgache à travers le monde. Parce que les plus belles histoires sont celles qui se construisent ensemble.",
           ],
           closing: 'Bienvenue dans la famille WYBOB.',
         },
-        {
-          kicker: 'Notre concept',
-          paragraphs: [
-            'Chez WYBOB, nous avons choisi de faire les choses autrement. Nous croyons au slow fashion : produire moins, mais produire mieux. Chaque chapeau est fabriqué en édition limitée, au rythme de notre communauté, sans surproduction.',
-            "Plutôt que de multiplier les modèles, nous avons fait le choix d'une seule silhouette. Un design intemporel, pensé pour traverser les années et devenir instantanément reconnaissable.",
-            "Notre collection évolue à travers les couleurs. Chaque nouvelle édition ouvre un nouveau chapitre de l'histoire WYBOB, tandis que les précédentes deviennent des pièces uniques qui ne seront plus reproduites.",
-            'Au-delà d\'un chapeau, WYBOB est une invitation à rejoindre une communauté de voyageurs, de créatifs et d\'optimistes qui partagent une même philosophie : vivre pleinement, créer des souvenirs et célébrer les moments qui comptent.',
-          ],
-          cta: 'Découvrir la collection',
-        },
       ] as HistoireSection[],
+    },
+    concept: {
+      title: 'Notre concept',
+      paragraphs: [
+        'Chez WYBOB, nous avons choisi de faire les choses autrement. Nous croyons au slow fashion : produire moins, mais produire mieux. Chaque chapeau est fabriqué en édition limitée, au rythme de notre communauté, sans surproduction.',
+        "Plutôt que de multiplier les modèles, nous avons fait le choix d'une seule silhouette. Un design intemporel, pensé pour traverser les années et devenir instantanément reconnaissable.",
+        "Notre collection évolue à travers les couleurs. Chaque nouvelle édition ouvre un nouveau chapitre de l'histoire WYBOB, tandis que les précédentes deviennent des pièces uniques qui ne seront plus reproduites.",
+        'Au-delà d\'un chapeau, WYBOB est une invitation à rejoindre une communauté de voyageurs, de créatifs et d\'optimistes qui partagent une même philosophie : vivre pleinement, créer des souvenirs et célébrer les moments qui comptent.',
+      ],
+      cta: 'Découvrir la collection',
     },
     galerie: {
       title: 'Notre Galerie',
@@ -309,6 +304,7 @@ export const translations = {
     nav: {
       home: 'Our Bob',
       histoire: 'Our Story',
+      concept: 'Our Concept',
       galerie: 'Gallery',
       contact: 'Contact',
       panier: 'Cart',
@@ -379,48 +375,42 @@ export const translations = {
           ],
         },
         {
-          kicker: 'A craft that means something',
+          title: 'A craft that means something',
           paragraphs: [
             "I grew up surrounded by thread, stitches, crochet and knitting. This heritage taught me to recognise true artisanal know-how and the time it takes to create an exceptional piece.",
           ],
           quote: "We believe real luxury isn't loud. It has a soul.",
           paragraphsAfterQuote: [
-            "That's how the desire to bring this creation to life naturally came about. But WYBOB needed a bigger mission.",
-          ],
-        },
-        {
-          kicker: 'Made in Madagascar',
-          paragraphs: [
-            'My roots run deep in Madagascar, a land of immense — and still largely unknown — artisanal talent.',
+            "That's how the desire to bring this creation to life naturally came about. But WYBOB needed a bigger mission. My roots run deep in Madagascar, a land of immense — and still largely unknown — artisanal talent.",
             "Behind every WYBOB are passionate hands, hours of meticulous work, and know-how passed down through generations. Through every creation, we want to shine a light on these extraordinary artisans and let Madagascar shine far beyond its borders. Every WYBOB tells the story of an artisan, a family, a country, and a shared passion for beautiful things.",
           ],
         },
         {
-          kicker: 'More than a hat',
+          title: 'More than a hat',
           paragraphs: [
             "The name WYBOB wasn't chosen by chance. It represents the family bond at the origin of everything — and our wish to build one big family where everyone finds their place.",
             "Wearing a WYBOB isn't just wearing a hat. It's asserting your personality without having to speak. It's choosing optimism, spontaneity and boldness. It's celebrating festivals, travels, sunsets, laughter — all the moments that make life more beautiful.",
           ],
         },
         {
-          kicker: 'Welcome to the WYBOB family',
+          title: 'Welcome to the WYBOB family',
           paragraphs: [
             'Today, our ambition goes far beyond making hats. We want to build a true community of people who share the same values: creativity, freedom, travel, sharing and joie de vivre.',
             "Every new member of the WYBOB family takes part in this adventure and helps Malagasy craftsmanship travel the world. Because the most beautiful stories are the ones we build together.",
           ],
           closing: 'Welcome to the WYBOB family.',
         },
-        {
-          kicker: 'Our concept',
-          paragraphs: [
-            'At WYBOB, we chose to do things differently. We believe in slow fashion: producing less, but producing better. Every hat is made in a limited edition, at the pace of our community, without overproduction.',
-            'Rather than multiplying models, we chose a single silhouette — a timeless design, made to last through the years and become instantly recognisable.',
-            'Our collection evolves through colour. Each new edition opens a new chapter in the WYBOB story, while previous ones become unique pieces that will never be reproduced again.',
-            'Beyond a hat, WYBOB is an invitation to join a community of travellers, creatives and optimists who share one philosophy: living fully, creating memories, and celebrating the moments that matter.',
-          ],
-          cta: 'Discover the collection',
-        },
       ] as HistoireSection[],
+    },
+    concept: {
+      title: 'Our concept',
+      paragraphs: [
+        'At WYBOB, we chose to do things differently. We believe in slow fashion: producing less, but producing better. Every hat is made in a limited edition, at the pace of our community, without overproduction.',
+        'Rather than multiplying models, we chose a single silhouette — a timeless design, made to last through the years and become instantly recognisable.',
+        'Our collection evolves through colour. Each new edition opens a new chapter in the WYBOB story, while previous ones become unique pieces that will never be reproduced again.',
+        'Beyond a hat, WYBOB is an invitation to join a community of travellers, creatives and optimists who share one philosophy: living fully, creating memories, and celebrating the moments that matter.',
+      ],
+      cta: 'Discover the collection',
     },
     galerie: {
       title: 'Our Gallery',

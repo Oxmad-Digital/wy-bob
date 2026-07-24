@@ -30,12 +30,21 @@
   overflow: hidden !important;
 }
 
+.container:has(.conceptZone) .navbar {
+  margin-bottom: 40px;
+}
+
+.container:has(.conceptZone) .footer {
+  margin-top: 40px;
+}
+
 /* Pages avec scroll interne */
 .container:has(.checkoutZone),
 .container:has(.loginZone),
 .container:has(.mentionsZone),
 .container:has(.cgvZone),
-.container:has(.privacyZone) {
+.container:has(.privacyZone),
+.container:has(.conceptZone) {
   overflow: hidden !important;
   height: calc(100dvh - 40px) !important;
   justify-content: flex-start !important;
@@ -45,7 +54,8 @@ body:has(.checkoutZone),
 body:has(.loginZone),
 body:has(.mentionsZone),
 body:has(.cgvZone),
-body:has(.privacyZone) {
+body:has(.privacyZone),
+body:has(.conceptZone) {
   overflow: hidden !important;
   height: 100vh !important;
 }
@@ -54,7 +64,8 @@ html:has(.checkoutZone),
 html:has(.loginZone),
 html:has(.mentionsZone),
 html:has(.cgvZone),
-html:has(.privacyZone) {
+html:has(.privacyZone),
+html:has(.conceptZone) {
   overflow: hidden !important;
   height: 100vh !important;
 }

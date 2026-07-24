@@ -9,24 +9,20 @@ import { useLanguage } from '@/contexts/LanguageContext'
 import '../page.css'
 import './histoire.css'
 
-const CDN = 'https://res.cloudinary.com/dnm9txjhm/image/upload/q_auto/f_auto'
-
 type SectionMeta = {
   layout: 'full' | 'split'
   imageSide?: 'left' | 'right'
   imageLabel: string
-  image: string
+  image?: string
 }
 
-// Photos temporaires piochées dans la gallerie, en attendant les vraies photos de la page Histoire
+// Photos temporaires piochées dans la gallerie (mêmes URLs que /api/gallery), en attendant les vraies photos de la page Histoire
 const SECTIONS_META: SectionMeta[] = [
-  { layout: 'full', imageLabel: 'Le chapeau du festival', image: `${CDN}/v1780486486/wybob_portrait_femme_maillot_noir_chapeau_crochet_blanc_zygujw.jpg` },
-  { layout: 'split', imageSide: 'right', imageLabel: 'Pénélope Wybo', image: `${CDN}/v1780486485/wybob_portrait_femme_souriante_maillot_noir_main_chapeau_eodlwd.jpg` },
-  { layout: 'split', imageSide: 'left', imageLabel: 'Crochet & tricot', image: `${CDN}/v1780486485/wybob_trois_femmes_allongees_pont_chapeaux_crochet_rerozt.jpg` },
-  { layout: 'split', imageSide: 'right', imageLabel: 'Artisans à Madagascar', image: `${CDN}/v1780486484/wybob_deux_femmes_face_sous_hangar_bois_turquoise_exmm9y.jpg` },
-  { layout: 'split', imageSide: 'left', imageLabel: 'Festival & voyage', image: `${CDN}/v1780486484/wybob_deux_femmes_maillots_bikinis_chapeaux_rouges_noirs_kpt1lu.jpg` },
-  { layout: 'full', imageLabel: 'La famille WYBOB', image: `${CDN}/v1780486485/wybob_portrait_serre_deux_femmes_chapeaux_bikinis_iwlc3v.jpg` },
-  { layout: 'split', imageSide: 'right', imageLabel: 'La collection couleurs', image: `${CDN}/v1780486485/wybob_portrait_deux_femmes_de_bout_sous_hangar_by5fse.jpg` },
+  { layout: 'full', imageLabel: 'Le chapeau du festival' },
+  { layout: 'split', imageSide: 'right', imageLabel: 'Pénélope Wybo', image: 'https://res.cloudinary.com/dnm9txjhm/image/upload/v1780598130/galerie/ntcjfrv2xyli9ilkdozp.jpg' },
+  { layout: 'split', imageSide: 'left', imageLabel: 'Savoir-faire & artisanat malgache', image: 'https://res.cloudinary.com/dnm9txjhm/image/upload/v1780598144/galerie/hmxampzuyhi9roiqfftz.jpg' },
+  { layout: 'split', imageSide: 'right', imageLabel: 'Festival & voyage', image: 'https://res.cloudinary.com/dnm9txjhm/image/upload/v1780598132/galerie/ecniitgdrxbbsxqvhnsw.jpg' },
+  { layout: 'full', imageLabel: 'La famille WYBOB', image: 'https://res.cloudinary.com/dnm9txjhm/image/upload/v1780598134/galerie/tcrfyy7jfebyjjlxw8t6.jpg' },
 ]
 
 export default function Histoire() {
@@ -94,17 +90,29 @@ export default function Histoire() {
               key={i}
               data-index={i}
               ref={(el) => { sectionRefs.current[i] = el }}
-              className={`histoireSection histoireSection--${meta.layout}`}
+              className={`histoireSection histoireSection--${meta.layout}${meta.layout === 'full' && !meta.image ? ' histoireSection--plain' : ''}`}
             >
-              {meta.layout === 'full' && (
+              {meta.layout === 'full' && meta.image && (
                 <div className="histoirePlaceholder histoirePlaceholder--full">
                   <Image src={meta.image} alt={meta.imageLabel} fill priority={i === 0} style={{ objectFit: 'cover' }} sizes="100vw" />
                 </div>
               )}
-              {meta.layout === 'full' && <div className="histoireOverlay" />}
+              {meta.layout === 'full' && meta.image && <div className="histoireOverlay" />}
+
+              {i === 0 && (
+                <button
+                  className="histoireScrollHint"
+                  onClick={() => goTo(1)}
+                  aria-label="Faire défiler vers le bas"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              )}
 
               <div className="histoireContent">
-                {meta.layout === 'split' && meta.imageSide === 'left' && (
+                {meta.layout === 'split' && meta.imageSide === 'left' && meta.image && (
                   <div className="histoirePlaceholder histoirePlaceholder--split">
                     <Image src={meta.image} alt={meta.imageLabel} fill style={{ objectFit: 'cover' }} sizes="(max-width: 1024px) 100vw, 50vw" />
                   </div>
@@ -136,7 +144,7 @@ export default function Histoire() {
                   )}
                 </div>
 
-                {meta.layout === 'split' && meta.imageSide === 'right' && (
+                {meta.layout === 'split' && meta.imageSide === 'right' && meta.image && (
                   <div className="histoirePlaceholder histoirePlaceholder--split">
                     <Image src={meta.image} alt={meta.imageLabel} fill style={{ objectFit: 'cover' }} sizes="(max-width: 1024px) 100vw, 50vw" />
                   </div>

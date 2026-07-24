@@ -24,6 +24,7 @@ export default function Navbar() {
   const links = [
     { label: t.nav.home, href: '/' },
     { label: t.nav.histoire, href: '/histoire' },
+    { label: t.nav.concept, href: '/concept' },
     { label: t.nav.galerie, href: '/galerie' },
     { label: t.nav.contact, href: '/contact' },
   ]

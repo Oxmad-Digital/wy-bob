@@ -112,6 +112,14 @@
   align-items: center;
 }
 
+/* ---- Variante "full" sans image (fond dégradé de la carte) ---- */
+.histoireSection--plain .histoireTitre,
+.histoireSection--plain .histoireKicker,
+.histoireSection--plain .histoireTexte p,
+.histoireSection--plain .histoireClosing {
+  color: #1B1843;
+}
+
 /* ---- Layout "split" (texte + image placeholder) ---- */
 .histoireSection--split .histoireContent {
   width: 100%;
@@ -226,6 +234,31 @@
   transform: translateY(0);
 }
 
+/* ---- Invitation à scroller (hero) ---- */
+.histoireScrollHint {
+  position: absolute;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  z-index: 5;
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: rgba(27, 24, 67, 0.5);
+  animation: histoireScrollHintBounce 2s ease-in-out infinite;
+  transition: color 0.2s ease;
+}
+
+.histoireScrollHint:hover {
+  color: #1B1843;
+}
+
+@keyframes histoireScrollHintBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(10px); }
+}
+
 /* ---- Navigation par points ---- */
 .histoireDots {
   position: absolute;
@@ -293,6 +326,10 @@
   }
 
   .histoireDots {
+    display: none;
+  }
+
+  .histoireScrollHint {
     display: none;
   }
 
