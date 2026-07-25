@@ -6,6 +6,12 @@ import Link from "next/link";
 import "./order-detail.css";
 import { TOAST_DURATION } from "../../_constants";
 import { FR_PRODUCTS, INTL_PRODUCTS } from "@/app/lib/chronopost/constants";
+import { COUNTRY_OPTIONS } from "@/app/lib/shipping/countries";
+
+const EMPTY_CUSTOMER_FORM = {
+  firstname: "", lastname: "", email: "", phone: "", company: "",
+  address: "", postalCode: "", city: "", country: "FR",
+};
 
 const STATUS_OPTIONS = [
   { value: "pending",    label: "En attente"     },
@@ -77,6 +83,9 @@ export default function AdminOrderDetailPage() {
     productKeyOverride: "",
     weightKgOverride: "",
   });
+  const [editingCustomer, setEditingCustomer] = useState(false);
+  const [savingCustomer, setSavingCustomer] = useState(false);
+  const [customerForm, setCustomerForm] = useState(EMPTY_CUSTOMER_FORM);
 
   const showToast = (msg, type = "success") => {
     setToast({ message: msg, type });
@@ -135,6 +144,42 @@ export default function AdminOrderDetailPage() {
       showToast("Erreur serveur", "error");
     } finally {
       setShipGenerating(false);
+    }
+  };
+
+  const startEditCustomer = () => {
+    const c = order.customer || {};
+    setCustomerForm({
+      firstname: c.firstname || "",
+      lastname: c.lastname || "",
+      email: c.email || "",
+      phone: c.phone || "",
+      company: c.company || "",
+      address: c.address || "",
+      postalCode: c.postalCode || "",
+      city: c.city || "",
+      country: c.country || "FR",
+    });
+    setEditingCustomer(true);
+  };
+
+  const saveCustomer = async () => {
+    setSavingCustomer(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${id}/customer`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(customerForm),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur", "error"); return; }
+      setOrder(data);
+      setEditingCustomer(false);
+      showToast("Coordonnées mises à jour — pensez à régénérer l'étiquette si besoin");
+    } catch {
+      showToast("Erreur serveur", "error");
+    } finally {
+      setSavingCustomer(false);
     }
   };
 
@@ -216,33 +261,106 @@ export default function AdminOrderDetailPage() {
 
         {/* ── Client ── */}
         <div className="od-card">
-          <h2 className="od-card-title">Client</h2>
-          <div className="od-client-row">
-            <div className="od-avatar">{initials}</div>
-            <div>
-              <div className="od-client-name">{fullName}</div>
-              {c.email && (
-                <a href={`mailto:${c.email}`} className="od-client-email">{c.email}</a>
-              )}
-              {c.phone && <div className="od-client-phone">{c.phone}</div>}
-            </div>
+          <div className="od-card-title-row">
+            <h2 className="od-card-title">Client</h2>
+            {!editingCustomer && (
+              <button type="button" className="od-edit-btn" onClick={startEditCustomer}>
+                ✎ Corriger
+              </button>
+            )}
           </div>
-          {(c.address || c.city) && (
-            <div className="od-address-block">
-              <div className="od-address-label">Adresse de livraison</div>
-              {c.address && <div className="od-address-line">{c.address}</div>}
-              {c.city    && <div className="od-address-city">{[c.postalCode, c.city].filter(Boolean).join(" ")}</div>}
-              {c.country && <div className="od-address-line">{c.country}</div>}
-            </div>
-          )}
-          {order.shipping?.relayPoint?.id && (
-            <div className="od-address-block">
-              <div className="od-address-label">Point relais</div>
-              <div className="od-address-line">{order.shipping.relayPoint.name}</div>
-              <div className="od-address-city">{order.shipping.relayPoint.zipCode} {order.shipping.relayPoint.city}</div>
-              {order.recipientPickupName && (
-                <div className="od-client-phone">Retrait par : {order.recipientPickupName}</div>
+
+          {!editingCustomer ? (
+            <>
+              <div className="od-client-row">
+                <div className="od-avatar">{initials}</div>
+                <div>
+                  <div className="od-client-name">{fullName}</div>
+                  {c.email && (
+                    <a href={`mailto:${c.email}`} className="od-client-email">{c.email}</a>
+                  )}
+                  {c.phone && <div className="od-client-phone">{c.phone}</div>}
+                </div>
+              </div>
+              {(c.address || c.city) && (
+                <div className="od-address-block">
+                  <div className="od-address-label">Adresse de livraison</div>
+                  {c.address && <div className="od-address-line">{c.address}</div>}
+                  {c.city    && <div className="od-address-city">{[c.postalCode, c.city].filter(Boolean).join(" ")}</div>}
+                  {c.country && <div className="od-address-line">{COUNTRY_OPTIONS.find(o => o.code === c.country)?.label || c.country}</div>}
+                </div>
               )}
+              {order.shipping?.relayPoint?.id && (
+                <div className="od-address-block">
+                  <div className="od-address-label">Point relais</div>
+                  <div className="od-address-line">{order.shipping.relayPoint.name}</div>
+                  <div className="od-address-city">{order.shipping.relayPoint.zipCode} {order.shipping.relayPoint.city}</div>
+                  {order.recipientPickupName && (
+                    <div className="od-client-phone">Retrait par : {order.recipientPickupName}</div>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="od-customer-form">
+              <p className="od-status-hint">
+                Corrige ici une faute de saisie (adresse, code postal, pays…) qui bloquerait la
+                génération de l&apos;étiquette Chronopost, puis régénère l&apos;étiquette ci-dessous.
+              </p>
+              <div className="od-customer-form-row">
+                <div className="od-ship-form-field">
+                  <label className="od-ship-form-label">Prénom</label>
+                  <input className="od-ship-input" value={customerForm.firstname} onChange={(e) => setCustomerForm(f => ({ ...f, firstname: e.target.value }))} />
+                </div>
+                <div className="od-ship-form-field">
+                  <label className="od-ship-form-label">Nom</label>
+                  <input className="od-ship-input" value={customerForm.lastname} onChange={(e) => setCustomerForm(f => ({ ...f, lastname: e.target.value }))} />
+                </div>
+              </div>
+              <div className="od-customer-form-row">
+                <div className="od-ship-form-field">
+                  <label className="od-ship-form-label">Email</label>
+                  <input type="email" className="od-ship-input" value={customerForm.email} onChange={(e) => setCustomerForm(f => ({ ...f, email: e.target.value }))} />
+                </div>
+                <div className="od-ship-form-field">
+                  <label className="od-ship-form-label">Téléphone</label>
+                  <input className="od-ship-input" value={customerForm.phone} onChange={(e) => setCustomerForm(f => ({ ...f, phone: e.target.value }))} />
+                </div>
+              </div>
+              <div className="od-ship-form-field">
+                <label className="od-ship-form-label">Entreprise (optionnel)</label>
+                <input className="od-ship-input" value={customerForm.company} onChange={(e) => setCustomerForm(f => ({ ...f, company: e.target.value }))} />
+              </div>
+              <div className="od-ship-form-field">
+                <label className="od-ship-form-label">Adresse</label>
+                <input className="od-ship-input" value={customerForm.address} onChange={(e) => setCustomerForm(f => ({ ...f, address: e.target.value }))} />
+              </div>
+              <div className="od-customer-form-row">
+                <div className="od-ship-form-field">
+                  <label className="od-ship-form-label">Code postal</label>
+                  <input className="od-ship-input" value={customerForm.postalCode} onChange={(e) => setCustomerForm(f => ({ ...f, postalCode: e.target.value }))} />
+                </div>
+                <div className="od-ship-form-field">
+                  <label className="od-ship-form-label">Ville</label>
+                  <input className="od-ship-input" value={customerForm.city} onChange={(e) => setCustomerForm(f => ({ ...f, city: e.target.value }))} />
+                </div>
+              </div>
+              <div className="od-ship-form-field">
+                <label className="od-ship-form-label">Pays</label>
+                <select className="od-ship-select" value={customerForm.country} onChange={(e) => setCustomerForm(f => ({ ...f, country: e.target.value }))}>
+                  {COUNTRY_OPTIONS.map((opt) => (
+                    <option key={opt.code} value={opt.code}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="od-customer-form-actions">
+                <button type="button" className="od-ship-generate-btn" disabled={savingCustomer} onClick={saveCustomer}>
+                  {savingCustomer ? "Enregistrement…" : "Enregistrer"}
+                </button>
+                <button type="button" className="od-ship-toggle-btn od-customer-cancel-btn" disabled={savingCustomer} onClick={() => setEditingCustomer(false)}>
+                  Annuler
+                </button>
+              </div>
             </div>
           )}
         </div>

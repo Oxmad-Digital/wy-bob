@@ -100,6 +100,28 @@
   margin: 0 0 16px;
 }
 
+.od-card-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.od-card-title-row .od-card-title { margin-bottom: 12px; }
+
+.od-edit-btn {
+  padding: 4px 10px;
+  border: 1.5px solid #e7e5e4;
+  border-radius: 999px;
+  background: #fff;
+  color: #57534e;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+.od-edit-btn:hover { border-color: #c58b00; color: #c58b00; }
+
+.od-customer-form { display: flex; flex-direction: column; gap: 12px; }
+.od-customer-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.od-customer-form-actions { display: flex; align-items: center; gap: 14px; margin-top: 4px; }
+.od-customer-cancel-btn { border-top: none; padding: 9px 0; width: auto; }
+
 /* Client card */
 .od-client-row {
   display: flex;

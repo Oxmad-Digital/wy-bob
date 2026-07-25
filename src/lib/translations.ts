@@ -190,6 +190,7 @@ export const translations = {
       total: 'Total',
       errors: {
         requiredFields: 'Veuillez remplir tous les champs obligatoires',
+        invalidPostalCode: 'Le code postal ne correspond pas au format attendu pour ce pays',
         relayPointRequired: 'Veuillez sélectionner un point relais',
         emptyCart: 'Votre panier est vide',
         payment: 'Erreur de paiement',
@@ -568,6 +569,7 @@ export const translations = {
       total: 'Total',
       errors: {
         requiredFields: 'Please fill in all required fields',
+        invalidPostalCode: 'The postal code does not match the expected format for this country',
         relayPointRequired: 'Please select a relay point',
         emptyCart: 'Your cart is empty',
         payment: 'Payment error',
