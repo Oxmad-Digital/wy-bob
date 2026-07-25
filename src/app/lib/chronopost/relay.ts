@@ -25,6 +25,17 @@ function tomorrowFrFormat(): string {
   return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
+// Le filtre de distance de Chronopost (`maxDistanceSearch`) n'est pas fiable pour les
+// petites valeurs : constaté empiriquement (compte de test) qu'il peut exclure TOUS les
+// points, y compris un point à seulement 100m de l'adresse recherchée, alors qu'une
+// recherche plus large les retrouve sans problème. On demande donc toujours à Chronopost
+// le rayon le plus large possible avec le maximum de points qu'il accepte (25, plafond
+// serveur : "max_pudo_number must be less than or equal to 25"), et c'est nous qui
+// appliquons ensuite le vrai filtre par rayon/nombre demandé par le client, en nous
+// basant sur `distanceEnMetre` que Chronopost calcule correctement pour chaque point.
+const CHRONOPOST_SEARCH_RADIUS_KM = 50;
+const CHRONOPOST_MAX_POINTS = 25;
+
 /**
  * recherchePointChronopostInterParService est la seule variante de recherche de
  * points relais documentée comme accessible en GET (chapitre 2.4.2.b3 de la doc) —
@@ -37,6 +48,9 @@ function tomorrowFrFormat(): string {
  * (86, 49) — vérifié empiriquement contre le compte de test.
  */
 export async function searchRelayPoints(params: SearchRelayPointsParams): Promise<RelayPoint[]> {
+  const requestedRadiusKm = params.maxDistanceKm ?? 20;
+  const requestedMaxPoints = params.maxPoints ?? 8;
+
   const parsed = await getRequest(CHRONOPOST_URLS.relay, "recherchePointChronopostInterParService", {
     address: params.address,
     zipCode: params.zipCode,
@@ -48,8 +62,8 @@ export async function searchRelayPoints(params: SearchRelayPointsParams): Promis
     serviceList: "100",
     weight: params.weightGrams ?? 500,
     shippingDate: tomorrowFrFormat(),
-    maxPointChronopost: params.maxPoints ?? 8,
-    maxDistanceSearch: params.maxDistanceKm ?? 20,
+    maxPointChronopost: CHRONOPOST_MAX_POINTS,
+    maxDistanceSearch: CHRONOPOST_SEARCH_RADIUS_KM,
     holidayTolerant: 1,
     language: "FR",
     version: "2.0",
@@ -73,6 +87,7 @@ export async function searchRelayPoints(params: SearchRelayPointsParams): Promis
   }
 
   const points = toArray(result?.listePointRelais);
+  const requestedRadiusMeters = requestedRadiusKm * 1000;
 
   return points
     .filter((p: XmlNode) => String(p?.actif) !== "false")
@@ -90,5 +105,7 @@ export async function searchRelayPoints(params: SearchRelayPointsParams): Promis
         longitude: p.coordGeolocalisationLongitude !== undefined ? Number(p.coordGeolocalisationLongitude) : undefined,
       })
     )
-    .filter((p) => p.id);
+    .filter((p) => p.id && (p.distanceInMeters === undefined || p.distanceInMeters <= requestedRadiusMeters))
+    .sort((a, b) => (a.distanceInMeters ?? Infinity) - (b.distanceInMeters ?? Infinity))
+    .slice(0, requestedMaxPoints);
 }
