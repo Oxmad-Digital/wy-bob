@@ -20,6 +20,25 @@ const MAP_OPTIONS = { streetViewControl: false, mapTypeControl: false, fullscree
 
 type GeoRelayPoint = RelayPoint & { latitude: number; longitude: number };
 
+// Pin en forme de colis (plutôt que la flèche par défaut de l'API) pour symboliser
+// visuellement un point relais. Couleur dorée quand sélectionné (cohérent avec
+// .relay-point-selected dans checkout.css), navy sinon.
+function relayMarkerIcon(selected: boolean): google.maps.Icon {
+  const fill = selected ? "#F9C464" : "#1B1843";
+  const size = selected ? 34 : 28;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">
+    <path d="M15 0C6.716 0 0 6.716 0 15c0 10.5 15 23 15 23s15-12.5 15-23C30 6.716 23.284 0 15 0z" fill="${fill}"/>
+    <circle cx="15" cy="15" r="9" fill="#ffffff"/>
+    <path d="M15 8.5l6 3v7l-6 3-6-3v-7l6-3z" fill="none" stroke="${fill}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M9 11.5L15 15l6-3.5M15 15v7" fill="none" stroke="${fill}" stroke-width="1.4" stroke-linejoin="round"/>
+  </svg>`;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new google.maps.Size(size, size * (38 / 30)),
+    anchor: new google.maps.Point(size / 2, size * (38 / 30)),
+  };
+}
+
 export default function RelayPointMap({ points, value, onChange, address, zipCode, city, country }: RelayPointMapProps) {
   const { t } = useLanguage();
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -102,15 +121,7 @@ export default function RelayPointMap({ points, value, onChange, address, zipCod
             position={{ lat: p.latitude, lng: p.longitude }}
             title={p.name}
             onClick={() => onChange(p)}
-            icon={{
-              path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-              rotation: 180,
-              scale: value?.id === p.id ? 7 : 5,
-              fillColor: value?.id === p.id ? "#1B1843" : "#ffffff",
-              fillOpacity: 1,
-              strokeColor: "#1B1843",
-              strokeWeight: 2,
-            }}
+            icon={relayMarkerIcon(value?.id === p.id)}
           />
         ))}
       </GoogleMap>
