@@ -69,6 +69,10 @@ export async function PATCH(req, { params }) {
         "customer.postalCode": postalCode,
         "customer.city": city,
         "customer.country": country,
+        // Une correction d'adresse invalide le message d'erreur d'une éventuelle tentative
+        // d'expédition précédente (ex: pays erroné) — sans quoi l'admin voit toujours
+        // l'ancienne erreur après correction, alors que rien n'a encore été retenté.
+        "shipping.shippingError": "",
       },
       { new: true }
     ).populate("products.product");
