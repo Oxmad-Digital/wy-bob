@@ -14,6 +14,7 @@ export async function PATCH(request, { params }) {
 
     await connectDB();
 
+    const { id } = await params;
     const body = await request.json();
     const { active, code, type, value, minOrderAmount, maxUses, expiresAt } = body;
 
@@ -27,7 +28,7 @@ export async function PATCH(request, { params }) {
       update.type = type;
     }
     if (value !== undefined) {
-      const effectiveType = type !== undefined ? type : (await PromoCode.findById(params.id))?.type;
+      const effectiveType = type !== undefined ? type : (await PromoCode.findById(id))?.type;
       if (effectiveType === "percent" && (value <= 0 || value > 100)) {
         return NextResponse.json({ message: "La réduction en % doit être entre 1 et 100" }, { status: 400 });
       }
@@ -41,7 +42,7 @@ export async function PATCH(request, { params }) {
     if (expiresAt !== undefined) update.expiresAt = expiresAt || null;
 
     const promo = await PromoCode.findByIdAndUpdate(
-      params.id,
+      id,
       update,
       { new: true, runValidators: true }
     );
@@ -69,7 +70,8 @@ export async function DELETE(request, { params }) {
 
     await connectDB();
 
-    const promo = await PromoCode.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const promo = await PromoCode.findByIdAndDelete(id);
 
     if (!promo) {
       return NextResponse.json({ message: "Code promo introuvable" }, { status: 404 });
