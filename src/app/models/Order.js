@@ -62,6 +62,8 @@ const OrderSchema = new mongoose.Schema(
         zipCode: String,
         city: String,
         country: String,
+        latitude: Number,
+        longitude: Number,
       },
       trackingStatus: String,
       trackingEvents: { type: [mongoose.Schema.Types.Mixed], default: [] },

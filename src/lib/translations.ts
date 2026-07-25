@@ -207,6 +207,8 @@ export const translations = {
         noneFound: 'Aucun point relais trouvé à proximité',
         serverError: 'Erreur serveur',
         selectedHint: 'Point relais sélectionné :',
+        radiusLabel: 'Rayon',
+        customerMarkerLabel: 'Votre adresse',
       },
       success: {
         failedTitle: 'Paiement non abouti',
@@ -586,6 +588,8 @@ export const translations = {
         noneFound: 'No relay point found nearby',
         serverError: 'Server error',
         selectedHint: 'Selected relay point:',
+        radiusLabel: 'Radius',
+        customerMarkerLabel: 'Your address',
       },
       success: {
         failedTitle: 'Payment unsuccessful',

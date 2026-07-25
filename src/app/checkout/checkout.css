@@ -214,6 +214,39 @@
 .relay-search-btn:hover { background: rgba(255, 255, 255, 0.85); }
 .relay-search-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+.relay-search-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.relay-radius-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #555;
+}
+
+.relay-radius-select {
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  font-size: 12px;
+  color: #1B1843;
+  cursor: pointer;
+}
+
+.relay-map {
+  width: 100%;
+  height: 260px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
 .relay-error {
   font-size: 12px;
   color: #c0392b;

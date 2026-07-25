@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import RelayPointMap from "./RelayPointMap";
 
 export interface RelayPoint {
   id: string;
@@ -12,6 +13,8 @@ export interface RelayPoint {
   city: string;
   country: string;
   distanceInMeters?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface RelayPointPickerProps {
@@ -23,12 +26,15 @@ interface RelayPointPickerProps {
   onChange: (point: RelayPoint | null) => void;
 }
 
+const RADIUS_OPTIONS_KM = [5, 10, 20, 50];
+
 export default function RelayPointPicker({ address, zipCode, city, country, value, onChange }: RelayPointPickerProps) {
   const { t } = useLanguage();
   const [points, setPoints] = useState<RelayPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
+  const [radiusKm, setRadiusKm] = useState(20);
 
   const search = async () => {
     if (!zipCode || !city) {
@@ -38,7 +44,7 @@ export default function RelayPointPicker({ address, zipCode, city, country, valu
     setLoading(true);
     setError("");
     try {
-      const params = new URLSearchParams({ address, zipCode, city, country: country || "FR" });
+      const params = new URLSearchParams({ address, zipCode, city, country: country || "FR", maxDistanceKm: String(radiusKm) });
       const res = await fetch(`/api/shipping/relay-points?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) {
@@ -60,11 +66,37 @@ export default function RelayPointPicker({ address, zipCode, city, country, valu
 
   return (
     <div className="relay-picker">
-      <button type="button" className="relay-search-btn" onClick={search} disabled={loading}>
-        {loading ? t.checkout.relay.searching : searched ? t.checkout.relay.findAgain : t.checkout.relay.findButton}
-      </button>
+      <div className="relay-search-row">
+        <button type="button" className="relay-search-btn" onClick={search} disabled={loading}>
+          {loading ? t.checkout.relay.searching : searched ? t.checkout.relay.findAgain : t.checkout.relay.findButton}
+        </button>
+        <label className="relay-radius-label">
+          {t.checkout.relay.radiusLabel}
+          <select
+            className="relay-radius-select"
+            value={radiusKm}
+            onChange={(e) => setRadiusKm(Number(e.target.value))}
+          >
+            {RADIUS_OPTIONS_KM.map((km) => (
+              <option key={km} value={km}>{km} km</option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       {error && <p className="relay-error">{error}</p>}
+
+      {points.length > 0 && (
+        <RelayPointMap
+          points={points}
+          value={value}
+          onChange={onChange}
+          address={address}
+          zipCode={zipCode}
+          city={city}
+          country={country}
+        />
+      )}
 
       {points.length > 0 && (
         <div className="relay-list">

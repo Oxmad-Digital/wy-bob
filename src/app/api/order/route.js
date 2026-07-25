@@ -183,6 +183,8 @@ export async function POST(req) {
                 zipCode: relayPoint.zipCode || "",
                 city: relayPoint.city || "",
                 country: relayPoint.country || country || "FR",
+                latitude: typeof relayPoint.latitude === "number" ? relayPoint.latitude : undefined,
+                longitude: typeof relayPoint.longitude === "number" ? relayPoint.longitude : undefined,
               },
             },
           }

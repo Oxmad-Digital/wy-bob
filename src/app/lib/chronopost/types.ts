@@ -51,6 +51,8 @@ export interface RelayPoint {
   city: string;
   country: string;
   distanceInMeters?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface TrackingEvent {

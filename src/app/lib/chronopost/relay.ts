@@ -80,6 +80,8 @@ export async function searchRelayPoints(params: SearchRelayPointsParams): Promis
         city: String(p.localite ?? ""),
         country: String(p.codePays ?? params.countryCode),
         distanceInMeters: p.distanceEnMetre !== undefined ? Number(p.distanceEnMetre) : undefined,
+        latitude: p.coordGeolocalisationLatitude !== undefined ? Number(p.coordGeolocalisationLatitude) : undefined,
+        longitude: p.coordGeolocalisationLongitude !== undefined ? Number(p.coordGeolocalisationLongitude) : undefined,
       })
     )
     .filter((p) => p.id);
