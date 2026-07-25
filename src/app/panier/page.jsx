@@ -5,11 +5,13 @@ import { useRef, useEffect, useState } from "react";
 import { useCart } from '@/components/panier-context'
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useLanguage } from "@/contexts/LanguageContext";
 import "../page.css";
 import "./panier.css";
 
 export default function Panier() {
   const { cartItems, removeFromCart, increaseQty, decreaseQty, cartTotal, appliedPromo, setAppliedPromo, finalTotal } = useCart();
+  const { t } = useLanguage();
   const router = useRouter();
   const rightRef = useRef(null);
   const [leftHeight, setLeftHeight] = useState(null);
@@ -41,14 +43,14 @@ export default function Panier() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setPromoError(data.message || "Code invalide");
+        setPromoError(data.message || t.cart.promoInvalid);
         setAppliedPromo(null);
         return;
       }
       setAppliedPromo({ code: data.promo.code, type: data.promo.type, value: data.promo.value, discount: data.discount });
       setPromoInput("");
     } catch {
-      setPromoError("Erreur lors de la vérification");
+      setPromoError(t.cart.promoError);
     } finally {
       setPromoLoading(false);
     }
@@ -65,8 +67,8 @@ export default function Panier() {
       <div className="container">
         <Navbar />
         <div className="cart-empty">
-          <p>Votre panier est vide 🛒</p>
-          <Link href="/">Retour à la boutique</Link>
+          <p>{t.cart.empty}</p>
+          <Link href="/">{t.cart.backToShop}</Link>
         </div>
         <Footer />
       </div>
@@ -85,7 +87,7 @@ export default function Panier() {
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Retour
+            {t.cart.back}
           </button>
 
           {/* GAUCHE */}
@@ -98,7 +100,7 @@ export default function Panier() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
-                Mon panier
+                {t.cart.title}
               </h2>
 
               <ul className="cart-list">
@@ -113,12 +115,12 @@ export default function Panier() {
 
                     <div className="cart-item-info">
                       <strong>{item.name}</strong>
-                      <p>Cette maille est vraiment trop cool</p>
-                      {item.color && <p>Couleur : {item.color}</p>}
+                      <p>{t.cart.itemSubtitle}</p>
+                      {item.color && <p>{t.cart.colorLabel} {item.color}</p>}
                       <div className="qty-controls">
-                        <button onClick={() => decreaseQty(item._id)} aria-label="Diminuer la quantité">−</button>
+                        <button onClick={() => decreaseQty(item._id)} aria-label={t.cart.decreaseQty}>−</button>
                         <span>{item.quantity}</span>
-                        <button onClick={() => increaseQty(item._id)} aria-label="Augmenter la quantité">+</button>
+                        <button onClick={() => increaseQty(item._id)} aria-label={t.cart.increaseQty}>+</button>
                       </div>
                     </div>
 
@@ -127,9 +129,9 @@ export default function Panier() {
                       <button
                         className="cart-remove"
                         onClick={() => removeFromCart(item._id)}
-                        aria-label="Retirer du panier"
+                        aria-label={t.cart.removeFromCart}
                       >
-                        🗑 Remove
+                        🗑 {t.cart.remove}
                       </button>
                     </div>
 
@@ -148,7 +150,7 @@ export default function Panier() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
                   <line x1="7" y1="7" x2="7.01" y2="7" />
                 </svg>
-                Code promo
+                {t.cart.promoTitle}
               </h3>
 
               {appliedPromo ? (
@@ -157,20 +159,20 @@ export default function Panier() {
                   <span className="promo-applied-discount">
                     -{appliedPromo.type === "percent" ? `${appliedPromo.value}%` : `${appliedPromo.value}€`}
                   </span>
-                  <button className="promo-remove-btn" onClick={handleRemovePromo} aria-label="Retirer le code">✕</button>
+                  <button className="promo-remove-btn" onClick={handleRemovePromo} aria-label={t.cart.promoRemove}>✕</button>
                 </div>
               ) : (
                 <>
                   <div className="promo-input-row">
                     <input
                       type="text"
-                      placeholder="Entre ton code promo"
+                      placeholder={t.cart.promoPlaceholder}
                       value={promoInput}
                       onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoError(""); }}
                       onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
                     />
                     <button onClick={handleApplyPromo} disabled={promoLoading || !promoInput.trim()}>
-                      {promoLoading ? "..." : "Appliquer"}
+                      {promoLoading ? t.cart.promoApplying : t.cart.promoApply}
                     </button>
                   </div>
                   {promoError && <p className="promo-error">{promoError}</p>}
@@ -179,27 +181,27 @@ export default function Panier() {
             </div>
 
             <div className="cart-summary">
-              <h3 className="cart-section-title">Résumé de la commande</h3>
+              <h3 className="cart-section-title">{t.cart.summaryTitle}</h3>
               <div className="summary-row">
-                <span>Sous-total ({cartItems.length})</span>
+                <span>{t.cart.subtotal} ({cartItems.length})</span>
                 <span>{cartTotal}€</span>
               </div>
               {appliedPromo && (
                 <div className="summary-row summary-discount">
-                  <span>Réduction ({appliedPromo.code})</span>
+                  <span>{t.cart.discount} ({appliedPromo.code})</span>
                   <span>−{appliedPromo.discount}€</span>
                 </div>
               )}
               <hr className="summary-divider" />
               <div className="summary-row summary-total">
-                <span>Total</span>
+                <span>{t.cart.total}</span>
                 <span>{finalTotal}€</span>
               </div>
               <button
                 className="checkout-btn"
                 onClick={() => router.push("/checkout")}
               >
-                Procéder au paiement
+                {t.cart.checkout}
               </button>
             </div>
 
