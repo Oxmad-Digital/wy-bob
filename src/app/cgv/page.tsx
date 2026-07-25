@@ -99,22 +99,78 @@ export default function CGV() {
               Livraison
             </h2>
             <p className={styles.text}>
-              Les livraisons sont effectuées à l'adresse indiquée lors de la commande. Les délais
-              et frais de livraison varient selon le mode d'expédition choisi et sont précisés lors
-              du processus de commande. En cas de retard ou de problème de livraison, le client
-              est invité à contacter notre service client.
+              Les livraisons sont effectuées, via notre transporteur Chronopost, à l'adresse
+              indiquée par le client lors de la commande — que celle-ci soit son propre domicile,
+              un point relais ou toute autre adresse de son choix. Les délais et frais de livraison
+              varient selon le mode d'expédition choisi et sont précisés lors du processus de
+              commande. En cas de retard ou de problème de livraison, le client est invité à
+              contacter notre service client.
+            </p>
+            <p className={styles.text}>
+              Conformément à l'article L.216-4 du Code de la consommation, le risque de perte ou
+              d'endommagement du bien est transféré au client au moment où celui-ci, ou un tiers
+              qu'il a désigné (autre que le transporteur), prend physiquement possession du bien.
+              Jusqu'à cette prise de possession effective, ce risque est supporté par Wybob.
             </p>
             <ul className={styles.list}>
               <li><span className={styles.label}>Zone de livraison :</span> France métropolitaine et DOM-TOM. Livraison internationale disponible selon les destinations.</li>
               <li><span className={styles.label}>Délai indicatif :</span> 3 à 5 jours ouvrés pour la France métropolitaine.</li>
               <li><span className={styles.label}>Suivi :</span> Un numéro de suivi est communiqué par email dès l'expédition de la commande.</li>
+              <li><span className={styles.label}>Exactitude de l'adresse :</span> Il appartient au client de vérifier l'exactitude et la complétude de l'adresse de livraison renseignée avant validation de la commande. Wybob ne peut être tenue responsable d'une erreur de saisie commise par le client.</li>
             </ul>
           </section>
 
-          {/* 7. Droit de rétractation */}
+          {/* 7. Responsabilité en cas d'incident de livraison */}
           <section className={styles.section}>
             <h2 className={styles.heading}>
               <span className={styles.numAccent}>7.</span>
+              Responsabilité en cas d'incident de livraison
+            </h2>
+            <p className={styles.text}>
+              En complément de l'article 6, les situations suivantes peuvent survenir après
+              l'expédition d'une commande. Elles sont traitées selon les principes ci-dessous,
+              sans préjudice d'un examen au cas par cas par notre service client.
+            </p>
+            <ul className={styles.list}>
+              <li>
+                <span className={styles.label}>Adresse erronée et colis retourné à l'expéditeur :</span>{' '}
+                si l'adresse fournie par le client est incomplète ou erronée et que le colis, non
+                distribuable, est retourné à Wybob par le transporteur, une réexpédition pourra
+                être proposée au client à sa demande, moyennant de nouveaux frais de livraison à
+                sa charge.
+              </li>
+              <li>
+                <span className={styles.label}>Colis remis au client ou à un tiers qu'il a désigné :</span>{' '}
+                lorsque le colis est livré à l'adresse indiquée par le client — y compris une
+                adresse autre que la sienne (proche, lieu de travail, etc.) qu'il a lui-même choisi
+                de renseigner — et que le transporteur établit une preuve de remise (signature ou
+                preuve de livraison équivalente), la livraison est réputée effectuée conformément à
+                l'article L.216-4 du Code de la consommation. Aucun remboursement ou réexpédition
+                n'est dû de ce seul fait, sauf preuve contraire apportée par le client.
+              </li>
+              <li>
+                <span className={styles.label}>Colis livré à l'adresse correcte sans preuve de remise :</span>{' '}
+                si le colis est livré à l'adresse exacte du client mais que le transporteur ne
+                peut établir de preuve de remise effective à celui-ci ou à un tiers qu'il a désigné,
+                le risque n'est pas réputé transféré et le client peut demander un remboursement ou
+                une réexpédition. Wybob se réserve alors le droit d'exercer un recours contre le
+                transporteur.
+              </li>
+              <li>
+                <span className={styles.label}>Colis déposé à une adresse erronée fournie par le client, sans preuve de remise :</span>{' '}
+                lorsque l'adresse erronée renseignée par le client est à l'origine de la remise du
+                colis à un tiers non désigné (dépôt en boîte aux lettres, par exemple), Wybob
+                examine la situation au cas par cas et n'est pas tenue de procéder à un
+                remboursement ou à une réexpédition gratuite, l'erreur étant à l'origine imputable
+                au client.
+              </li>
+            </ul>
+          </section>
+
+          {/* 8. Droit de rétractation */}
+          <section className={styles.section}>
+            <h2 className={styles.heading}>
+              <span className={styles.numAccent}>8.</span>
               Droit de rétractation
             </h2>
             <p className={styles.text}>
@@ -130,10 +186,10 @@ export default function CGV() {
             </ul>
           </section>
 
-          {/* 8. Garanties légales */}
+          {/* 9. Garanties légales */}
           <section className={styles.section}>
             <h2 className={styles.heading}>
-              <span className={styles.numAccent}>8.</span>
+              <span className={styles.numAccent}>9.</span>
               Garanties légales
             </h2>
             <p className={styles.text}>
@@ -145,10 +201,10 @@ export default function CGV() {
             </ul>
           </section>
 
-          {/* 9. Service client */}
+          {/* 10. Service client */}
           <section className={styles.section}>
             <h2 className={styles.heading}>
-              <span className={styles.numAccent}>9.</span>
+              <span className={styles.numAccent}>10.</span>
               Service client
             </h2>
             <p className={styles.text}>
@@ -158,10 +214,10 @@ export default function CGV() {
             </p>
           </section>
 
-          {/* 10. Droit applicable */}
+          {/* 11. Droit applicable */}
           <section className={styles.section}>
             <h2 className={styles.heading}>
-              <span className={styles.numAccent}>10.</span>
+              <span className={styles.numAccent}>11.</span>
               Droit applicable
             </h2>
             <p className={styles.text}>
