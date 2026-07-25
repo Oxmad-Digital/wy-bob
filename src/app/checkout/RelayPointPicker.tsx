@@ -28,6 +28,12 @@ interface RelayPointPickerProps {
 
 const RADIUS_OPTIONS_KM = [5, 10, 20, 50];
 
+// Chronopost plafonne le nombre de points renvoyés indépendamment du rayon (maxPointChronopost) :
+// sans faire varier ce plafond avec le rayon, un rayon plus large ne renvoie pas plus de points
+// dans une zone dense (le plafond est déjà atteint par les points les plus proches).
+// Le service refuse toute valeur > 25 ("max_pudo_number must be less than or equal to 25").
+const MAX_POINTS_BY_RADIUS_KM: Record<number, number> = { 5: 8, 10: 15, 20: 25, 50: 25 };
+
 export default function RelayPointPicker({ address, zipCode, city, country, value, onChange }: RelayPointPickerProps) {
   const { t } = useLanguage();
   const [points, setPoints] = useState<RelayPoint[]>([]);
@@ -44,7 +50,15 @@ export default function RelayPointPicker({ address, zipCode, city, country, valu
     setLoading(true);
     setError("");
     try {
-      const params = new URLSearchParams({ address, zipCode, city, country: country || "FR", maxDistanceKm: String(radiusKm) });
+      const maxPoints = MAX_POINTS_BY_RADIUS_KM[radiusKm] ?? 8;
+      const params = new URLSearchParams({
+        address,
+        zipCode,
+        city,
+        country: country || "FR",
+        maxDistanceKm: String(radiusKm),
+        maxPoints: String(maxPoints),
+      });
       const res = await fetch(`/api/shipping/relay-points?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) {

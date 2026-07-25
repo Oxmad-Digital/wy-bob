@@ -13,6 +13,8 @@ export async function GET(req: Request) {
   const country = (searchParams.get("country") || "FR").toUpperCase();
   const maxDistanceKmParam = Number(searchParams.get("maxDistanceKm"));
   const maxDistanceKm = Number.isFinite(maxDistanceKmParam) && maxDistanceKmParam > 0 ? maxDistanceKmParam : undefined;
+  const maxPointsParam = Number(searchParams.get("maxPoints"));
+  const maxPoints = Number.isFinite(maxPointsParam) && maxPointsParam > 0 ? maxPointsParam : undefined;
 
   if (!zipCode || !city) {
     return NextResponse.json({ message: "Code postal et ville requis" }, { status: 400 });
@@ -21,7 +23,7 @@ export async function GET(req: Request) {
   const productCode = country === "FR" ? "86" : "49"; // Chrono Relais 13 vs Chronorelais Europe
 
   try {
-    const points = await searchRelayPoints({ address, zipCode, city, countryCode: country, productCode, maxDistanceKm });
+    const points = await searchRelayPoints({ address, zipCode, city, countryCode: country, productCode, maxDistanceKm, maxPoints });
     return NextResponse.json({ points });
   } catch (error) {
     const message = error instanceof ChronopostError ? error.message : "Recherche de points relais indisponible";

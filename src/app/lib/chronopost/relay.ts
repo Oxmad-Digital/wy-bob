@@ -59,6 +59,12 @@ export async function searchRelayPoints(params: SearchRelayPointsParams): Promis
   const responseNode = body?.recherchePointChronopostInterParServiceResponse;
   const result = responseNode?.return ?? responseNode;
 
+  // Code 601 = le filtre de distance n'a laissé aucun point relais (rayon de recherche
+  // trop petit pour la zone) — un résultat vide légitime, pas une panne du service.
+  if (Number(result?.errorCode) === 601) {
+    return [];
+  }
+
   if (result?.errorCode !== undefined && Number(result.errorCode) !== 0) {
     throw new ChronopostError(
       result.errorMessage || `Erreur recherche points relais (code ${result.errorCode})`,
