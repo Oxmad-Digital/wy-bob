@@ -7,12 +7,14 @@ import Footer from "@/components/Footer";
 import { useSession } from "next-auth/react";
 import { computeOrderTotals } from "@/app/lib/pricing";
 import { FALLBACK_SHIPPING_FEE } from "@/app/lib/shipping/zones";
+import { useLanguage } from "@/contexts/LanguageContext";
 import "../page.css";
 import "./checkout.css";
 
 export default function CheckoutPage() {
   const { finalTotal } = useCart();
   const { status } = useSession();
+  const { t } = useLanguage();
 
   // Montant initial approximatif pour l'amorçage du Payment Element — corrigé dès que
   // CheckoutForm obtient la vraie estimation (poids réel + zone) via elements.update().
@@ -25,7 +27,7 @@ export default function CheckoutPage() {
       <div className="container">
         <Navbar />
         <div className="checkoutZone">
-          <p className="checkout-loading">Chargement...</p>
+          <p className="checkout-loading">{t.checkout.loading}</p>
         </div>
         <Footer />
       </div>

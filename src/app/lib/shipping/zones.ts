@@ -154,7 +154,7 @@ export const FALLBACK_SHIPPING_FEE = 10;
 
 export interface DeliveryEstimate {
   carrier: string; // nom du produit Chronopost réellement utilisé (voir chronopost/constants.ts)
-  delay: string;
+  delay: { fr: string; en: string };
 }
 
 // Délais Chronopost par zone/mode. Le délai France (Chrono 13 / Chrono Relais 13 : J+1
@@ -164,19 +164,19 @@ export interface DeliveryEstimate {
 // avec les délais réels annoncés par Chronopost pour ces zones avant mise en production.
 export const DELIVERY_ESTIMATES: Record<ShippingZone, Record<ShippingMode, DeliveryEstimate>> = {
   FR: {
-    home: { carrier: "Chronopost Chrono 13", delay: "livraison en 24h (J+1 avant 13h)" },
-    relay: { carrier: "Chronopost Relais 13", delay: "retrait en point relais sous 24 à 48h" },
+    home: { carrier: "Chronopost Chrono 13", delay: { fr: "livraison en 24h (J+1 avant 13h)", en: "delivery within 24h (next day by 1pm)" } },
+    relay: { carrier: "Chronopost Relais 13", delay: { fr: "retrait en point relais sous 24 à 48h", en: "pickup at relay point within 24 to 48h" } },
   },
   EU_PROCHE: {
-    home: { carrier: "Chronopost Classic", delay: "livraison en 2 à 4 jours ouvrés" },
-    relay: { carrier: "Chronorelais Europe", delay: "retrait en point relais en 2 à 4 jours ouvrés" },
+    home: { carrier: "Chronopost Classic", delay: { fr: "livraison en 2 à 4 jours ouvrés", en: "delivery in 2 to 4 business days" } },
+    relay: { carrier: "Chronorelais Europe", delay: { fr: "retrait en point relais en 2 à 4 jours ouvrés", en: "pickup at relay point in 2 to 4 business days" } },
   },
   EUROPE_LARGE: {
-    home: { carrier: "Chronopost Classic", delay: "livraison en 3 à 6 jours ouvrés" },
-    relay: { carrier: "Chronorelais Europe", delay: "retrait en point relais en 3 à 6 jours ouvrés" },
+    home: { carrier: "Chronopost Classic", delay: { fr: "livraison en 3 à 6 jours ouvrés", en: "delivery in 3 to 6 business days" } },
+    relay: { carrier: "Chronorelais Europe", delay: { fr: "retrait en point relais en 3 à 6 jours ouvrés", en: "pickup at relay point in 3 to 6 business days" } },
   },
   INTERNATIONAL: {
-    home: { carrier: "Chronopost Classic", delay: "livraison en 5 à 10 jours ouvrés" },
-    relay: { carrier: "Chronorelais Europe", delay: "retrait en point relais en 5 à 10 jours ouvrés" },
+    home: { carrier: "Chronopost Classic", delay: { fr: "livraison en 5 à 10 jours ouvrés", en: "delivery in 5 to 10 business days" } },
+    relay: { carrier: "Chronorelais Europe", delay: { fr: "retrait en point relais en 5 à 10 jours ouvrés", en: "pickup at relay point in 5 to 10 business days" } },
   },
 };

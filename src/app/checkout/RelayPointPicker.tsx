@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export interface RelayPoint {
   id: string;
@@ -23,6 +24,7 @@ interface RelayPointPickerProps {
 }
 
 export default function RelayPointPicker({ address, zipCode, city, country, value, onChange }: RelayPointPickerProps) {
+  const { t } = useLanguage();
   const [points, setPoints] = useState<RelayPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,7 +32,7 @@ export default function RelayPointPicker({ address, zipCode, city, country, valu
 
   const search = async () => {
     if (!zipCode || !city) {
-      setError("Renseignez d'abord le code postal et la ville ci-dessus");
+      setError(t.checkout.relay.missingFields);
       return;
     }
     setLoading(true);
@@ -40,16 +42,16 @@ export default function RelayPointPicker({ address, zipCode, city, country, valu
       const res = await fetch(`/api/shipping/relay-points?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message || "Recherche indisponible");
+        setError(data.message || t.checkout.relay.unavailable);
         setPoints([]);
         return;
       }
       setPoints(data.points || []);
       if ((data.points || []).length === 0) {
-        setError("Aucun point relais trouvé à proximité");
+        setError(t.checkout.relay.noneFound);
       }
     } catch {
-      setError("Erreur serveur");
+      setError(t.checkout.relay.serverError);
     } finally {
       setLoading(false);
       setSearched(true);
@@ -59,7 +61,7 @@ export default function RelayPointPicker({ address, zipCode, city, country, valu
   return (
     <div className="relay-picker">
       <button type="button" className="relay-search-btn" onClick={search} disabled={loading}>
-        {loading ? "Recherche…" : searched ? "Rechercher à nouveau" : "Trouver un point relais"}
+        {loading ? t.checkout.relay.searching : searched ? t.checkout.relay.findAgain : t.checkout.relay.findButton}
       </button>
 
       {error && <p className="relay-error">{error}</p>}
@@ -88,7 +90,7 @@ export default function RelayPointPicker({ address, zipCode, city, country, valu
       )}
 
       {value && (
-        <p className="relay-selected-hint">Point relais sélectionné : <strong>{value.name}</strong></p>
+        <p className="relay-selected-hint">{t.checkout.relay.selectedHint} <strong>{value.name}</strong></p>
       )}
     </div>
   );

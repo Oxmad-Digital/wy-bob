@@ -9,7 +9,7 @@ export function getDeliveryEstimate(params: { country: string; deliveryMethod: S
   return DELIVERY_ESTIMATES[zone][params.deliveryMethod];
 }
 
-export function formatDeliveryLabel(params: { country: string; deliveryMethod: ShippingMode }): string {
+export function formatDeliveryLabel(params: { country: string; deliveryMethod: ShippingMode }, locale: "fr" | "en" = "fr"): string {
   const { carrier, delay } = getDeliveryEstimate(params);
-  return `${carrier} — ${delay}`;
+  return `${carrier} — ${delay[locale]}`;
 }

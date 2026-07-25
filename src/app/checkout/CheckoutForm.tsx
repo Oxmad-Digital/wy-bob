@@ -8,6 +8,7 @@ import { useCart } from "@/components/panier-context";
 import RelayPointPicker, { type RelayPoint } from "./RelayPointPicker";
 import { computeOrderTotals } from "@/app/lib/pricing";
 import { formatDeliveryLabel } from "@/app/lib/shipping/delivery";
+import { useLanguage } from "@/contexts/LanguageContext";
 import "./checkout.css";
 
 // Codes pays ISO2 — requis par l'API Chronopost (domicile FR vs international,
@@ -69,6 +70,7 @@ export default function CheckoutForm() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { cartItems, cartTotal, appliedPromo, finalTotal, setAppliedPromo, clearCart } = useCart();
+  const { t, locale } = useLanguage();
 
   const [firstname, setFirstname] = useState("");
   const [lastname, setLastname] = useState("");
@@ -168,15 +170,15 @@ export default function CheckoutForm() {
   setError(null);
 
   if (!firstname || !lastname || !email || !city || !address) {
-    setError("Veuillez remplir tous les champs obligatoires");
+    setError(t.checkout.errors.requiredFields);
     return;
   }
   if (shipping === "relais" && !relayPoint) {
-    setError("Veuillez sélectionner un point relais");
+    setError(t.checkout.errors.relayPointRequired);
     return;
   }
   if (!cartItems || cartItems.length === 0) {
-    setError("Votre panier est vide");
+    setError(t.checkout.errors.emptyCart);
     return;
   }
   if (!stripe || !elements) return;
@@ -187,7 +189,7 @@ export default function CheckoutForm() {
     // ✅ 1 — Soumettre les éléments Stripe d'abord
     const { error: submitError } = await elements.submit();
     if (submitError) {
-      setError(submitError.message ?? "Erreur de paiement");
+      setError(submitError.message ?? t.checkout.errors.payment);
       setLoading(false);
       return;
     }
@@ -205,7 +207,7 @@ export default function CheckoutForm() {
     });
     if (!res.ok) {
       const err = await res.json();
-      setError(err.error || "Erreur lors de la création du paiement");
+      setError(err.error || t.checkout.errors.paymentIntent);
       setLoading(false);
       return;
     }
@@ -236,7 +238,7 @@ export default function CheckoutForm() {
 
     const orderData = await orderRes.json();
     if (!orderRes.ok) {
-      setError(orderData.message || "Erreur lors de la commande");
+      setError(orderData.message || t.checkout.errors.order);
       setLoading(false);
       return;
     }
@@ -253,7 +255,7 @@ export default function CheckoutForm() {
     });
 
     if (stripeError) {
-      setError(stripeError.message ?? "Erreur de paiement");
+      setError(stripeError.message ?? t.checkout.errors.payment);
       setLoading(false);
       return;
     }
@@ -264,7 +266,7 @@ export default function CheckoutForm() {
 
   } catch (err) {
     console.error("CHECKOUT ERROR:", err);
-    setError("Erreur serveur");
+    setError(t.checkout.errors.server);
   } finally {
     setLoading(false);
   }
@@ -277,58 +279,58 @@ export default function CheckoutForm() {
           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          Retour
+          {t.checkout.back}
         </button>
 
         <div className="checkout-left">
           <div className="checkout-section">
-            <h3 className="checkout-section-title">Contact</h3>
-            <input type="email" placeholder="Tom.exemple@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="checkout-input" required />
-            <input type="tel" placeholder="Téléphone (ex: 034 00 000 00)" value={phone} onChange={(e) => setPhone(e.target.value)} className="checkout-input" />
+            <h3 className="checkout-section-title">{t.checkout.contactTitle}</h3>
+            <input type="email" placeholder={t.checkout.emailPlaceholder} value={email} onChange={(e) => setEmail(e.target.value)} className="checkout-input" required />
+            <input type="tel" placeholder={t.checkout.phonePlaceholder} value={phone} onChange={(e) => setPhone(e.target.value)} className="checkout-input" />
           </div>
 
           <div className="checkout-section">
-            <h3 className="checkout-section-title">Livraison</h3>
+            <h3 className="checkout-section-title">{t.checkout.deliveryTitle}</h3>
             {savedAddresses.length > 0 && (
               <select
                 value={selectedAddressIndex}
                 onChange={(e) => handleSelectSavedAddress(e.target.value)}
                 className="checkout-input"
               >
-                <option value="">Utiliser une adresse enregistrée…</option>
+                <option value="">{t.checkout.useSavedAddress}</option>
                 {savedAddresses.map((addr, i) => (
                   <option key={i} value={i}>
-                    {addr.label || `Adresse ${i + 1}`} — {addr.street}, {addr.city}
+                    {addr.label || `${t.checkout.addressFallback} ${i + 1}`} — {addr.street}, {addr.city}
                   </option>
                 ))}
               </select>
             )}
             <select value={country} onChange={(e) => setCountry(e.target.value)} className="checkout-input">
               {COUNTRY_OPTIONS.map((c) => (
-                <option key={c.code} value={c.code}>{c.label}</option>
+                <option key={c.code} value={c.code}>{t.checkout.countries[c.code as keyof typeof t.checkout.countries] ?? c.label}</option>
               ))}
             </select>
             <div className="checkout-row">
-              <input type="text" placeholder="Prénom" value={firstname} onChange={(e) => setFirstname(e.target.value)} className="checkout-input" required />
-              <input type="text" placeholder="Nom" value={lastname} onChange={(e) => setLastname(e.target.value)} className="checkout-input" required />
+              <input type="text" placeholder={t.checkout.firstnamePlaceholder} value={firstname} onChange={(e) => setFirstname(e.target.value)} className="checkout-input" required />
+              <input type="text" placeholder={t.checkout.lastnamePlaceholder} value={lastname} onChange={(e) => setLastname(e.target.value)} className="checkout-input" required />
             </div>
-            <input type="text" placeholder="Entreprise (optionnel)" value={company} onChange={(e) => setCompany(e.target.value)} className="checkout-input" />
-            <input type="text" placeholder="Adresse" value={address} onChange={(e) => setAddress(e.target.value)} className="checkout-input" required />
+            <input type="text" placeholder={t.checkout.companyPlaceholder} value={company} onChange={(e) => setCompany(e.target.value)} className="checkout-input" />
+            <input type="text" placeholder={t.checkout.addressPlaceholder} value={address} onChange={(e) => setAddress(e.target.value)} className="checkout-input" required />
             <div className="checkout-row">
-              <input type="text" placeholder="Code postal" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} className="checkout-input" />
-              <input type="text" placeholder="Ville" value={city} onChange={(e) => setCity(e.target.value)} className="checkout-input" required />
+              <input type="text" placeholder={t.checkout.postalCodePlaceholder} value={postalCode} onChange={(e) => setPostalCode(e.target.value)} className="checkout-input" />
+              <input type="text" placeholder={t.checkout.cityPlaceholder} value={city} onChange={(e) => setCity(e.target.value)} className="checkout-input" required />
             </div>
           </div>
 
           <div className="checkout-section">
-            <h3 className="checkout-section-title">Mode d'expédition</h3>
+            <h3 className="checkout-section-title">{t.checkout.shippingMethodTitle}</h3>
             <label className="checkout-radio">
               <input type="radio" name="shipping" value="colissimo" checked={shipping === "colissimo"} onChange={() => setShipping("colissimo")} />
-              <span>{formatDeliveryLabel({ country, deliveryMethod: "home" })}</span>
+              <span>{formatDeliveryLabel({ country, deliveryMethod: "home" }, locale)}</span>
             </label>
             <label className="checkout-radio">
               <input type="radio" name="shipping" value="relais" checked={shipping === "relais"} onChange={() => setShipping("relais")} />
-              <span>{formatDeliveryLabel({ country, deliveryMethod: "relay" })}</span>
+              <span>{formatDeliveryLabel({ country, deliveryMethod: "relay" }, locale)}</span>
             </label>
 
             {shipping === "relais" && (
@@ -343,7 +345,7 @@ export default function CheckoutForm() {
                 />
                 <input
                   type="text"
-                  placeholder="Personne habilitée à retirer le colis (optionnel)"
+                  placeholder={t.checkout.pickupNamePlaceholder}
                   value={recipientPickupName}
                   onChange={(e) => setRecipientPickupName(e.target.value)}
                   className="checkout-input"
@@ -353,14 +355,14 @@ export default function CheckoutForm() {
           </div>
 
           <div className="checkout-section">
-            <h3 className="checkout-section-title">Paiement</h3>
+            <h3 className="checkout-section-title">{t.checkout.paymentTitle}</h3>
             <PaymentElement />
           </div>
 
           {error && <p className="checkout-form-error">{error}</p>}
 
           <button className="checkout-submit" onClick={handleSubmit} disabled={loading || shippingFee === null}>
-            {loading ? "Envoi..." : "Vérifier la commande"}
+            {loading ? t.checkout.submitting : t.checkout.submit}
           </button>
         </div>
 
@@ -383,24 +385,24 @@ export default function CheckoutForm() {
           )}
 
           <div className="checkout-summary">
-            <h3 className="checkout-summary-title">Résumé de la commande</h3>
+            <h3 className="checkout-summary-title">{t.checkout.summaryTitle}</h3>
             <div className="checkout-summary-row">
-              <span>Sous-total ({totalQty})</span>
+              <span>{t.checkout.subtotal} ({totalQty})</span>
               <span>{cartTotal} €</span>
             </div>
             {appliedPromo && (
               <div className="checkout-summary-row checkout-summary-discount">
-                <span>Réduction ({appliedPromo.code})</span>
+                <span>{t.checkout.discount} ({appliedPromo.code})</span>
                 <span>−{appliedPromo.discount} €</span>
               </div>
             )}
             <div className="checkout-summary-row">
-              <span>Livraison</span>
+              <span>{t.checkout.deliveryLabel}</span>
               <span>{shippingFee === null ? "…" : `${livraison} €`}</span>
             </div>
             <div className="checkout-summary-divider" />
             <div className="checkout-summary-row checkout-summary-total">
-              <span>Total</span>
+              <span>{t.checkout.total}</span>
               <span>{total} €</span>
             </div>
           </div>

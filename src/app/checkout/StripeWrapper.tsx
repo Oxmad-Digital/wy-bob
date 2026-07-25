@@ -3,15 +3,18 @@
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import CheckoutForm from "./CheckoutForm";
+import { useLanguage } from "@/contexts/LanguageContext";
 import "./checkout.css";
 
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 export default function StripeWrapper({ total }: { total: number }) {
+  const { t } = useLanguage();
+
   if (!stripeKey) {
     return (
-      <p className="checkout-loading">Le paiement en ligne sera disponible prochainement.</p>
+      <p className="checkout-loading">{t.checkout.stripeUnavailable}</p>
     );
   }
 

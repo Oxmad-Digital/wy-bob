@@ -6,6 +6,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useCart } from "@/components/panier-context";
+import { useLanguage } from "@/contexts/LanguageContext";
 import "../../page.css";
 import "../checkout.css";
 import "./success.css";
@@ -13,6 +14,7 @@ import "./success.css";
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const { clearCart } = useCart();
+  const { t } = useLanguage();
   // Absent (arrivée directe depuis CheckoutForm après confirmPayment sans redirection) ou
   // "succeeded" (retour d'un moyen de paiement redirigé type Bancontact/MB Way) = paiement OK.
   const redirectStatus = searchParams.get("redirect_status");
@@ -38,9 +40,9 @@ function CheckoutSuccessContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
-              <h1 className="checkout-result-title">Paiement non abouti</h1>
-              <p className="checkout-result-text">Le paiement a été annulé ou refusé. Votre commande n&apos;a pas été validée.</p>
-              <Link href="/checkout" className="checkout-result-cta checkout-result-cta--primary">Réessayer</Link>
+              <h1 className="checkout-result-title">{t.checkout.success.failedTitle}</h1>
+              <p className="checkout-result-text">{t.checkout.success.failedText}</p>
+              <Link href="/checkout" className="checkout-result-cta checkout-result-cta--primary">{t.checkout.success.retry}</Link>
             </>
           ) : (
             <>
@@ -49,9 +51,9 @@ function CheckoutSuccessContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h1 className="checkout-result-title">Paiement reçu</h1>
-              <p className="checkout-result-text">Votre paiement a bien été validé. Vous recevrez un email de confirmation sous peu.</p>
-              <Link href="/" className="checkout-result-cta checkout-result-cta--primary">Retour à l&apos;accueil</Link>
+              <h1 className="checkout-result-title">{t.checkout.success.successTitle}</h1>
+              <p className="checkout-result-text">{t.checkout.success.successText}</p>
+              <Link href="/" className="checkout-result-cta checkout-result-cta--primary">{t.checkout.success.backHome}</Link>
             </>
           )}
         </div>
