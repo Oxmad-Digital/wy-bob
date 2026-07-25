@@ -8,7 +8,6 @@ import { TOAST_DURATION } from "../../_constants";
 
 const ORDER_STATUS = {
   pending:    { label: "En attente",  cls: "s-pending"    },
-  confirmed:  { label: "Confirmée",   cls: "s-confirmed"  },
   processing: { label: "En cours",    cls: "s-processing" },
   paid:       { label: "Payée",       cls: "s-paid"       },
   shipped:    { label: "Expédiée",    cls: "s-shipped"    },

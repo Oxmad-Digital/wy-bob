@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/app/lib/db";
 import Order from "@/app/models/Order";
+import Product from "@/app/models/Product";
 import { auth } from "@/auth";
 import mongoose from "mongoose";
 import { applyOrderStatusChange } from "@/app/lib/orderStatusChange";
@@ -61,7 +62,6 @@ export async function PATCH(req, { params }) {
 
     const allowedStatus = [
       "pending",
-      "confirmed",
       "processing",
       "paid",
       "shipped",
@@ -117,6 +117,16 @@ export async function DELETE(req, { params }) {
       return NextResponse.json(
         { message: `Impossible de supprimer une commande ${order.status}` },
         { status: 400 }
+      );
+    }
+
+    // Le stock avait été réservé à la création — s'il n'a pas déjà été restitué par une
+    // annulation, on le restitue avant de supprimer la commande.
+    if (order.status !== "cancelled") {
+      await Promise.all(
+        order.products.map((line) =>
+          Product.updateOne({ _id: line.product }, { $inc: { stock: line.quantity } })
+        )
       );
     }
 

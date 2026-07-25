@@ -15,7 +15,6 @@ const EMPTY_CUSTOMER_FORM = {
 
 const STATUS_OPTIONS = [
   { value: "pending",    label: "En attente"     },
-  { value: "confirmed",  label: "Confirmée"      },
   { value: "paid",       label: "Payée"          },
   { value: "processing", label: "En préparation" },
   { value: "shipped",    label: "Expédiée"       },
@@ -32,7 +31,7 @@ const PAYMENT_LABELS = {
 
 // Ordre "naturel" du cycle de vie d'une commande — sert à repérer les retours en arrière.
 // "cancelled" est volontairement exclu : c'est une sortie de cycle, pas une étape.
-const STATUS_SEQUENCE = ["pending", "confirmed", "paid", "processing", "shipped", "delivered"];
+const STATUS_SEQUENCE = ["pending", "paid", "processing", "shipped", "delivered"];
 
 function isSensitiveTransition(from, to) {
   if (to === "cancelled" || from === "cancelled") return true;
@@ -241,72 +240,15 @@ export default function AdminOrderDetailPage() {
         </div>
       )}
 
-      {/* Topbar */}
-      <div className="od-topbar">
-        <Link href="/admin/orders" className="od-back-btn">← Commandes</Link>
-        <div className="od-topbar-center">
-          <h1 className="od-title">Commande <span className="od-ref">#{orderNumber}</span></h1>
-          {order.createdAt && (
-            <span className="od-date-top">
-              {new Date(order.createdAt).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })}
-            </span>
-          )}
-        </div>
-        <span className={`ao-status-badge ao-status-${order.status}`}>
-          {STATUS_OPTIONS.find(s => s.value === order.status)?.label || order.status}
-        </span>
-      </div>
-
-      <div className="od-grid">
-
-        {/* ── Client ── */}
-        <div className="od-card">
-          <div className="od-card-title-row">
-            <h2 className="od-card-title">Client</h2>
-            {!editingCustomer && (
-              <button type="button" className="od-edit-btn" onClick={startEditCustomer}>
-                ✎ Corriger
-              </button>
-            )}
-          </div>
-
-          {!editingCustomer ? (
-            <>
-              <div className="od-client-row">
-                <div className="od-avatar">{initials}</div>
-                <div>
-                  <div className="od-client-name">{fullName}</div>
-                  {c.email && (
-                    <a href={`mailto:${c.email}`} className="od-client-email">{c.email}</a>
-                  )}
-                  {c.phone && <div className="od-client-phone">{c.phone}</div>}
-                </div>
-              </div>
-              {(c.address || c.city) && (
-                <div className="od-address-block">
-                  <div className="od-address-label">Adresse de livraison</div>
-                  {c.address && <div className="od-address-line">{c.address}</div>}
-                  {c.city    && <div className="od-address-city">{[c.postalCode, c.city].filter(Boolean).join(" ")}</div>}
-                  {c.country && <div className="od-address-line">{COUNTRY_OPTIONS.find(o => o.code === c.country)?.label || c.country}</div>}
-                </div>
-              )}
-              {order.shipping?.relayPoint?.id && (
-                <div className="od-address-block">
-                  <div className="od-address-label">Point relais</div>
-                  <div className="od-address-line">{order.shipping.relayPoint.name}</div>
-                  <div className="od-address-city">{order.shipping.relayPoint.zipCode} {order.shipping.relayPoint.city}</div>
-                  {order.recipientPickupName && (
-                    <div className="od-client-phone">Retrait par : {order.recipientPickupName}</div>
-                  )}
-                </div>
-              )}
-            </>
-          ) : (
+      {editingCustomer && (
+        <div className="od-modal-overlay" onClick={() => !savingCustomer && setEditingCustomer(false)}>
+          <div className="od-modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <h2 className="od-card-title">Corriger les coordonnées</h2>
+            <p className="od-status-hint">
+              Corrige ici une faute de saisie (adresse, code postal, pays…) qui bloquerait la
+              génération de l&apos;étiquette Chronopost, puis régénère l&apos;étiquette ci-dessous.
+            </p>
             <div className="od-customer-form">
-              <p className="od-status-hint">
-                Corrige ici une faute de saisie (adresse, code postal, pays…) qui bloquerait la
-                génération de l&apos;étiquette Chronopost, puis régénère l&apos;étiquette ci-dessous.
-              </p>
               <div className="od-customer-form-row">
                 <div className="od-ship-form-field">
                   <label className="od-ship-form-label">Prénom</label>
@@ -361,6 +303,64 @@ export default function AdminOrderDetailPage() {
                   Annuler
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Topbar */}
+      <div className="od-topbar">
+        <Link href="/admin/orders" className="od-back-btn">← Commandes</Link>
+        <div className="od-topbar-center">
+          <h1 className="od-title">Commande <span className="od-ref">#{orderNumber}</span></h1>
+          {order.createdAt && (
+            <span className="od-date-top">
+              {new Date(order.createdAt).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })}
+            </span>
+          )}
+        </div>
+        <span className={`ao-status-badge ao-status-${order.status}`}>
+          {STATUS_OPTIONS.find(s => s.value === order.status)?.label || order.status}
+        </span>
+      </div>
+
+      <div className="od-grid">
+
+        {/* ── Client ── */}
+        <div className="od-card">
+          <div className="od-card-title-row">
+            <h2 className="od-card-title">Client</h2>
+            <button type="button" className="od-edit-btn" onClick={startEditCustomer}>
+              ✎ Corriger
+            </button>
+          </div>
+
+          <div className="od-client-row">
+            <div className="od-avatar">{initials}</div>
+            <div>
+              <div className="od-client-name">{fullName}</div>
+              {c.email && (
+                <a href={`mailto:${c.email}`} className="od-client-email">{c.email}</a>
+              )}
+              {c.phone && <div className="od-client-phone">{c.phone}</div>}
+            </div>
+          </div>
+          {(c.address || c.city) && (
+            <div className="od-address-block">
+              <div className="od-address-label">Adresse de livraison</div>
+              {c.address && <div className="od-address-line">{c.address}</div>}
+              {c.city    && <div className="od-address-city">{[c.postalCode, c.city].filter(Boolean).join(" ")}</div>}
+              {c.country && <div className="od-address-line">{COUNTRY_OPTIONS.find(o => o.code === c.country)?.label || c.country}</div>}
+            </div>
+          )}
+          {order.shipping?.relayPoint?.id && (
+            <div className="od-address-block">
+              <div className="od-address-label">Point relais</div>
+              <div className="od-address-line">{order.shipping.relayPoint.name}</div>
+              <div className="od-address-city">{order.shipping.relayPoint.zipCode} {order.shipping.relayPoint.city}</div>
+              {order.recipientPickupName && (
+                <div className="od-client-phone">Retrait par : {order.recipientPickupName}</div>
+              )}
             </div>
           )}
         </div>

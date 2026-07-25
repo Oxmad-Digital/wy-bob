@@ -1,12 +1,12 @@
 // app/lib/orderStatusChange.js
 import Order from "@/app/models/Order";
+import Product from "@/app/models/Product";
 import { sendEmail } from "@/app/lib/mailer";
 import { getOrderStatusUpdateEmailTemplate } from "@/app/lib/emailTemplates";
 import { generateShipmentForOrder, markShippingError } from "@/app/lib/chronopost/orderShipment";
 
 export const STATUS_LABELS = {
   pending: { label: "En attente", icon: "⏳", color: "#f59e0b" },
-  confirmed: { label: "Confirmée", icon: "✔️", color: "#3b82f6" },
   paid: { label: "Payée", icon: "💰", color: "#10b981" },
   processing: { label: "En préparation", icon: "📦", color: "#8b5cf6" },
   shipped: { label: "Expédiée", icon: "🚚", color: "#06b6d4" },
@@ -16,7 +16,6 @@ export const STATUS_LABELS = {
 
 const STATUS_MESSAGES = {
   pending: "Votre commande est en attente de traitement.",
-  confirmed: "Bonne nouvelle ! Votre commande a été confirmée.",
   paid: "Votre paiement a été reçu. Merci !",
   processing: "Votre commande est en cours de préparation.",
   shipped: "Votre commande a été expédiée ! Elle arrivera bientôt.",
@@ -31,8 +30,22 @@ const STATUS_MESSAGES = {
  * Stripe (confirmation automatique de paiement) pour ne pas dupliquer cette logique.
  */
 export async function applyOrderStatusChange(orderId, status) {
+  const previousOrder = await Order.findById(orderId).select("status products");
+  if (!previousOrder) return null;
+  const wasAlreadyCancelled = previousOrder.status === "cancelled";
+
   const order = await Order.findByIdAndUpdate(orderId, { status }, { new: true });
   if (!order) return null;
+
+  // Le stock avait été réservé à la création de la commande — on le restitue à
+  // l'annulation, une seule fois (pas de double restitution si déjà annulée).
+  if (status === "cancelled" && !wasAlreadyCancelled) {
+    await Promise.all(
+      previousOrder.products.map((line) =>
+        Product.updateOne({ _id: line.product }, { $inc: { stock: line.quantity } })
+      )
+    );
+  }
 
   if (["paid", "processing"].includes(status) && !order.shipping?.skybillNumber) {
     try {

@@ -9,7 +9,6 @@ const PER_PAGE = 20;
 
 const STATUS_OPTIONS = [
   { value: "pending",    label: "En attente"     },
-  { value: "confirmed",  label: "Confirmée"      },
   { value: "paid",       label: "Payée"          },
   { value: "processing", label: "En préparation" },
   { value: "shipped",    label: "Expédiée"       },

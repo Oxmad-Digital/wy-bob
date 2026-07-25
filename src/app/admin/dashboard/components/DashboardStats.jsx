@@ -12,7 +12,6 @@ const PIE_COLORS = ["#F9C464", "#1B1843", "#78716c", "#c4b5a5", "#e7e5e4"];
 
 const STATUS_LABELS = {
   pending:    "En attente",
-  confirmed:  "Confirmée",
   processing: "En traitement",
   paid:       "Payée",
   shipped:    "Expédiée",
@@ -433,7 +432,6 @@ function Alert({ type, message }) {
 function StatusBadge({ status }) {
   const c = {
     pending:    { bg: "#fffbf0", text: "#7c5200",  border: "#eddcb0" },
-    confirmed:  { bg: "#eff6ff", text: "#1e3a5f",  border: "#bfdbfe" },
     processing: { bg: "#faf5ff", text: "#5b21b6",  border: "#ddd6fe" },
     paid:       { bg: "#f0fdf4", text: "#166534",  border: "#bbf7d0" },
     shipped:    { bg: "#ecfeff", text: "#155e75",  border: "#a5f3fc" },

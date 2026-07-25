@@ -39,7 +39,6 @@ export default function DashboardOverviewClient({
 
   const STATUS_BADGE: Record<string, string> = {
     pending:    "db-badge db-badge-pending",
-    confirmed:  "db-badge db-badge-confirmed",
     processing: "db-badge db-badge-processing",
     paid:       "db-badge db-badge-paid",
     shipped:    "db-badge db-badge-shipped",

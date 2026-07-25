@@ -50,10 +50,20 @@ export async function POST(req, { params }) {
       order.shipping.lastTrackedAt = new Date();
       await order.save();
 
+      let currentStatus = order.status;
+
+      // Le premier événement de suivi signifie que le colis a été scanné par le
+      // transporteur : la commande a donc quitté la préparation, même si l'admin n'a
+      // pas cliqué sur "Expédiée" manuellement.
+      if (tracking.events?.length > 0 && ["paid", "processing"].includes(currentStatus)) {
+        resultOrder = (await applyOrderStatusChange(order._id.toString(), "shipped")) || order;
+        currentStatus = resultOrder.status;
+      }
+
       const label = tracking.statusLabel || "";
       const looksDelivered = DELIVERED_HINT.test(label) && !DELIVERED_EXCLUDE.test(label);
 
-      if (looksDelivered && !["delivered", "cancelled"].includes(order.status)) {
+      if (looksDelivered && !["delivered", "cancelled"].includes(currentStatus)) {
         try {
           const pod = await searchPOD(order.shipping.skybillNumber);
           if (pod.available && pod.base64) {

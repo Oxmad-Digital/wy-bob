@@ -122,6 +122,29 @@
 .od-customer-form-actions { display: flex; align-items: center; gap: 14px; margin-top: 4px; }
 .od-customer-cancel-btn { border-top: none; padding: 9px 0; width: auto; }
 
+/* Modale de correction client */
+.od-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.od-modal-dialog {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+  padding: 28px 28px 24px;
+  max-width: 520px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
 /* Client card */
 .od-client-row {
   display: flex;
@@ -190,7 +213,6 @@
 
 /* Status select (shared colors) */
 .ao-status-pending    { background: #fffbeb; color: #b45309; }
-.ao-status-confirmed  { background: #fef9ec; color: #c58b00; }
 .ao-status-processing { background: #f5f3ff; color: #6d28d9; }
 .ao-status-paid       { background: #f0fdf4; color: #15803d; }
 .ao-status-shipped    { background: #ecfeff; color: #0e7490; }

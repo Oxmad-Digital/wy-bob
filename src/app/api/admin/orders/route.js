@@ -48,7 +48,7 @@ export async function GET(request) {
       Order.countDocuments(),
     ]);
 
-    const stats = { total: totalAll, pending: 0, confirmed: 0, processing: 0, paid: 0, shipped: 0, delivered: 0, cancelled: 0 };
+    const stats = { total: totalAll, pending: 0, processing: 0, paid: 0, shipped: 0, delivered: 0, cancelled: 0 };
     statsAgg.forEach(s => { if (s._id in stats) stats[s._id] = s.count; });
 
     return NextResponse.json({

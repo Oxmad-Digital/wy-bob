@@ -193,6 +193,16 @@ export async function POST(req) {
 
     console.log("✅ Commande créée:", order._id, "N°", order.orderNumber);
 
+    // Le stock est réservé dès la création de la commande (avant même le paiement) ; il
+    // est restauré si la commande est annulée — voir applyOrderStatusChange.
+    await Promise.all(
+      products.map((line) =>
+        Product.updateOne({ _id: line.product }, [
+          { $set: { stock: { $max: [0, { $subtract: ["$stock", line.quantity] }] } } },
+        ])
+      )
+    );
+
     const normalizedEmail = email.toLowerCase();
     let existingCustomer = await Customer.findOne({ email: normalizedEmail });
 

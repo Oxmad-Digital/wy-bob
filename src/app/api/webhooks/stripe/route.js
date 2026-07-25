@@ -40,7 +40,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Commande non trouvée, nouvelle tentative attendue" }, { status: 404 });
     }
 
-    if (order.status === "pending" || order.status === "confirmed") {
+    if (order.status === "pending") {
       await applyOrderStatusChange(order._id.toString(), "paid");
     }
   }

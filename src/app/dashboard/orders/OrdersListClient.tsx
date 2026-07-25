@@ -14,7 +14,7 @@ type Order = {
   customer?: { address?: string; city?: string };
 };
 
-const STEP_KEYS = ["pending", "confirmed", "paid", "processing", "shipped", "delivered"] as const;
+const STEP_KEYS = ["pending", "paid", "processing", "shipped", "delivered"] as const;
 
 export default function OrdersListClient({ orders }: { orders: Order[] }) {
   const { t, locale } = useLanguage();
@@ -23,7 +23,6 @@ export default function OrdersListClient({ orders }: { orders: Order[] }) {
 
   const STATUS_BADGE: Record<string, string> = {
     pending:    "db-badge db-badge-pending",
-    confirmed:  "db-badge db-badge-confirmed",
     processing: "db-badge db-badge-processing",
     paid:       "db-badge db-badge-paid",
     shipped:    "db-badge db-badge-shipped",
@@ -51,7 +50,6 @@ export default function OrdersListClient({ orders }: { orders: Order[] }) {
 
               const timelineLabels = [
                 o.timeline.pending,
-                o.timeline.confirmed,
                 o.timeline.paid,
                 o.timeline.processing,
                 o.timeline.shipped,

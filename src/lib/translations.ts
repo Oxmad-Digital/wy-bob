@@ -320,7 +320,6 @@ export const translations = {
         productRemoved: "Produit supprimé",
         statuses: {
           pending: "En attente",
-          confirmed: "Confirmée",
           paid: "Payée",
           processing: "En préparation",
           shipped: "Expédiée",
@@ -329,7 +328,6 @@ export const translations = {
         },
         timeline: {
           pending: "En attente",
-          confirmed: "Confirmée",
           paid: "Payée",
           processing: "Préparation",
           shipped: "Expédiée",
@@ -701,7 +699,6 @@ export const translations = {
         productRemoved: "Removed product",
         statuses: {
           pending: "Pending",
-          confirmed: "Confirmed",
           paid: "Paid",
           processing: "Processing",
           shipped: "Shipped",
@@ -710,7 +707,6 @@ export const translations = {
         },
         timeline: {
           pending: "Pending",
-          confirmed: "Confirmed",
           paid: "Paid",
           processing: "Processing",
           shipped: "Shipped",
