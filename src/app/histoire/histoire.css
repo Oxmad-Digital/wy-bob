@@ -42,7 +42,6 @@
   scroll-snap-align: start;
   scroll-snap-stop: always;
   display: flex;
-  align-items: center;
   justify-content: center;
   overflow: hidden;
   box-sizing: border-box;
