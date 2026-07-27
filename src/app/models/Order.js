@@ -1,4 +1,8 @@
 import mongoose from "mongoose";
+// Le schéma référence "Product" (ref, plus bas) : sans cet import, populate("products.product")
+// plante en MissingSchemaError si aucun autre module n'a déjà enregistré ce modèle dans
+// l'exécution en cours (dépend de l'ordre de chargement au cold start Vercel).
+import "@/app/models/Product";
 
 const OrderSchema = new mongoose.Schema(
   {
