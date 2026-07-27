@@ -84,6 +84,57 @@ export function getOrderStatusUpdateEmailTemplate({ firstname, orderNumber, stat
   `;
 }
 
+export function getExtraPaymentEmailTemplate({ firstname, orderNumber, reason, amount, paymentUrl }) {
+  return `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background: #f9f9f9; border-radius: 16px;">
+
+      <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="color: #1B1843; font-size: 28px; font-weight: 700;">WYBOB 🎩</h1>
+      </div>
+
+      <h2 style="color: #1B1843; font-size: 22px; text-align: center;">
+        Paiement complémentaire requis
+      </h2>
+
+      <p style="color: #444; font-size: 16px; line-height: 1.6; text-align: center; margin: 20px 0;">
+        Bonjour ${firstname},<br/>
+        ${reason || "Un complément est nécessaire pour finaliser votre commande"} concernant votre commande <strong>#${orderNumber}</strong>.
+      </p>
+
+      <div style="background: #fff; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center;">
+        <p style="margin: 0 0 8px; color: #888; font-size: 13px;">Montant à régler</p>
+        <p style="margin: 0; color: #1B1843; font-size: 24px; font-weight: 700;">${Number(amount).toFixed(2)} €</p>
+      </div>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${paymentUrl}" style="
+          background-color: #F9C464;
+          color: #1B1843;
+          padding: 14px 40px;
+          border-radius: 50px;
+          text-decoration: none;
+          font-weight: 700;
+          font-size: 16px;
+          display: inline-block;
+        ">
+          Procéder au paiement
+        </a>
+      </div>
+
+      <p style="color: #888; font-size: 13px; text-align: center;">
+        Pour toute question, contactez-nous à support@wybob.fr
+      </p>
+
+      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+
+      <p style="color: #888; font-size: 12px; text-align: center;">
+        © 2026 WYBOB
+      </p>
+
+    </div>
+  `;
+}
+
 export function getVerificationEmailTemplate(name, dashboardUrl) {
   return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background: #f9f9f9; border-radius: 16px;">

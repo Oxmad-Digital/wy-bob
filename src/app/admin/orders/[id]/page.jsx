@@ -85,6 +85,9 @@ export default function AdminOrderDetailPage() {
   const [editingCustomer, setEditingCustomer] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
   const [customerForm, setCustomerForm] = useState(EMPTY_CUSTOMER_FORM);
+  const [extraAmount, setExtraAmount] = useState("");
+  const [extraReason, setExtraReason] = useState("");
+  const [sendingExtraPayment, setSendingExtraPayment] = useState(false);
 
   const showToast = (msg, type = "success") => {
     setToast({ message: msg, type });
@@ -194,6 +197,29 @@ export default function AdminOrderDetailPage() {
       showToast("Erreur serveur", "error");
     } finally {
       setTracking(false);
+    }
+  };
+
+  const sendExtraPayment = async () => {
+    const amount = Number(extraAmount);
+    if (!Number.isFinite(amount) || amount <= 0) { showToast("Montant invalide", "error"); return; }
+    setSendingExtraPayment(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${id}/extra-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, reason: extraReason }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur", "error"); return; }
+      setOrder(data);
+      setExtraAmount("");
+      setExtraReason("");
+      showToast("Lien de paiement envoyé au client");
+    } catch {
+      showToast("Erreur serveur", "error");
+    } finally {
+      setSendingExtraPayment(false);
     }
   };
 
@@ -409,6 +435,57 @@ export default function AdminOrderDetailPage() {
               );
             })}
           </div>
+        </div>
+
+        {/* ── Paiement complémentaire ── */}
+        <div className="od-card">
+          <h2 className="od-card-title">Paiement complémentaire</h2>
+          <p className="od-status-hint">
+            Génère un lien de paiement Stripe à montant libre (ex. frais de réexpédition
+            suite à une correction d&apos;adresse) et l&apos;envoie par email au client.
+          </p>
+          <div className="od-ship-form-field">
+            <label className="od-ship-form-label">Motif</label>
+            <input
+              className="od-ship-input"
+              placeholder="Ex. Frais de réexpédition"
+              value={extraReason}
+              onChange={(e) => setExtraReason(e.target.value)}
+            />
+          </div>
+          <div className="od-ship-form-field">
+            <label className="od-ship-form-label">Montant (€)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              className="od-ship-input"
+              value={extraAmount}
+              onChange={(e) => setExtraAmount(e.target.value)}
+            />
+          </div>
+          <button
+            type="button"
+            className="od-ship-generate-btn"
+            disabled={sendingExtraPayment}
+            onClick={sendExtraPayment}
+          >
+            {sendingExtraPayment ? "Envoi…" : "Envoyer le lien de paiement"}
+          </button>
+
+          {order.extraPayments?.length > 0 && (
+            <div className="od-extra-payments-list">
+              {order.extraPayments.slice().reverse().map((ep) => (
+                <div key={ep._id} className="od-extra-payment-row">
+                  <span className="od-extra-payment-reason">{ep.reason || "Paiement complémentaire"}</span>
+                  <span className="od-extra-payment-amount">{Number(ep.amount).toFixed(2)} €</span>
+                  <span className={`od-extra-payment-status od-extra-payment-${ep.status}`}>
+                    {ep.status === "paid" ? "✅ Payé" : ep.status === "cancelled" ? "✕ Annulé" : "⏳ En attente"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>

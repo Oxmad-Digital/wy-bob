@@ -227,6 +227,30 @@
   font-style: italic;
 }
 
+/* Paiement complémentaire */
+.od-extra-payments-list {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.od-extra-payment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #f5f5f4;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+.od-extra-payment-reason { color: #292524; font-weight: 600; flex: 1; }
+.od-extra-payment-amount { color: #57534e; white-space: nowrap; }
+.od-extra-payment-status { font-size: 12px; font-weight: 700; white-space: nowrap; }
+.od-extra-payment-pending   { color: #b45309; }
+.od-extra-payment-paid      { color: #15803d; }
+.od-extra-payment-cancelled { color: #b91c1c; }
+
 .od-status-grid {
   display: flex;
   flex-wrap: wrap;

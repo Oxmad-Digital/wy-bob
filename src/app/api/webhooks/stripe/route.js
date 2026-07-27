@@ -45,5 +45,21 @@ export async function POST(request) {
     }
   }
 
+  if (event.type === "checkout.session.completed") {
+    const checkoutSession = event.data.object;
+
+    if (checkoutSession.metadata?.type === "extra_payment") {
+      await connectDB();
+      const order = await Order.findById(checkoutSession.metadata.orderId);
+      const extraPayment = order?.extraPayments?.id(checkoutSession.metadata.extraPaymentId);
+
+      if (extraPayment && extraPayment.status !== "paid") {
+        extraPayment.status = "paid";
+        extraPayment.paidAt = new Date();
+        await order.save();
+      }
+    }
+  }
+
   return NextResponse.json({ received: true });
 }

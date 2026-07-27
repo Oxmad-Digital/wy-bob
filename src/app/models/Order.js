@@ -77,6 +77,20 @@ const OrderSchema = new mongoose.Schema(
       shippingError: String,
       cancelledAt: Date,
     },
+    extraPayments: {
+      type: [
+        {
+          reason: String,
+          amount: Number,
+          status: { type: String, enum: ["pending", "paid", "cancelled"], default: "pending" },
+          stripeSessionId: String,
+          checkoutUrl: String,
+          createdAt: { type: Date, default: Date.now },
+          paidAt: Date,
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );
