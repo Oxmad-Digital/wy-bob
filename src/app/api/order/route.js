@@ -35,10 +35,33 @@ export async function POST(req) {
 
     const body = await req.json();
     // 'total' is intentionally NOT destructured from body — it is calculated server-side below
-    const { customer, cartItems, payment, paymentIntentId, delivery, promoCode, promoDiscount, relayPoint, recipientPickupName } = body;
+    const { customer, cartItems, payment, paymentIntentId, delivery, promoCode, promoDiscount, relayPoint, recipientPickupName, idempotencyKey } = body;
 
     if (!customer) {
       return NextResponse.json({ message: "Client manquant" }, { status: 400 });
+    }
+
+    // Une même tentative de checkout (retries après erreur, double-clic) renvoie toujours
+    // la même idempotencyKey : si une commande existe déjà pour cette clé, on la renvoie
+    // telle quelle au lieu d'en recréer une (et de re-décrémenter le stock, renvoyer les emails, etc).
+    if (idempotencyKey) {
+      const existingOrder = await Order.findOne({ idempotencyKey });
+      if (existingOrder) {
+        return NextResponse.json(
+          {
+            success: true,
+            message: "Commande déjà créée",
+            order: {
+              _id: existingOrder._id,
+              orderNumber: String(existingOrder.orderNumber).padStart(4, "0"),
+              total: existingOrder.total,
+              status: existingOrder.status,
+              createdAt: existingOrder.createdAt,
+            },
+          },
+          { status: 200 }
+        );
+      }
     }
 
     const { firstname, lastname, city, address, phone, company, postalCode, country } = customer;
@@ -171,6 +194,7 @@ export async function POST(req) {
       promoDiscount: appliedDiscount,
       payment: payment || "cash",
       paymentIntentId: paymentIntentId || null,
+      idempotencyKey: idempotencyKey || null,
       delivery: delivery || "colissimo",
       status: "pending",
       ...(delivery === "relais" && relayPoint?.id
@@ -197,9 +221,11 @@ export async function POST(req) {
     // est restauré si la commande est annulée — voir applyOrderStatusChange.
     await Promise.all(
       products.map((line) =>
-        Product.updateOne({ _id: line.product }, [
-          { $set: { stock: { $max: [0, { $subtract: ["$stock", line.quantity] }] } } },
-        ])
+        Product.updateOne(
+          { _id: line.product },
+          [{ $set: { stock: { $max: [0, { $subtract: ["$stock", line.quantity] }] } } }],
+          { updatePipeline: true }
+        )
       )
     );
 

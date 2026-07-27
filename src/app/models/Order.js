@@ -36,6 +36,7 @@ const OrderSchema = new mongoose.Schema(
       default: "cash",
     },
     paymentIntentId: { type: String, default: null, index: true },
+    idempotencyKey: { type: String, default: null, unique: true, sparse: true },
     delivery: {
   type: String,
   enum: ['standard', 'express', 'pickup', 'colissimo', 'relais'],

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
@@ -37,6 +37,14 @@ export default function CheckoutForm() {
   const [error, setError] = useState<string | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const [selectedAddressIndex, setSelectedAddressIndex] = useState("");
+
+  // Stable pour toute la durée de la page : réutilisée telle quelle à chaque retry
+  // (erreur de paiement, double-clic) pour que le serveur puisse reconnaître qu'il
+  // s'agit de la même tentative de commande et ne pas en recréer une en double.
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  // Verrou synchrone : un useState (loading) ne se répercute sur le DOM qu'au re-render
+  // suivant, ce qui laisse passer un second clic tiré plus vite que ce re-render.
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -116,6 +124,7 @@ export default function CheckoutForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
+  if (submittingRef.current) return;
   setError(null);
 
   if (!firstname || !lastname || !email || !city || !address || !postalCode) {
@@ -136,6 +145,7 @@ export default function CheckoutForm() {
   }
   if (!stripe || !elements) return;
 
+  submittingRef.current = true;
   setLoading(true);
 
   try {
@@ -186,6 +196,7 @@ export default function CheckoutForm() {
         recipientPickupName: shipping === "relais" ? (recipientPickupName || `${firstname} ${lastname}`) : "",
         promoCode: appliedPromo?.code ?? null,
         promoDiscount: appliedPromo?.discount ?? 0,
+        idempotencyKey,
       }),
     });
 
@@ -221,6 +232,7 @@ export default function CheckoutForm() {
     console.error("CHECKOUT ERROR:", err);
     setError(t.checkout.errors.server);
   } finally {
+    submittingRef.current = false;
     setLoading(false);
   }
 };
