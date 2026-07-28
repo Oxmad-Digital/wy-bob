@@ -30,6 +30,20 @@
   overflow: hidden !important;
 }
 
+/* Sur mobile, le panier scrolle normalement : pas de hauteur/overflow figés. */
+@media (max-width: 767px) {
+  .container:has(.cart-page) {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: calc(100dvh - 40px) !important;
+  }
+  body:has(.cart-page),
+  html:has(.cart-page) {
+    overflow: visible !important;
+    height: auto !important;
+  }
+}
+
 .container:has(.conceptZone) {
   background: linear-gradient(
     -45deg,
@@ -78,6 +92,42 @@ html:has(.privacyZone),
 html:has(.conceptZone) {
   overflow: hidden !important;
   height: 100vh !important;
+}
+
+/* Sur mobile/tablette (portrait ou paysage), la page concept scrolle
+   normalement : pas de scroll interne, donc pas de hauteur/overflow figés. */
+@media (max-width: 1024px) {
+  .container:has(.conceptZone) {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: calc(100dvh - 40px) !important;
+  }
+  body:has(.conceptZone),
+  html:has(.conceptZone) {
+    overflow: visible !important;
+    height: auto !important;
+  }
+}
+
+/* Sur mobile, les pages CGV / Mentions légales / Checkout scrollent
+   normalement : pas de scroll interne, donc pas de hauteur/overflow figés. */
+@media (max-width: 767px) {
+  .container:has(.cgvZone),
+  .container:has(.mentionsZone),
+  .container:has(.checkoutZone) {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: calc(100dvh - 40px) !important;
+  }
+  body:has(.cgvZone),
+  body:has(.mentionsZone),
+  body:has(.checkoutZone),
+  html:has(.cgvZone),
+  html:has(.mentionsZone),
+  html:has(.checkoutZone) {
+    overflow: visible !important;
+    height: auto !important;
+  }
 }
 
 /* LAYOUT PRINCIPAL */
@@ -460,7 +510,7 @@ html:has(.conceptZone) {
     min-height: unset;
     flex-direction: column;
     align-items: center;
-    overflow: hidden;
+    overflow: visible;
     gap: 28px;
   }
 

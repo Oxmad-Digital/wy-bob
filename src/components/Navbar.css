@@ -256,7 +256,7 @@
     font-weight: 300;
     font-family: 'DM Sans', sans-serif;
     letter-spacing: -0.5px;
-    padding: 30px;
+    padding: 14px 30px;
     width: 100%;
     text-align: center;
     transition: opacity 0.2s;
@@ -328,6 +328,10 @@
     padding-bottom: 10px;
   }
   .navLogo { margin-top: 0; }
+  .navLogo img {
+    width: 44px !important;
+    height: 44px !important;
+  }
 
   .mobileLink {
     font-size: 36px;

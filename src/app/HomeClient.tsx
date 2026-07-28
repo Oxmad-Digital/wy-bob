@@ -69,7 +69,7 @@ export default function HomeClient({ product }: Props) {
 
   useEffect(() => {
     const el = scrollRef.current
-    if (!el || window.innerWidth < 768) return
+    if (!el || window.innerWidth <= 1024) return
     el.style.maxHeight = el.getBoundingClientRect().height + 'px'
   }, [])
 

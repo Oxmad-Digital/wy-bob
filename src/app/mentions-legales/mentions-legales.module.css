@@ -152,6 +152,9 @@
    ============================================= */
 @media (max-width: 767px) {
   .mentionsZone {
+    flex: none;
+    min-height: 0;
+    overflow-y: visible;
     padding: 24px 16px;
   }
 

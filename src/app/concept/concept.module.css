@@ -102,12 +102,12 @@
 /* =============================================
    TABLETTE / MOBILE — max-width: 1024px
    ============================================= */
-@media (max-width: 1024px) and (orientation: portrait) {
+@media (max-width: 1024px) {
   .conceptZone {
     flex-direction: column;
     gap: 24px;
-    padding: 16px;
-    overflow-y: auto;
+    padding: 0px;
+    overflow-y: visible;
   }
 
   .imageCol {

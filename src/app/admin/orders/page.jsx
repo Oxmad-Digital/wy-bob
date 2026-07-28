@@ -41,8 +41,7 @@ const STATUS_FILTERS = [
 ];
 
 const SORT_OPTIONS = [
-  { label: "Date",  value: "createdAt" },
-  { label: "Total", value: "total"     },
+  { label: "Total", value: "total" },
 ];
 
 export default function AdminOrdersPage() {
@@ -61,7 +60,9 @@ export default function AdminOrdersPage() {
   const [toast, setToast]                     = useState(null);
   const [confirmModal, setConfirmModal]       = useState(null);
   const [sortOpen, setSortOpen]               = useState(false);
+  const [statusOpen, setStatusOpen]           = useState(false);
   const sortRef = useRef(null);
+  const statusRef = useRef(null);
 
   const showToast = (msg, type = "success") => {
     setToast({ message: msg, type });
@@ -81,6 +82,7 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     const close = (e) => {
       if (sortRef.current && !sortRef.current.contains(e.target)) setSortOpen(false);
+      if (statusRef.current && !statusRef.current.contains(e.target)) setStatusOpen(false);
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
@@ -232,23 +234,32 @@ export default function AdminOrdersPage() {
 
         <div className="ap-divider" />
 
-        <div className="ap-filters">
-          {STATUS_FILTERS.map(f => (
-            <button
-              key={f.value}
-              onClick={() => { setStatusFilter(f.value); setPage(1); }}
-              className={`ap-filter-btn ${statusFilter === f.value ? "active" : ""}`}
-            >
-              {f.label}
-            </button>
-          ))}
+        <div className="ap-status-wrap" ref={statusRef}>
+          <button className="ap-sort-trigger" onClick={() => setStatusOpen(o => !o)}>
+            {STATUS_FILTERS.find(f => f.value === statusFilter)?.label}
+            <span className={`ap-sort-trigger-arrow ${statusOpen ? "open" : ""}`} aria-hidden="true">▼</span>
+          </button>
+          {statusOpen && (
+            <ul className="ap-sort-dropdown">
+              {STATUS_FILTERS.map(f => (
+                <li
+                  key={f.value}
+                  className={`ap-sort-option ${statusFilter === f.value ? "selected" : ""}`}
+                  onClick={() => { setStatusFilter(f.value); setPage(1); setStatusOpen(false); }}
+                >
+                  {f.label}
+                  {statusFilter === f.value && <span className="ap-sort-check" aria-hidden="true">✓</span>}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="ap-divider" />
 
         <div className="ap-sort-wrap" ref={sortRef}>
           <button className="ap-sort-trigger" onClick={() => setSortOpen(o => !o)}>
-            {SORT_OPTIONS.find(o => o.value === sort)?.label}
+            {SORT_OPTIONS.find(o => o.value === sort)?.label || "Trier"}
             <span className={`ap-sort-trigger-arrow ${sortOpen ? "open" : ""}`} aria-hidden="true">▼</span>
           </button>
           {sortOpen && (

@@ -95,26 +95,11 @@
   flex-shrink: 0;
 }
 
-.ap-filters { display: flex; gap: 5px; flex-wrap: wrap; }
-
-.ap-filter-btn {
-  padding: 7px 13px;
-  border: 1.5px solid #e7e5e4;
-  border-radius: 8px;
-  background: #fff;
-  color: #57534e;
-  font-size: 12px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.ap-filter-btn:hover  { border-color: #F9C464; color: #c58b00; }
-.ap-filter-btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
-
 /* Sort */
 .ap-sort-wrap { position: relative; }
+
+/* Status */
+.ap-status-wrap { position: relative; }
 
 .ap-sort-trigger {
   display: flex;
@@ -572,6 +557,4 @@
     padding: 7px 14px;
     font-size: 13px;
   }
-
-  .ap-filters { display: none; }
 }
