@@ -61,6 +61,7 @@ function LoginContent() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/dashboard";
@@ -97,16 +98,32 @@ function LoginContent() {
     }
 
     setLoading(true);
+    setResendState("idle");
     const res = await signIn("credentials", { email, password, redirect: false });
     setLoading(false);
 
     if (res?.error) {
-      setError(t.login.errors.invalid);
+      setError(res.error === "CredentialsSignin" ? t.login.errors.invalid : res.error);
       return;
     }
 
     const updatedSession = await getSession();
     router.push(updatedSession?.user?.role === "admin" ? "/admin" : redirectTo);
+  }
+
+  const isUnverifiedError = /non vérifié|not verified/i.test(error);
+
+  async function handleResendVerification() {
+    setResendState("sending");
+    try {
+      await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+    } finally {
+      setResendState("sent");
+    }
   }
 
   return (
@@ -173,6 +190,20 @@ function LoginContent() {
                 <div className="login-error">
                   <IconAlert />
                   <span>{error}</span>
+                  {isUnverifiedError && (
+                    <button
+                      type="button"
+                      className="login-resend-link"
+                      onClick={handleResendVerification}
+                      disabled={resendState !== "idle"}
+                    >
+                      {resendState === "sending"
+                        ? t.login.resendVerificationSending
+                        : resendState === "sent"
+                        ? t.login.resendVerificationSent
+                        : t.login.resendVerification}
+                    </button>
+                  )}
                 </div>
               )}
 

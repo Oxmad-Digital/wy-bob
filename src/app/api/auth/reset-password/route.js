@@ -2,6 +2,7 @@ import { connectDB } from "@/app/lib/db";
 import User from "@/app/models/User";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
+import { checkRateLimit, getClientIp } from "@/app/lib/rateLimit";
 
 function validatePassword(password) {
   const errors = [];
@@ -16,6 +17,15 @@ function validatePassword(password) {
 export async function POST(req) {
   try {
     await connectDB();
+
+    const ip = getClientIp(req);
+    const rateLimit = await checkRateLimit({ key: `reset-password:${ip}`, windowMs: 60 * 1000, maxAttempts: 10 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { message: `Trop de tentatives. Réessayez dans ${rateLimit.retryAfter} secondes.` },
+        { status: 429 }
+      );
+    }
 
     const { token, password } = await req.json();
 

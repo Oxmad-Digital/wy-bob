@@ -181,6 +181,7 @@
 /* ERREUR */
 .login-error {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   font-size: 13px;
@@ -194,6 +195,24 @@
 .login-error span {
   margin: 0;
   padding: 0;
+}
+
+.login-resend-link {
+  flex-basis: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #1B1843;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.login-resend-link:disabled {
+  cursor: default;
+  opacity: 0.7;
 }
 
 /* BOUTON */

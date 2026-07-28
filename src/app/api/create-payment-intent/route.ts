@@ -7,6 +7,7 @@ import { computeOrderTotals } from "@/app/lib/pricing";
 import { resolvePromoDiscount } from "@/app/lib/promo";
 import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
 import { computeShippingFee } from "@/app/lib/shipping/pricing";
+import { checkRateLimit, getClientIp } from "@/app/lib/rateLimit";
 
 export async function POST(req: Request) {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -14,13 +15,21 @@ export async function POST(req: Request) {
   }
 
   try {
+    await connectDB();
+    const ip = getClientIp(req);
+    const rateLimit = await checkRateLimit({ key: `create-payment-intent:${ip}`, windowMs: 60 * 1000, maxAttempts: 15 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: `Trop de tentatives. Réessayez dans ${rateLimit.retryAfter} secondes.` },
+        { status: 429 }
+      );
+    }
+
     const { cartItems, promoCode, country, deliveryMethod } = await req.json();
 
     if (!Array.isArray(cartItems) || cartItems.length === 0) {
       return NextResponse.json({ error: "Panier vide" }, { status: 400 });
     }
-
-    await connectDB();
 
     // Recalculate total strictly server-side — never trust client-supplied prices
     let subtotal = 0;

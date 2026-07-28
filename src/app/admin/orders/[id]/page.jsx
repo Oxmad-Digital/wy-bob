@@ -88,6 +88,9 @@ export default function AdminOrderDetailPage() {
   const [extraAmount, setExtraAmount] = useState("");
   const [extraReason, setExtraReason] = useState("");
   const [sendingExtraPayment, setSendingExtraPayment] = useState(false);
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundReason, setRefundReason] = useState("");
+  const [refunding, setRefunding] = useState(false);
 
   const showToast = (msg, type = "success") => {
     setToast({ message: msg, type });
@@ -223,6 +226,30 @@ export default function AdminOrderDetailPage() {
     }
   };
 
+  const sendRefund = async () => {
+    const amount = Number(refundAmount);
+    if (!Number.isFinite(amount) || amount <= 0) { showToast("Montant invalide", "error"); return; }
+    if (!confirm(`Rembourser ${amount.toFixed(2)} € au client ? Cette action est immédiate et irréversible.`)) return;
+    setRefunding(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${id}/refund`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, reason: refundReason }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur", "error"); return; }
+      setOrder(data);
+      setRefundAmount("");
+      setRefundReason("");
+      showToast("Remboursement effectué — email envoyé au client");
+    } catch {
+      showToast("Erreur serveur", "error");
+    } finally {
+      setRefunding(false);
+    }
+  };
+
   const cancelShipmentAction = async () => {
     if (!confirm("Annuler cette étiquette Chronopost ? Cette action n'est pas testable avec le compte de test.")) return;
     setCancelling(true);
@@ -256,6 +283,10 @@ export default function AdminOrderDetailPage() {
     ? String(order.orderNumber).padStart(4, "0")
     : order._id.toString().slice(-8).toUpperCase();
   const shipInfo = describeShipping(order.shipping);
+  const refundedTotal = (order.refunds || [])
+    .filter((r) => r.status === "succeeded")
+    .reduce((sum, r) => sum + r.amount, 0);
+  const refundable = Math.max(0, Math.round((order.total - refundedTotal) * 100) / 100);
 
   return (
     <div className="od-page">
@@ -483,6 +514,71 @@ export default function AdminOrderDetailPage() {
                   <span className="od-extra-payment-amount">{Number(ep.amount).toFixed(2)} €</span>
                   <span className={`od-extra-payment-status od-extra-payment-${ep.status}`}>
                     {ep.status === "paid" ? "✅ Payé" : ep.status === "cancelled" ? "✕ Annulé" : "⏳ En attente"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Remboursement ── */}
+        <div className="od-card">
+          <h2 className="od-card-title">Remboursement</h2>
+          {order.paymentIntentId ? (
+            <>
+              <p className="od-status-hint">
+                Rembourse le client via Stripe (droit de rétractation, litige, erreur de commande…).
+                {refundedTotal > 0 && ` Déjà remboursé : ${refundedTotal.toFixed(2)} €.`}
+                {" "}Reste remboursable : {refundable.toFixed(2)} €.
+              </p>
+              {refundable > 0 && (
+                <div className="od-customer-form">
+                  <div className="od-ship-form-field">
+                    <label className="od-ship-form-label">Motif (optionnel)</label>
+                    <input
+                      className="od-ship-input"
+                      placeholder="Ex. Rétractation client"
+                      value={refundReason}
+                      onChange={(e) => setRefundReason(e.target.value)}
+                    />
+                  </div>
+                  <div className="od-ship-form-field">
+                    <label className="od-ship-form-label">Montant (€)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      max={refundable}
+                      className="od-ship-input"
+                      value={refundAmount}
+                      onChange={(e) => setRefundAmount(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="od-ship-cancel-btn"
+                    disabled={refunding}
+                    onClick={sendRefund}
+                  >
+                    {refunding ? "Remboursement…" : "Rembourser"}
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="od-status-hint">
+              Aucun paiement Stripe associé à cette commande (paiement hors ligne) — remboursement à effectuer manuellement.
+            </p>
+          )}
+
+          {order.refunds?.length > 0 && (
+            <div className="od-extra-payments-list">
+              {order.refunds.slice().reverse().map((r, i) => (
+                <div key={r.stripeRefundId || i} className="od-extra-payment-row">
+                  <span className="od-extra-payment-reason">{r.reason || "Remboursement"}</span>
+                  <span className="od-extra-payment-amount">{Number(r.amount).toFixed(2)} €</span>
+                  <span className={`od-extra-payment-status od-extra-payment-${r.status === "succeeded" ? "paid" : r.status === "failed" ? "cancelled" : "pending"}`}>
+                    {r.status === "succeeded" ? "✅ Remboursé" : r.status === "failed" ? "✕ Échoué" : "⏳ En attente"}
                   </span>
                 </div>
               ))}

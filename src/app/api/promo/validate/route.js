@@ -4,10 +4,20 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/app/lib/db";
 import PromoCode from "@/app/models/PromoCode";
+import { checkRateLimit, getClientIp } from "@/app/lib/rateLimit";
 
 export async function POST(request) {
   try {
     await connectDB();
+
+    const ip = getClientIp(request);
+    const rateLimit = await checkRateLimit({ key: `promo-validate:${ip}`, windowMs: 60 * 1000, maxAttempts: 20 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { message: `Trop de tentatives. Réessayez dans ${rateLimit.retryAfter} secondes.` },
+        { status: 429 }
+      );
+    }
 
     const { code, cartTotal } = await request.json();
 

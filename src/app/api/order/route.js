@@ -17,6 +17,7 @@ import { resolvePromoDiscount } from "@/app/lib/promo";
 import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
 import { computeShippingFee } from "@/app/lib/shipping/pricing";
 import { formatDeliveryLabel } from "@/app/lib/shipping/delivery";
+import { checkRateLimit, getClientIp } from "@/app/lib/rateLimit";
 
 function generateRewardCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -30,6 +31,15 @@ export async function POST(req) {
 
   try {
     await connectDB();
+
+    const ip = getClientIp(req);
+    const rateLimit = await checkRateLimit({ key: `order-create:${ip}`, windowMs: 5 * 60 * 1000, maxAttempts: 15 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { message: `Trop de tentatives. Réessayez dans ${rateLimit.retryAfter} secondes.` },
+        { status: 429 }
+      );
+    }
 
     const session = await auth();
 
@@ -403,7 +413,7 @@ export async function POST(req) {
     let emailErrors = [];
 
     try {
-      const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+      const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM;
       await sendEmail({
         to: adminEmail,
         subject: `🛒 Nouvelle commande #${orderNumber} - ${firstname} ${lastname}`,

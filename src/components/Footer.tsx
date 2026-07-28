@@ -1,5 +1,6 @@
 'use client'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { openCookieSettings } from '@/lib/cookieConsent'
 import './Footer.css'
 
 export default function Footer() {
@@ -15,6 +16,9 @@ export default function Footer() {
         <a href="/mentions-legales">{t.footer.legal}</a>
         <a href="/cgv">{t.footer.cgv}</a>
         <a href="/politique-confidentialite">{t.footer.privacy}</a>
+        <button type="button" className="footerCookieBtn" onClick={openCookieSettings}>
+          {t.footer.manageCookies}
+        </button>
       </div>
       <div className="footerRight">
         <a href="#" aria-label="Instagram">

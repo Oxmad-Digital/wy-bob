@@ -3,25 +3,9 @@ import User from "@/app/models/User";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/app/lib/mailer";
-import { getVerificationEmailTemplate } from "@/app/lib/emailTemplates";
-/* ===== RATE LIMITING ===== */
-const registrationAttempts = new Map();
-
-function checkRateLimit(ip) {
-  const now = Date.now();
-  const windowMs = 60 * 1000;
-  const maxAttempts = 5;
-  if (!registrationAttempts.has(ip)) registrationAttempts.set(ip, []);
-  const attempts = registrationAttempts.get(ip);
-  const recentAttempts = attempts.filter(t => now - t < windowMs);
-  registrationAttempts.set(ip, recentAttempts);
-  if (recentAttempts.length >= maxAttempts) {
-    const retryAfter = Math.ceil((recentAttempts[0] + windowMs - now) / 1000);
-    return { allowed: false, retryAfter };
-  }
-  recentAttempts.push(now);
-  return { allowed: true };
-}
+import { getAccountVerificationEmailTemplate } from "@/app/lib/emailTemplates";
+import crypto from "crypto";
+import { checkRateLimit, getClientIp } from "@/app/lib/rateLimit";
 
 function sanitize(input) {
   if (typeof input !== "string") return input;
@@ -49,9 +33,9 @@ export async function POST(req) {
   try {
     await connectDB();
 
-    const ip = req.headers.get("x-forwarded-for") || "unknown";
+    const ip = getClientIp(req);
 
-    const rateLimit = checkRateLimit(ip);
+    const rateLimit = await checkRateLimit({ key: `register:${ip}`, windowMs: 60 * 1000, maxAttempts: 5 });
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { message: `Trop de tentatives. Réessayez dans ${rateLimit.retryAfter} secondes.` },
@@ -106,27 +90,32 @@ export async function POST(req) {
     /* Hash mot de passe */
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    /* Créer utilisateur — emailVerified: true direct */
+    /* Token de vérification email — valable 24h */
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
     await User.create({
       name,
       email,
       password: hashedPassword,
       role: "customer",
-      emailVerified: true,
+      emailVerified: false,
+      verificationToken,
+      verificationTokenExpiry,
     });
 
-    /* 📧 Email de bienvenue en arrière-plan — ne bloque pas */
-    const welcomeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
-    const html = getVerificationEmailTemplate(name, welcomeUrl);
+    /* 📧 Email de vérification en arrière-plan — ne bloque pas */
+    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`;
+    const html = getAccountVerificationEmailTemplate(name, verifyUrl);
 
     sendEmail({
       to: email,
-      subject: "Bienvenue sur WYBOB 🎩",
+      subject: "Confirmez votre adresse email — WYBOB 🎩",
       html,
-    }).catch(err => console.error("Erreur email bienvenue:", err));
+    }).catch(err => console.error("Erreur email vérification:", err));
 
     return NextResponse.json(
-      { message: "Compte créé avec succès !" },
+      { message: "Compte créé ! Vérifiez votre boîte mail pour activer votre compte." },
       { status: 201 }
     );
 

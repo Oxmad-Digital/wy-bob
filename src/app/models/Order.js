@@ -91,6 +91,18 @@ const OrderSchema = new mongoose.Schema(
       ],
       default: [],
     },
+    refunds: {
+      type: [
+        {
+          amount: Number,
+          reason: String,
+          stripeRefundId: String,
+          status: { type: String, enum: ["succeeded", "pending", "failed"], default: "succeeded" },
+          createdAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );

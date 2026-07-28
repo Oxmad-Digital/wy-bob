@@ -135,6 +135,89 @@ export function getExtraPaymentEmailTemplate({ firstname, orderNumber, reason, a
   `;
 }
 
+export function getAccountVerificationEmailTemplate(name, verifyUrl) {
+  return `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background: #f9f9f9; border-radius: 16px;">
+
+      <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="color: #1B1843; font-size: 28px; font-weight: 700;">WYBOB 🎩</h1>
+      </div>
+
+      <h2 style="color: #1B1843; font-size: 22px; text-align: center;">
+        Bienvenue ${name} ! Confirmez votre email
+      </h2>
+
+      <p style="color: #444; font-size: 16px; line-height: 1.6; text-align: center; margin: 20px 0;">
+        Plus qu'une étape pour activer votre compte WYBOB. Cliquez sur le bouton ci-dessous pour confirmer votre adresse email. Ce lien est valable <strong>24 heures</strong>.
+      </p>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${verifyUrl}" style="
+          background-color: #F9C464;
+          color: #1B1843;
+          padding: 14px 40px;
+          border-radius: 50px;
+          text-decoration: none;
+          font-weight: 700;
+          font-size: 16px;
+          display: inline-block;
+        ">
+          Confirmer mon email
+        </a>
+      </div>
+
+      <p style="color: #888; font-size: 13px; text-align: center;">
+        Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.
+      </p>
+
+      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+
+      <p style="color: #888; font-size: 12px; text-align: center;">
+        © 2026 WYBOB
+      </p>
+
+    </div>
+  `;
+}
+
+export function getRefundEmailTemplate({ firstname, orderNumber, amount, reason }) {
+  return `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background: #f9f9f9; border-radius: 16px;">
+
+      <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="color: #1B1843; font-size: 28px; font-weight: 700;">WYBOB 🎩</h1>
+      </div>
+
+      <h2 style="color: #1B1843; font-size: 22px; text-align: center;">
+        Remboursement effectué
+      </h2>
+
+      <p style="color: #444; font-size: 16px; line-height: 1.6; text-align: center; margin: 20px 0;">
+        Bonjour ${firstname},<br/>
+        Un remboursement a été effectué concernant votre commande <strong>#${orderNumber}</strong>.
+        ${reason ? `Motif : ${reason}.` : ""}
+      </p>
+
+      <div style="background: #fff; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center;">
+        <p style="margin: 0 0 8px; color: #888; font-size: 13px;">Montant remboursé</p>
+        <p style="margin: 0; color: #1B1843; font-size: 24px; font-weight: 700;">${Number(amount).toFixed(2)} €</p>
+      </div>
+
+      <p style="color: #888; font-size: 13px; text-align: center;">
+        Ce montant sera recrédité sur votre moyen de paiement sous quelques jours ouvrés.
+        Pour toute question, contactez-nous à support@wybob.fr
+      </p>
+
+      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+
+      <p style="color: #888; font-size: 12px; text-align: center;">
+        © 2026 WYBOB
+      </p>
+
+    </div>
+  `;
+}
+
 export function getVerificationEmailTemplate(name, dashboardUrl) {
   return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background: #f9f9f9; border-radius: 16px;">
