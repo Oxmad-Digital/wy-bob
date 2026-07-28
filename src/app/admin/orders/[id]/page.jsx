@@ -444,34 +444,36 @@ export default function AdminOrderDetailPage() {
             Génère un lien de paiement Stripe à montant libre (ex. frais de réexpédition
             suite à une correction d&apos;adresse) et l&apos;envoie par email au client.
           </p>
-          <div className="od-ship-form-field">
-            <label className="od-ship-form-label">Motif</label>
-            <input
-              className="od-ship-input"
-              placeholder="Ex. Frais de réexpédition"
-              value={extraReason}
-              onChange={(e) => setExtraReason(e.target.value)}
-            />
+          <div className="od-customer-form">
+            <div className="od-ship-form-field">
+              <label className="od-ship-form-label">Motif</label>
+              <input
+                className="od-ship-input"
+                placeholder="Ex. Frais de réexpédition"
+                value={extraReason}
+                onChange={(e) => setExtraReason(e.target.value)}
+              />
+            </div>
+            <div className="od-ship-form-field">
+              <label className="od-ship-form-label">Montant (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                className="od-ship-input"
+                value={extraAmount}
+                onChange={(e) => setExtraAmount(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              className="od-ship-generate-btn"
+              disabled={sendingExtraPayment}
+              onClick={sendExtraPayment}
+            >
+              {sendingExtraPayment ? "Envoi…" : "Envoyer le lien de paiement"}
+            </button>
           </div>
-          <div className="od-ship-form-field">
-            <label className="od-ship-form-label">Montant (€)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              className="od-ship-input"
-              value={extraAmount}
-              onChange={(e) => setExtraAmount(e.target.value)}
-            />
-          </div>
-          <button
-            type="button"
-            className="od-ship-generate-btn"
-            disabled={sendingExtraPayment}
-            onClick={sendExtraPayment}
-          >
-            {sendingExtraPayment ? "Envoi…" : "Envoyer le lien de paiement"}
-          </button>
 
           {order.extraPayments?.length > 0 && (
             <div className="od-extra-payments-list">
