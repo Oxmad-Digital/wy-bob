@@ -211,6 +211,7 @@ export default function DashboardStats() {
               <Tooltip
                 contentStyle={{ background: N.bg, border: `1px solid ${N.border}`, borderRadius: "8px", fontSize: "12px", fontFamily: font, boxShadow: N.shadowMd }}
                 cursor={{ stroke: N.border, strokeWidth: 1 }}
+                formatter={(value, name) => name === "CA (€)" ? [`${parseFloat(value).toFixed(2)} €`, name] : [value, name]}
               />
               <Area type="monotone" dataKey="revenue" stroke="#F9C464" strokeWidth={2} fill="url(#gradRevenue)" name="CA (€)" dot={false} />
               <Area type="monotone" dataKey="orders"  stroke="#1B1843"  strokeWidth={2} fill="url(#gradOrders)"  name="Commandes" dot={false} />
