@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Script from 'next/script'
 import { getStoredConsent, onConsentChange } from '@/lib/cookieConsent'
 
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+const GA_MEASUREMENT_ID = 'G-6K0M03PL1C'
 
 export default function GoogleAnalytics() {
   const [analyticsAllowed, setAnalyticsAllowed] = useState(false)
