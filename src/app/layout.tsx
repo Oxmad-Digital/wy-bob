@@ -4,6 +4,7 @@ import { CartProvider } from '@/components/panier-context'
 import SessionWrapper from '@/components/SessionWrapper'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import CookieConsentBanner from '@/components/CookieConsentBanner'
+import GoogleAnalytics from '@/components/GoogleAnalytics'
 import './globals.css'
 
 const dmSans = DM_Sans({
@@ -59,6 +60,7 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${dmSans.variable} ${quicksand.variable}`}>
       <body>
+        <GoogleAnalytics />
         <SessionWrapper>
           <LanguageProvider>
             <CartProvider>
