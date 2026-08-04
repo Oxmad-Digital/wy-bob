@@ -83,6 +83,7 @@ function buildShippingXml(input: CreateShipmentInput, resolved: ReturnType<typeo
          <refValue>
             <recipientRef>${escapeXml(input.recipientRef)}</recipientRef>
             <shipperRef>${escapeXml(input.shipperRef)}</shipperRef>
+            ${input.deliveryMethod === "relay" ? `<idRelais>${escapeXml(input.relayId)}</idRelais>` : ""}
          </refValue>
          <skybillValue>
             <bulkNumber></bulkNumber>
@@ -116,7 +117,6 @@ function buildShippingXml(input: CreateShipmentInput, resolved: ReturnType<typeo
             <height>1</height>
             <length>1</length>
             <width>1</width>
-            ${input.deliveryMethod === "relay" ? `<idRelais>${escapeXml(input.relayId)}</idRelais>` : ""}
             <alternateProductCode></alternateProductCode>
          </skybillValue>
          <skybillParamsValue>

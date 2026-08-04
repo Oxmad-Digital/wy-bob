@@ -21,8 +21,6 @@ const SECTIONS_META: SectionMeta[] = [
   { layout: 'full', imageLabel: 'Le chapeau du festival' },
   { layout: 'split', imageSide: 'right', imageLabel: 'Pénélope Wybo', image: 'https://res.cloudinary.com/dnm9txjhm/image/upload/v1780598130/galerie/ntcjfrv2xyli9ilkdozp.jpg' },
   { layout: 'split', imageSide: 'left', imageLabel: 'Savoir-faire & artisanat malgache', image: 'https://res.cloudinary.com/dnm9txjhm/image/upload/v1780598144/galerie/hmxampzuyhi9roiqfftz.jpg' },
-  { layout: 'split', imageSide: 'right', imageLabel: 'Festival & voyage', image: 'https://res.cloudinary.com/dnm9txjhm/image/upload/v1780598132/galerie/ecniitgdrxbbsxqvhnsw.jpg' },
-  { layout: 'full', imageLabel: 'La famille WYBOB', image: 'https://res.cloudinary.com/dnm9txjhm/image/upload/v1780598134/galerie/tcrfyy7jfebyjjlxw8t6.jpg' },
 ]
 
 export default function Histoire() {
@@ -105,7 +103,7 @@ export default function Histoire() {
                   onClick={() => goTo(1)}
                   aria-label="Faire défiler vers le bas"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>

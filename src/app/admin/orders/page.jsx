@@ -44,6 +44,36 @@ const SORT_OPTIONS = [
   { label: "Total", value: "total" },
 ];
 
+const TOGGLEABLE_COLUMNS = [
+  { key: "contact",  label: "Contact"      },
+  { key: "location", label: "Localisation" },
+  { key: "payment",  label: "Paiement"     },
+  { key: "delivery", label: "Livraison"    },
+  { key: "date",     label: "Date"         },
+];
+
+const COLUMNS_STORAGE_KEY = "wybob_admin_orders_columns";
+
+function getDefaultVisibleColumns() {
+  if (typeof window === "undefined") {
+    return { contact: true, location: true, payment: true, delivery: true, date: true };
+  }
+  const w = window.innerWidth;
+  if (w >= 1600) return { contact: true,  location: true, payment: true,  delivery: true,  date: true };
+  if (w >= 1280) return { contact: true,  location: true, payment: false, delivery: false, date: true };
+  return          { contact: false, location: true, payment: false, delivery: false, date: true };
+}
+
+function loadVisibleColumns() {
+  const fallback = getDefaultVisibleColumns();
+  if (typeof window === "undefined") return fallback;
+  try {
+    const saved = window.localStorage.getItem(COLUMNS_STORAGE_KEY);
+    if (saved) return { ...fallback, ...JSON.parse(saved) };
+  } catch {}
+  return fallback;
+}
+
 export default function AdminOrdersPage() {
   const [orders, setOrders]                   = useState([]);
   const [loading, setLoading]                 = useState(true);
@@ -61,8 +91,19 @@ export default function AdminOrdersPage() {
   const [confirmModal, setConfirmModal]       = useState(null);
   const [sortOpen, setSortOpen]               = useState(false);
   const [statusOpen, setStatusOpen]           = useState(false);
+  const [columnsOpen, setColumnsOpen]         = useState(false);
+  const [visibleColumns, setVisibleColumns]   = useState(loadVisibleColumns);
   const sortRef = useRef(null);
   const statusRef = useRef(null);
+  const columnsRef = useRef(null);
+
+  const toggleColumn = (key) => {
+    setVisibleColumns(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { window.localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   const showToast = (msg, type = "success") => {
     setToast({ message: msg, type });
@@ -83,6 +124,7 @@ export default function AdminOrdersPage() {
     const close = (e) => {
       if (sortRef.current && !sortRef.current.contains(e.target)) setSortOpen(false);
       if (statusRef.current && !statusRef.current.contains(e.target)) setStatusOpen(false);
+      if (columnsRef.current && !columnsRef.current.contains(e.target)) setColumnsOpen(false);
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
@@ -281,6 +323,31 @@ export default function AdminOrdersPage() {
           {sortDir === "asc" ? "↑" : "↓"}
         </button>
 
+        <div className="ap-divider" />
+
+        <div className="ap-columns-wrap" ref={columnsRef}>
+          <button className="ap-sort-trigger" onClick={() => setColumnsOpen(o => !o)}>
+            Colonnes
+            <span className={`ap-sort-trigger-arrow ${columnsOpen ? "open" : ""}`} aria-hidden="true">▼</span>
+          </button>
+          {columnsOpen && (
+            <ul className="ap-sort-dropdown ap-columns-dropdown">
+              {TOGGLEABLE_COLUMNS.map(col => (
+                <li
+                  key={col.key}
+                  className="ap-column-option"
+                  onClick={() => toggleColumn(col.key)}
+                >
+                  <span className={`ap-column-checkbox ${visibleColumns[col.key] ? "checked" : ""}`} aria-hidden="true">
+                    {visibleColumns[col.key] && "✓"}
+                  </span>
+                  {col.label}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         {stats && (
           <>
             <div className="ap-divider" />
@@ -321,13 +388,13 @@ export default function AdminOrdersPage() {
               <tr>
                 <th>#</th>
                 <th>Client</th>
-                <th>Contact</th>
-                <th>Localisation</th>
+                {visibleColumns.contact  && <th>Contact</th>}
+                {visibleColumns.location && <th>Localisation</th>}
                 <th>Total</th>
-                <th>Paiement</th>
-                <th>Livraison</th>
+                {visibleColumns.payment  && <th>Paiement</th>}
+                {visibleColumns.delivery && <th>Livraison</th>}
                 <th>Statut</th>
-                <th>Date</th>
+                {visibleColumns.date     && <th>Date</th>}
                 <th>Actions</th>
               </tr>
             </thead>
@@ -350,31 +417,39 @@ export default function AdminOrdersPage() {
                         <span className="ao-client-name">{fullName}</span>
                       </div>
                     </td>
-                    <td>
-                      <div className="ao-contact">
-                        {c.email && <a href={`mailto:${c.email}`} className="ao-email">{c.email}</a>}
-                        {c.phone && <span className="ao-phone">{c.phone}</span>}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="ao-location">
-                        {c.city    && <span className="ao-city">{c.city}</span>}
-                        {c.address && <span className="ao-address">{c.address}</span>}
-                      </div>
-                    </td>
+                    {visibleColumns.contact && (
+                      <td>
+                        <div className="ao-contact">
+                          {c.email && <a href={`mailto:${c.email}`} className="ao-email">{c.email}</a>}
+                          {c.phone && <span className="ao-phone">{c.phone}</span>}
+                        </div>
+                      </td>
+                    )}
+                    {visibleColumns.location && (
+                      <td>
+                        <div className="ao-location">
+                          {c.city    && <span className="ao-city">{c.city}</span>}
+                          {c.address && <span className="ao-address">{c.address}</span>}
+                        </div>
+                      </td>
+                    )}
                     <td>
                       <span className="ao-total">{(o.total || 0).toLocaleString()} €</span>
                     </td>
-                    <td>
-                      <span className={`ao-payment ao-payment-${o.payment}`}>
-                        {PAYMENT_LABELS[o.payment] || o.payment || "—"}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="ao-delivery">
-                        {DELIVERY_LABELS[o.delivery] || o.delivery || "—"}
-                      </span>
-                    </td>
+                    {visibleColumns.payment && (
+                      <td>
+                        <span className={`ao-payment ao-payment-${o.payment}`}>
+                          {PAYMENT_LABELS[o.payment] || o.payment || "—"}
+                        </span>
+                      </td>
+                    )}
+                    {visibleColumns.delivery && (
+                      <td>
+                        <span className="ao-delivery">
+                          {DELIVERY_LABELS[o.delivery] || o.delivery || "—"}
+                        </span>
+                      </td>
+                    )}
                     <td>
                       <select
                         value={o.status}
@@ -387,11 +462,13 @@ export default function AdminOrdersPage() {
                         ))}
                       </select>
                     </td>
-                    <td>
-                      <span className="ap-date">
-                        {o.createdAt ? new Date(o.createdAt).toLocaleDateString("fr-FR") : "—"}
-                      </span>
-                    </td>
+                    {visibleColumns.date && (
+                      <td>
+                        <span className="ap-date">
+                          {o.createdAt ? new Date(o.createdAt).toLocaleDateString("fr-FR") : "—"}
+                        </span>
+                      </td>
+                    )}
                     <td>
                       <div className="ap-actions">
                         <Link href={`/admin/orders/${o._id}`} className="ap-btn-view" aria-label="Voir le détail de la commande">↗</Link>

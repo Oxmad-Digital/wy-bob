@@ -32,6 +32,18 @@ export default function Concept() {
             ))}
           </div>
 
+          {concept.sections?.map((section, i) => (
+            <div key={i} className={styles.extraSection}>
+              {section.title && <h2 className={styles.sectionTitle}>{section.title}</h2>}
+              <div className={styles.paragraphs}>
+                {section.paragraphs.map((p, pi) => (
+                  <p key={pi}>{p}</p>
+                ))}
+                {section.closing && <p className={styles.closing}>{section.closing}</p>}
+              </div>
+            </div>
+          ))}
+
           {concept.cta && (
             <Link href="/galerie" className={styles.cta}>
               {concept.cta}

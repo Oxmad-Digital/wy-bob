@@ -10,6 +10,12 @@ export type HistoireSection = {
   cta?: string
 }
 
+export type ConceptSection = {
+  title?: string
+  paragraphs: string[]
+  closing?: string
+}
+
 export const translations = {
   fr: {
     nav: {
@@ -110,6 +116,17 @@ export const translations = {
             "Derrière chaque WYBOB se cachent des mains passionnées, des heures de travail minutieux et un savoir-faire transmis de génération en génération. À travers chaque création, nous voulons mettre en lumière ces artisans extraordinaires et faire rayonner Madagascar bien au-delà de ses frontières. Chaque WYBOB raconte l'histoire d'un artisan, d'une famille, d'un pays et d'une passion commune pour les belles choses.",
           ],
         },
+      ] as HistoireSection[],
+    },
+    concept: {
+      title: 'Produire moins, mais produire mieux',
+      paragraphs: [
+        'Chez WYBOB, nous avons choisi de faire les choses autrement. Nous croyons au slow fashion : produire moins, mais produire mieux. Chaque chapeau est fabriqué en édition limitée, au rythme de notre communauté, sans surproduction.',
+        "Plutôt que de multiplier les modèles, nous avons fait le choix d'une seule silhouette. Un design intemporel, pensé pour traverser les années et devenir instantanément reconnaissable.",
+        "Notre collection évolue à travers les couleurs. Chaque nouvelle édition ouvre un nouveau chapitre de l'histoire WYBOB, tandis que les précédentes deviennent des pièces uniques qui ne seront plus reproduites.",
+        'Au-delà d\'un chapeau, WYBOB est une invitation à rejoindre une communauté de voyageurs, de créatifs et d\'optimistes qui partagent une même philosophie : vivre pleinement, créer des souvenirs et célébrer les moments qui comptent.',
+      ],
+      sections: [
         {
           title: 'Plus qu\'un chapeau',
           paragraphs: [
@@ -125,16 +142,7 @@ export const translations = {
           ],
           closing: 'Bienvenue dans la famille WYBOB.',
         },
-      ] as HistoireSection[],
-    },
-    concept: {
-      title: 'Produire moins, mais produire mieux',
-      paragraphs: [
-        'Chez WYBOB, nous avons choisi de faire les choses autrement. Nous croyons au slow fashion : produire moins, mais produire mieux. Chaque chapeau est fabriqué en édition limitée, au rythme de notre communauté, sans surproduction.',
-        "Plutôt que de multiplier les modèles, nous avons fait le choix d'une seule silhouette. Un design intemporel, pensé pour traverser les années et devenir instantanément reconnaissable.",
-        "Notre collection évolue à travers les couleurs. Chaque nouvelle édition ouvre un nouveau chapitre de l'histoire WYBOB, tandis que les précédentes deviennent des pièces uniques qui ne seront plus reproduites.",
-        'Au-delà d\'un chapeau, WYBOB est une invitation à rejoindre une communauté de voyageurs, de créatifs et d\'optimistes qui partagent une même philosophie : vivre pleinement, créer des souvenirs et célébrer les moments qui comptent.',
-      ],
+      ] as ConceptSection[],
       cta: 'Découvrir la collection',
     },
     galerie: {
@@ -506,6 +514,17 @@ export const translations = {
             "Behind every WYBOB are passionate hands, hours of meticulous work, and know-how passed down through generations. Through every creation, we want to shine a light on these extraordinary artisans and let Madagascar shine far beyond its borders. Every WYBOB tells the story of an artisan, a family, a country, and a shared passion for beautiful things.",
           ],
         },
+      ] as HistoireSection[],
+    },
+    concept: {
+      title: 'Our concept',
+      paragraphs: [
+        'At WYBOB, we chose to do things differently. We believe in slow fashion: producing less, but producing better. Every hat is made in a limited edition, at the pace of our community, without overproduction.',
+        'Rather than multiplying models, we chose a single silhouette — a timeless design, made to last through the years and become instantly recognisable.',
+        'Our collection evolves through colour. Each new edition opens a new chapter in the WYBOB story, while previous ones become unique pieces that will never be reproduced again.',
+        'Beyond a hat, WYBOB is an invitation to join a community of travellers, creatives and optimists who share one philosophy: living fully, creating memories, and celebrating the moments that matter.',
+      ],
+      sections: [
         {
           title: 'More than a hat',
           paragraphs: [
@@ -521,16 +540,7 @@ export const translations = {
           ],
           closing: 'Welcome to the WYBOB family.',
         },
-      ] as HistoireSection[],
-    },
-    concept: {
-      title: 'Our concept',
-      paragraphs: [
-        'At WYBOB, we chose to do things differently. We believe in slow fashion: producing less, but producing better. Every hat is made in a limited edition, at the pace of our community, without overproduction.',
-        'Rather than multiplying models, we chose a single silhouette — a timeless design, made to last through the years and become instantly recognisable.',
-        'Our collection evolves through colour. Each new edition opens a new chapter in the WYBOB story, while previous ones become unique pieces that will never be reproduced again.',
-        'Beyond a hat, WYBOB is an invitation to join a community of travellers, creatives and optimists who share one philosophy: living fully, creating memories, and celebrating the moments that matter.',
-      ],
+      ] as ConceptSection[],
       cta: 'Discover the collection',
     },
     galerie: {

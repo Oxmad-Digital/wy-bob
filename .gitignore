@@ -40,6 +40,9 @@ env.local
 # logs Chronopost (XML brut requêtes/réponses, contient les identifiants de compte)
 /chronopost-logs/
 
+# jeux de validation Chronopost (XML + étiquettes pour la recette technique)
+/chronopost-validation/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

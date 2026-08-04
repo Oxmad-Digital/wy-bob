@@ -101,6 +101,44 @@
 /* Status */
 .ap-status-wrap { position: relative; }
 
+/* Columns */
+.ap-columns-wrap { position: relative; }
+
+.ap-columns-dropdown { min-width: 170px; }
+
+.ap-column-option {
+  padding: 8px 15px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0f172a;
+  cursor: pointer;
+  transition: background 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.ap-column-option:hover { background: #f5f5f4; }
+
+.ap-column-checkbox {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  border: 1.5px solid #d6d3d1;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 1;
+  color: #fff;
+  transition: background 0.12s, border-color 0.12s;
+}
+.ap-column-checkbox.checked {
+  background: #F9C464;
+  border-color: #F9C464;
+  color: #1B1843;
+}
+
 .ap-sort-trigger {
   display: flex;
   align-items: center;
