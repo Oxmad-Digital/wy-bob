@@ -35,7 +35,7 @@ export default async function DashboardOverview() {
     status: o.status,
     createdAt: o.createdAt instanceof Date ? o.createdAt.toISOString() : String(o.createdAt),
     total: Number(o.total) || 0,
-    products: o.products ?? [],
+    products: (o.products ?? []).map((p: any) => ({ quantity: p.quantity })),
   }));
 
   const safeAddress = address ? {

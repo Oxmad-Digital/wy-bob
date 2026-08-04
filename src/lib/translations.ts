@@ -49,6 +49,7 @@ export const translations = {
       analyticsDesc: "Google Analytics — mesure d'audience anonymisée. Déposés uniquement avec votre accord.",
       save: 'Enregistrer mes choix',
       privacyLink: 'En savoir plus dans notre politique de confidentialité',
+      close: 'Fermer',
     },
     home: {
       tagline: "Pensé dans les moindres détails, le WYBOB allie caractère, confort et savoir-faire artisanal.",
@@ -447,6 +448,7 @@ export const translations = {
       analyticsDesc: 'Google Analytics — anonymized audience measurement. Only set with your consent.',
       save: 'Save my choices',
       privacyLink: 'Learn more in our privacy policy',
+      close: 'Close',
     },
     home: {
       tagline: "Thought through down to the smallest detail, the WYBOB blends character, comfort and artisanal craftsmanship.",

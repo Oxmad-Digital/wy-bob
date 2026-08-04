@@ -21,6 +21,13 @@ const STATUS_LABELS = {
 
 const font = "'DM Sans', sans-serif";
 
+const SeeAllIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M10 8l4 4-4 4" />
+  </svg>
+);
+
 const N = {
   border:      "#ebebea",
   borderLight: "#f2f2f0",
@@ -271,7 +278,7 @@ export default function DashboardStats() {
         <div style={{ ...card, overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", borderBottom: `1px solid ${N.border}` }}>
             <SectionHeader label="Dernières commandes" noMargin />
-            <a href="/admin/orders" style={{ fontSize: "11px", color: "#F9C464", fontWeight: "600", textDecoration: "none", fontFamily: font }}>Voir tout →</a>
+            <a href="/admin/orders" style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "#F9C464", fontWeight: "600", textDecoration: "none", fontFamily: font }}>Voir tout <SeeAllIcon /></a>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -298,7 +305,7 @@ export default function DashboardStats() {
         <div style={{ ...card, overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", borderBottom: `1px solid ${N.border}` }}>
             <SectionHeader label="Top 5 clients" noMargin />
-            <a href="/admin/customers" style={{ fontSize: "11px", color: "#F9C464", fontWeight: "600", textDecoration: "none", fontFamily: font }}>Voir tout →</a>
+            <a href="/admin/customers" style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "#F9C464", fontWeight: "600", textDecoration: "none", fontFamily: font }}>Voir tout <SeeAllIcon /></a>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>

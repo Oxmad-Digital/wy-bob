@@ -69,7 +69,7 @@
 .container:has(.privacyZone),
 .container:has(.conceptZone) {
   overflow: hidden !important;
-  height: calc(100dvh - 40px) !important;
+  height: calc(100dvh - 20px) !important;
   justify-content: flex-start !important;
 }
 

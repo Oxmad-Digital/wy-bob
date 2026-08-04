@@ -44,6 +44,14 @@ export default function CookieConsentBanner() {
   return (
     <div className="cookie-banner" role="dialog" aria-modal="true" aria-label={t.cookieConsent.settingsTitle}>
       <div className="cookie-banner-card">
+        <button
+          type="button"
+          className="cookie-banner-close"
+          onClick={rejectAll}
+          aria-label={t.cookieConsent.close}
+        >
+          &times;
+        </button>
         {!customizing ? (
           <>
             <p className="cookie-banner-text">
@@ -85,7 +93,7 @@ export default function CookieConsentBanner() {
               />
             </div>
             <div className="cookie-banner-actions">
-              <button type="button" className="cookie-btn cookie-btn-primary" onClick={saveCustom}>
+              <button type="button" className="cookie-btn cookie-btn-primary cookie-btn-save" onClick={saveCustom}>
                 {t.cookieConsent.save}
               </button>
             </div>
