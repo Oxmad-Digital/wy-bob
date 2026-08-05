@@ -29,8 +29,9 @@ const PAYMENT_LABELS = {
   bank_transfer: "Virement bancaire",
 };
 
-// Ordre "naturel" du cycle de vie d'une commande — sert à repérer les retours en arrière.
-// "cancelled" est volontairement exclu : c'est une sortie de cycle, pas une étape.
+// Ordre "naturel" du cycle de vie d'une commande — sert à repérer les retours en arrière
+// et à construire le stepper. "cancelled" est volontairement exclu : c'est une sortie de
+// cycle, pas une étape, donc elle a son propre bouton plutôt qu'une place dans la séquence.
 const STATUS_SEQUENCE = ["pending", "paid", "processing", "shipped", "delivered"];
 
 function isSensitiveTransition(from, to) {
@@ -63,6 +64,16 @@ function describeShipping(shipping) {
   }
 
   return { product: key, service: String(shipping.service ?? "—") };
+}
+
+// Les dates Chronopost n'ont pas de format documenté garanti : si Date() n'arrive pas à
+// la parser, on affiche la valeur brute plutôt qu'un "Invalid Date".
+function formatTrackingDate(raw) {
+  if (!raw) return "";
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime())
+    ? raw
+    : d.toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" });
 }
 
 export default function AdminOrderDetailPage() {
@@ -131,6 +142,11 @@ export default function AdminOrderDetailPage() {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const cancelOrder = () => {
+    if (!confirm("Annuler cette commande ? Un email sera envoyé au client.")) return;
+    updateStatus("cancelled");
   };
 
   const generateShipment = async () => {
@@ -287,6 +303,8 @@ export default function AdminOrderDetailPage() {
     .filter((r) => r.status === "succeeded")
     .reduce((sum, r) => sum + r.amount, 0);
   const refundable = Math.max(0, Math.round((order.total - refundedTotal) * 100) / 100);
+  const sequenceIdx = STATUS_SEQUENCE.indexOf(order.status); // -1 pour "cancelled"
+  const trackingEvents = order.shipping?.trackingEvents || [];
 
   return (
     <div className="od-page">
@@ -376,416 +394,529 @@ export default function AdminOrderDetailPage() {
             </span>
           )}
         </div>
-        <span className={`ao-status-badge ao-status-${order.status}`}>
-          {STATUS_OPTIONS.find(s => s.value === order.status)?.label || order.status}
-        </span>
+        <div className="od-stat-strip">
+          <div className="od-stat-chip">
+            <div className="od-stat-k">Paiement</div>
+            <div className="od-stat-v">{PAYMENT_LABELS[order.payment] || order.payment || "—"}</div>
+          </div>
+          <div className="od-stat-chip">
+            <div className="od-stat-k">Articles</div>
+            <div className="od-stat-v">{order.products?.length || 0}</div>
+          </div>
+          <div className="od-stat-chip od-stat-chip-total">
+            <div className="od-stat-k">Total</div>
+            <div className="od-stat-v">{(order.total || 0).toLocaleString()} €</div>
+          </div>
+        </div>
       </div>
 
-      <div className="od-grid">
-
-        {/* ── Client ── */}
-        <div className="od-card">
-          <div className="od-card-title-row">
-            <h2 className="od-card-title">Client</h2>
-            <button type="button" className="od-edit-btn" onClick={startEditCustomer}>
-              ✎ Corriger
-            </button>
-          </div>
-
-          <div className="od-client-row">
-            <div className="od-avatar">{initials}</div>
-            <div>
-              <div className="od-client-name">{fullName}</div>
-              {c.email && (
-                <a href={`mailto:${c.email}`} className="od-client-email">{c.email}</a>
-              )}
-              {c.phone && <div className="od-client-phone">{c.phone}</div>}
-            </div>
-          </div>
-          {(c.address || c.city) && (
-            <div className="od-address-block">
-              <div className="od-address-label">Adresse de livraison</div>
-              {c.address && <div className="od-address-line">{c.address}</div>}
-              {c.city    && <div className="od-address-city">{[c.postalCode, c.city].filter(Boolean).join(" ")}</div>}
-              {c.country && <div className="od-address-line">{COUNTRY_OPTIONS.find(o => o.code === c.country)?.label || c.country}</div>}
-            </div>
-          )}
-          {order.shipping?.relayPoint?.id && (
-            <div className="od-address-block">
-              <div className="od-address-label">Point relais</div>
-              <div className="od-address-line">{order.shipping.relayPoint.name}</div>
-              <div className="od-address-city">{order.shipping.relayPoint.zipCode} {order.shipping.relayPoint.city}</div>
-              {order.recipientPickupName && (
-                <div className="od-client-phone">Retrait par : {order.recipientPickupName}</div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* ── Résumé ── */}
-        <div className="od-card">
-          <h2 className="od-card-title">Résumé</h2>
-          <div className="od-summary-row">
-            <span className="od-summary-label">Paiement</span>
-            <span className={`ao-payment ao-payment-${order.payment}`}>
-              {PAYMENT_LABELS[order.payment] || order.payment || "—"}
-            </span>
-          </div>
-          <div className="od-summary-row">
-            <span className="od-summary-label">Articles</span>
-            <span className="od-summary-value">{order.products?.length || 0}</span>
-          </div>
-          <div className="od-summary-row od-summary-total">
-            <span className="od-summary-label">Total</span>
-            <span className="od-total-value">{(order.total || 0).toLocaleString()} €</span>
-          </div>
-        </div>
-
-        {/* ── Changer le statut ── */}
-        <div className="od-card">
-          <h2 className="od-card-title">Changer le statut</h2>
-          <p className="od-status-hint">Un email est envoyé automatiquement au client.</p>
-          <div className="od-status-grid">
-            {STATUS_OPTIONS.map(s => {
-              const isCurrent = order.status === s.value;
-              const sensitive = !isCurrent && isSensitiveTransition(order.status, s.value);
-              const muted = sensitive && s.value !== "cancelled";
-              return (
-                <button
-                  key={s.value}
-                  disabled={updating || isCurrent}
-                  onClick={() => {
-                    if (sensitive && !confirm(`Passer la commande en "${s.label}" ? Un email sera envoyé au client.`)) return;
-                    updateStatus(s.value);
-                  }}
-                  className={`od-status-btn ao-status-${s.value} ${isCurrent ? "od-status-current" : ""} ${muted ? "od-status-muted" : ""}`}
-                >
-                  {s.label}
-                  {isCurrent && <span className="od-status-check" aria-hidden="true">✓</span>}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── Paiement complémentaire ── */}
-        <div className="od-card">
-          <h2 className="od-card-title">Paiement complémentaire</h2>
-          <p className="od-status-hint">
-            Génère un lien de paiement Stripe à montant libre (ex. frais de réexpédition
-            suite à une correction d&apos;adresse) et l&apos;envoie par email au client.
-          </p>
-          <div className="od-customer-form">
-            <div className="od-ship-form-field">
-              <label className="od-ship-form-label">Motif</label>
-              <input
-                className="od-ship-input"
-                placeholder="Ex. Frais de réexpédition"
-                value={extraReason}
-                onChange={(e) => setExtraReason(e.target.value)}
-              />
-            </div>
-            <div className="od-ship-form-field">
-              <label className="od-ship-form-label">Montant (€)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0.01"
-                className="od-ship-input"
-                value={extraAmount}
-                onChange={(e) => setExtraAmount(e.target.value)}
-              />
-            </div>
-            <button
-              type="button"
-              className="od-ship-generate-btn"
-              disabled={sendingExtraPayment}
-              onClick={sendExtraPayment}
-            >
-              {sendingExtraPayment ? "Envoi…" : "Envoyer le lien de paiement"}
-            </button>
-          </div>
-
-          {order.extraPayments?.length > 0 && (
-            <div className="od-extra-payments-list">
-              {order.extraPayments.slice().reverse().map((ep) => (
-                <div key={ep._id} className="od-extra-payment-row">
-                  <span className="od-extra-payment-reason">{ep.reason || "Paiement complémentaire"}</span>
-                  <span className="od-extra-payment-amount">{Number(ep.amount).toFixed(2)} €</span>
-                  <span className={`od-extra-payment-status od-extra-payment-${ep.status}`}>
-                    {ep.status === "paid" ? "✅ Payé" : ep.status === "cancelled" ? "✕ Annulé" : "⏳ En attente"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ── Remboursement ── */}
-        <div className="od-card">
-          <h2 className="od-card-title">Remboursement</h2>
-          {order.paymentIntentId ? (
-            <>
-              <p className="od-status-hint">
-                Rembourse le client via Stripe (droit de rétractation, litige, erreur de commande…).
-                {refundedTotal > 0 && ` Déjà remboursé : ${refundedTotal.toFixed(2)} €.`}
-                {" "}Reste remboursable : {refundable.toFixed(2)} €.
-              </p>
-              {refundable > 0 && (
-                <div className="od-customer-form">
-                  <div className="od-ship-form-field">
-                    <label className="od-ship-form-label">Motif (optionnel)</label>
-                    <input
-                      className="od-ship-input"
-                      placeholder="Ex. Rétractation client"
-                      value={refundReason}
-                      onChange={(e) => setRefundReason(e.target.value)}
-                    />
-                  </div>
-                  <div className="od-ship-form-field">
-                    <label className="od-ship-form-label">Montant (€)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      max={refundable}
-                      className="od-ship-input"
-                      value={refundAmount}
-                      onChange={(e) => setRefundAmount(e.target.value)}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    className="od-ship-cancel-btn"
-                    disabled={refunding}
-                    onClick={sendRefund}
-                  >
-                    {refunding ? "Remboursement…" : "Rembourser"}
-                  </button>
-                </div>
-              )}
-            </>
+      {/* ── Statut de la commande ── */}
+      <div className="od-stepper-card">
+        <div className="od-stepper-head">
+          <h2 className="od-card-title" style={{ margin: 0 }}>Statut de la commande</h2>
+          {order.status === "cancelled" ? (
+            <span className="od-stepper-cancelled-tag">Commande annulée</span>
           ) : (
-            <p className="od-status-hint">
-              Aucun paiement Stripe associé à cette commande (paiement hors ligne) — remboursement à effectuer manuellement.
-            </p>
-          )}
-
-          {order.refunds?.length > 0 && (
-            <div className="od-extra-payments-list">
-              {order.refunds.slice().reverse().map((r, i) => (
-                <div key={r.stripeRefundId || i} className="od-extra-payment-row">
-                  <span className="od-extra-payment-reason">{r.reason || "Remboursement"}</span>
-                  <span className="od-extra-payment-amount">{Number(r.amount).toFixed(2)} €</span>
-                  <span className={`od-extra-payment-status od-extra-payment-${r.status === "succeeded" ? "paid" : r.status === "failed" ? "cancelled" : "pending"}`}>
-                    {r.status === "succeeded" ? "✅ Remboursé" : r.status === "failed" ? "✕ Échoué" : "⏳ En attente"}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <span className="od-stepper-hint">Cliquez sur une étape pour la mettre à jour</span>
           )}
         </div>
 
+        <div className="od-stepper">
+          {STATUS_SEQUENCE.map((value, i) => {
+            const label     = STATUS_OPTIONS.find((s) => s.value === value)?.label;
+            const isDone    = sequenceIdx !== -1 && i < sequenceIdx;
+            const isCurrent = sequenceIdx !== -1 && i === sequenceIdx;
+            return (
+              <button
+                key={value}
+                type="button"
+                disabled={updating || isCurrent}
+                onClick={() => {
+                  if (isSensitiveTransition(order.status, value) && !confirm(`Passer la commande en "${label}" ? Un email sera envoyé au client.`)) return;
+                  updateStatus(value);
+                }}
+                className={`od-step ${isDone ? "is-done" : ""} ${isCurrent ? "is-current" : ""}`}
+              >
+                <span className="od-step-line" />
+                <span className="od-step-dot">{isDone ? "✓" : isCurrent ? "●" : i + 1}</span>
+                <span className="od-step-label">{label}</span>
+                <span className="od-step-sub">{isCurrent ? "Étape actuelle" : ""}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="od-stepper-foot">
+          <span className="od-email-note">Un email de notification est envoyé au client à chaque changement.</span>
+          {order.status !== "cancelled" && (
+            <button type="button" className="od-cancel-link" disabled={updating} onClick={cancelOrder}>
+              ✕ Annuler la commande
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* ── Expédition Chronopost ── */}
-      <div className="od-card od-ship-card">
-        <h2 className="od-card-title">Expédition Chronopost</h2>
+      <div className="od-layout">
 
-        {order.shipping?.shippingError && (
-          <div className="od-ship-error">⚠️ {order.shipping.shippingError}</div>
-        )}
+        <div className="od-main-col">
 
-        {order.shipping?.skybillNumber && (
-          <>
-            <div className="od-ship-summary">
-              <div className="od-ship-field">
-                <div className="od-ship-field-label">N° de suivi</div>
-                <div className="od-ship-field-value">{order.shipping.skybillNumber}</div>
-              </div>
-              <div className="od-ship-field">
-                <div className="od-ship-field-label">Produit</div>
-                <div className="od-ship-field-value od-ship-field-value-plain">{shipInfo.product}</div>
-                <div className="od-ship-field-sub">{order.shipping.productKey}</div>
-              </div>
-              <div className="od-ship-field">
-                <div className="od-ship-field-label">Service</div>
-                <div className="od-ship-field-value od-ship-field-value-plain">{shipInfo.service}</div>
-                <div className="od-ship-field-sub">{order.shipping.service ?? "—"}</div>
-              </div>
-              <div className="od-ship-field">
-                <div className="od-ship-field-label">Poids</div>
-                <div className="od-ship-field-value">{order.shipping.weightKg ?? "—"} kg</div>
-              </div>
-            </div>
-            <div className="od-ship-actions-row">
-              <a
-                href={`/api/admin/orders/${id}/label`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="od-ship-download-btn"
-              >
-                📄 Télécharger l&apos;étiquette
-              </a>
-              <button type="button" className="od-ship-track-btn" onClick={refreshTracking} disabled={tracking}>
-                {tracking ? "Actualisation…" : "🔄 Actualiser le suivi"}
+          {/* ── Client ── */}
+          <div className="od-card">
+            <div className="od-card-title-row">
+              <h2 className="od-card-title">Client</h2>
+              <button type="button" className="od-edit-btn" onClick={startEditCustomer}>
+                ✎ Corriger
               </button>
-              <a
-                href={`/api/admin/orders/${id}/pod`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="od-ship-track-btn"
-              >
-                🧾 Preuve de livraison
-              </a>
-              {!order.shipping.cancelledAt && (
-                <button type="button" className="od-ship-cancel-btn" onClick={cancelShipmentAction} disabled={cancelling}>
-                  {cancelling ? "Annulation…" : "✕ Annuler l'étiquette"}
-                </button>
+            </div>
+
+            <div className="od-client-line">
+              <div className="od-client-id">
+                <div className="od-avatar">{initials}</div>
+                <div className="od-client-name">{fullName}</div>
+              </div>
+              {c.email && (
+                <div className="od-client-item">
+                  <span className="od-client-item-label">Email</span>
+                  <a href={`mailto:${c.email}`} className="od-client-item-value od-client-email">{c.email}</a>
+                </div>
+              )}
+              {c.phone && (
+                <div className="od-client-item">
+                  <span className="od-client-item-label">Téléphone</span>
+                  <span className="od-client-item-value">{c.phone}</span>
+                </div>
+              )}
+              {(c.address || c.city) && (
+                <div className="od-client-item od-client-item-grow">
+                  <span className="od-client-item-label">Adresse de livraison</span>
+                  <span className="od-client-item-value">
+                    {[c.address, [c.postalCode, c.city].filter(Boolean).join(" "), c.country && (COUNTRY_OPTIONS.find(o => o.code === c.country)?.label || c.country)]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </div>
+              )}
+              {order.shipping?.relayPoint?.id && (
+                <div className="od-client-item od-client-item-grow">
+                  <span className="od-client-item-label">Point relais</span>
+                  <span className="od-client-item-value">
+                    {[order.shipping.relayPoint.name, `${order.shipping.relayPoint.zipCode} ${order.shipping.relayPoint.city}`, order.recipientPickupName && `Retrait par : ${order.recipientPickupName}`]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </div>
               )}
             </div>
+          </div>
 
-            {order.shipping.cancelledAt ? (
-              <p className="od-ship-cancelled-hint">
-                Étiquette annulée le {new Date(order.shipping.cancelledAt).toLocaleString("fr-FR")}
-              </p>
-            ) : (
-              <p className="od-ship-cancel-warning">
-                ⚠️ L&apos;annulation n&apos;est pas testable avec le compte de test Chronopost.
-              </p>
+          {/* ── Produits ── */}
+          {order.products?.length > 0 && (
+            <div className="od-card od-products-card">
+              <h2 className="od-card-title">Articles commandés</h2>
+              <table className="od-products-table">
+                <thead>
+                  <tr>
+                    <th>Produit</th>
+                    <th className="od-num">Prix unit.</th>
+                    <th className="od-num">Qté</th>
+                    <th className="od-num">Sous-total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.products.map((item, i) => {
+                    const p        = item.product || {};
+                    const qty      = item.quantity || 1;
+                    const unit     = p.pricePromo ?? p.price ?? 0;
+                    const subtotal = unit * qty;
+                    return (
+                      <tr key={i}>
+                        <td>
+                          <div className="od-product-cell">
+                            {p.image
+                              ? <img src={p.image} alt={p.name} className="od-product-img" />
+                              : <div className="od-product-no-img">👕</div>
+                            }
+                            <div>
+                              <div className="od-product-name">{p.name || "Produit supprimé"}</div>
+                              <div className="od-product-ref">
+                                {p._id ? p._id.toString().slice(-8).toUpperCase() : "—"}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="od-num od-prod-price">{unit.toFixed(2)} €</td>
+                        <td className="od-num">× {qty}</td>
+                        <td className="od-num od-prod-sub">{subtotal.toFixed(2)} €</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan={3} className="od-foot-label">Total commande</td>
+                    <td className="od-num od-foot-total">{(order.total || 0).toFixed(2)} €</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+
+          {/* ── Expédition Chronopost ── */}
+          <div className="od-card od-ship-card">
+            <h2 className="od-card-title">Expédition Chronopost</h2>
+
+            {order.shipping?.shippingError && (
+              <div className="od-ship-error">⚠️ {order.shipping.shippingError}</div>
             )}
 
-            {order.shipping.trackingStatus && (
-              <div className="od-ship-tracking">
-                <div className="od-ship-field-label">Statut de suivi</div>
-                <div className="od-ship-field-value">{order.shipping.trackingStatus}</div>
-                {order.shipping.lastTrackedAt && (
-                  <div className="od-ship-tracking-date">
-                    Actualisé le {new Date(order.shipping.lastTrackedAt).toLocaleString("fr-FR")}
+            {order.shipping?.skybillNumber && (
+              <div className="od-tabs">
+                <button
+                  type="button"
+                  className={`od-tab-btn ${!shipFormOpen ? "is-active" : ""}`}
+                  onClick={() => setShipFormOpen(false)}
+                >
+                  Suivi
+                </button>
+                <button
+                  type="button"
+                  className={`od-tab-btn ${shipFormOpen ? "is-active" : ""}`}
+                  onClick={() => setShipFormOpen(true)}
+                >
+                  Régénérer l&apos;étiquette
+                </button>
+              </div>
+            )}
+
+            {order.shipping?.skybillNumber && !shipFormOpen && (
+              <>
+                <div className="od-ship-summary">
+                  <div className="od-ship-field">
+                    <div className="od-ship-field-label">N° de suivi</div>
+                    <div className="od-ship-field-value">{order.shipping.skybillNumber}</div>
+                  </div>
+                  <div className="od-ship-field">
+                    <div className="od-ship-field-label">Produit</div>
+                    <div className="od-ship-field-value od-ship-field-value-plain">{shipInfo.product}</div>
+                    <div className="od-ship-field-sub">{order.shipping.productKey}</div>
+                  </div>
+                  <div className="od-ship-field">
+                    <div className="od-ship-field-label">Service</div>
+                    <div className="od-ship-field-value od-ship-field-value-plain">{shipInfo.service}</div>
+                    <div className="od-ship-field-sub">{order.shipping.service ?? "—"}</div>
+                  </div>
+                  <div className="od-ship-field">
+                    <div className="od-ship-field-label">Poids</div>
+                    <div className="od-ship-field-value">{order.shipping.weightKg ?? "—"} kg</div>
+                  </div>
+                </div>
+                <div className="od-ship-actions-row">
+                  <a
+                    href={`/api/admin/orders/${id}/label`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="od-ship-download-btn"
+                  >
+                    📄 Télécharger l&apos;étiquette
+                  </a>
+                  <button type="button" className="od-ship-track-btn" onClick={refreshTracking} disabled={tracking}>
+                    {tracking ? "Actualisation…" : "🔄 Actualiser le suivi"}
+                  </button>
+                  <a
+                    href={`/api/admin/orders/${id}/pod`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="od-ship-track-btn"
+                  >
+                    🧾 Preuve de livraison
+                  </a>
+                  {!order.shipping.cancelledAt && (
+                    <button type="button" className="od-ship-cancel-btn" onClick={cancelShipmentAction} disabled={cancelling}>
+                      {cancelling ? "Annulation…" : "✕ Annuler l'étiquette"}
+                    </button>
+                  )}
+                </div>
+
+                {order.shipping.cancelledAt ? (
+                  <p className="od-ship-cancelled-hint">
+                    Étiquette annulée le {new Date(order.shipping.cancelledAt).toLocaleString("fr-FR")}
+                  </p>
+                ) : (
+                  <p className="od-ship-cancel-warning">
+                    ⚠️ L&apos;annulation n&apos;est pas testable avec le compte de test Chronopost.
+                  </p>
+                )}
+
+                {trackingEvents.length > 0 ? (
+                  <div className="od-track-timeline">
+                    {trackingEvents.map((ev, i) => {
+                      const isLast = i === trackingEvents.length - 1;
+                      return (
+                        <div key={i} className={`od-track-item ${isLast ? "is-current" : "is-done"}`}>
+                          <div className="od-track-rail">
+                            <div className="od-track-dot" />
+                            {i < trackingEvents.length - 1 && <div className="od-track-connector" />}
+                          </div>
+                          <div className="od-track-body">
+                            <div className="od-track-title">{ev.label || ev.code || "Événement"}</div>
+                            <div className="od-track-meta">
+                              {formatTrackingDate(ev.date)}{ev.site ? ` · ${ev.site}` : ""}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {order.shipping.lastTrackedAt && (
+                      <div className="od-track-refreshed">
+                        Actualisé le {new Date(order.shipping.lastTrackedAt).toLocaleString("fr-FR")}
+                      </div>
+                    )}
+                  </div>
+                ) : order.shipping.trackingStatus && (
+                  <div className="od-ship-tracking">
+                    <div className="od-ship-field-label">Statut de suivi</div>
+                    <div className="od-ship-field-value">{order.shipping.trackingStatus}</div>
+                    {order.shipping.lastTrackedAt && (
+                      <div className="od-ship-tracking-date">
+                        Actualisé le {new Date(order.shipping.lastTrackedAt).toLocaleString("fr-FR")}
+                      </div>
+                    )}
                   </div>
                 )}
+              </>
+            )}
+
+            {(!order.shipping?.skybillNumber || shipFormOpen) && (
+              <div className="od-ship-form">
+                <div className="od-ship-form-field">
+                  <label className="od-ship-form-label">Forcer le produit</label>
+                  <select
+                    className="od-ship-select"
+                    value={shipOverrides.productKeyOverride}
+                    onChange={(e) => setShipOverrides(o => ({ ...o, productKeyOverride: e.target.value }))}
+                  >
+                    <option value="">Automatique</option>
+                    <optgroup label="France">
+                      {Object.entries(FR_PRODUCTS).map(([key, p]) => (
+                        <option key={key} value={key}>{p.label}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="International">
+                      {Object.entries(INTL_PRODUCTS).map(([key, p]) => (
+                        <option key={key} value={key}>{p.label}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                <div className="od-ship-form-field">
+                  <label className="od-ship-form-label">Type destinataire (intl.)</label>
+                  <select
+                    className="od-ship-select"
+                    value={shipOverrides.businessType}
+                    onChange={(e) => setShipOverrides(o => ({ ...o, businessType: e.target.value }))}
+                  >
+                    <option value="BtoC">Particulier (BtoC)</option>
+                    <option value="BtoB">Entreprise (BtoB)</option>
+                  </select>
+                </div>
+
+                <div className="od-ship-form-field">
+                  <label className="od-ship-form-label">Poids (kg)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    placeholder="Auto"
+                    className="od-ship-input"
+                    value={shipOverrides.weightKgOverride}
+                    onChange={(e) => setShipOverrides(o => ({ ...o, weightKgOverride: e.target.value }))}
+                  />
+                </div>
+
+                <div className="od-ship-form-field">
+                  <label className="od-ship-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={shipOverrides.saturday}
+                      onChange={(e) => setShipOverrides(o => ({ ...o, saturday: e.target.checked }))}
+                    />
+                    Livraison le samedi
+                  </label>
+                </div>
+
+                <button
+                  className="od-ship-generate-btn"
+                  disabled={shipGenerating}
+                  onClick={generateShipment}
+                >
+                  {shipGenerating ? "Génération…" : order.shipping?.skybillNumber ? "Régénérer l'étiquette" : "Générer l'étiquette"}
+                </button>
               </div>
             )}
-          </>
-        )}
-
-        {order.shipping?.skybillNumber && (
-          <button
-            type="button"
-            className="od-ship-toggle-btn"
-            onClick={() => setShipFormOpen(o => !o)}
-          >
-            {shipFormOpen ? "▾ Masquer les options de régénération" : "▸ Modifier / régénérer l'étiquette"}
-          </button>
-        )}
-
-        {(!order.shipping?.skybillNumber || shipFormOpen) && (
-        <div className="od-ship-form">
-          <div className="od-ship-form-field">
-            <label className="od-ship-form-label">Forcer le produit</label>
-            <select
-              className="od-ship-select"
-              value={shipOverrides.productKeyOverride}
-              onChange={(e) => setShipOverrides(o => ({ ...o, productKeyOverride: e.target.value }))}
-            >
-              <option value="">Automatique</option>
-              <optgroup label="France">
-                {Object.entries(FR_PRODUCTS).map(([key, p]) => (
-                  <option key={key} value={key}>{p.label}</option>
-                ))}
-              </optgroup>
-              <optgroup label="International">
-                {Object.entries(INTL_PRODUCTS).map(([key, p]) => (
-                  <option key={key} value={key}>{p.label}</option>
-                ))}
-              </optgroup>
-            </select>
           </div>
 
-          <div className="od-ship-form-field">
-            <label className="od-ship-form-label">Type destinataire (intl.)</label>
-            <select
-              className="od-ship-select"
-              value={shipOverrides.businessType}
-              onChange={(e) => setShipOverrides(o => ({ ...o, businessType: e.target.value }))}
-            >
-              <option value="BtoC">Particulier (BtoC)</option>
-              <option value="BtoB">Entreprise (BtoB)</option>
-            </select>
-          </div>
-
-          <div className="od-ship-form-field">
-            <label className="od-ship-form-label">Poids (kg)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              placeholder="Auto"
-              className="od-ship-input"
-              value={shipOverrides.weightKgOverride}
-              onChange={(e) => setShipOverrides(o => ({ ...o, weightKgOverride: e.target.value }))}
-            />
-          </div>
-
-          <div className="od-ship-form-field">
-            <label className="od-ship-checkbox">
-              <input
-                type="checkbox"
-                checked={shipOverrides.saturday}
-                onChange={(e) => setShipOverrides(o => ({ ...o, saturday: e.target.checked }))}
-              />
-              Livraison le samedi
-            </label>
-          </div>
-
-          <button
-            className="od-ship-generate-btn"
-            disabled={shipGenerating}
-            onClick={generateShipment}
-          >
-            {shipGenerating ? "Génération…" : order.shipping?.skybillNumber ? "Régénérer l'étiquette" : "Générer l'étiquette"}
-          </button>
         </div>
-        )}
-      </div>
 
-      {/* ── Produits ── */}
-      {order.products?.length > 0 && (
-        <div className="od-card od-products-card">
-          <h2 className="od-card-title">Articles commandés</h2>
-          <table className="od-products-table">
-            <thead>
-              <tr>
-                <th>Produit</th>
-                <th>Référence</th>
-                <th>Quantité</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.products.map((item, i) => {
-                const p = item.product || {};
-                return (
-                  <tr key={i}>
-                    <td>
-                      <div className="od-product-cell">
-                        {p.image
-                          ? <img src={p.image} alt={p.name} className="od-product-img" />
-                          : <div className="od-product-no-img">👕</div>
-                        }
-                        <span className="od-product-name">{p.name || "Produit supprimé"}</span>
+        <div className="od-side-col">
+
+          {/* ── Résumé ── */}
+          <div className="od-card">
+            <h2 className="od-card-title">Résumé</h2>
+            <div className="od-summary-row">
+              <span className="od-summary-label">Statut</span>
+              <span className={`ao-status-badge ao-status-${order.status}`}>
+                {STATUS_OPTIONS.find(s => s.value === order.status)?.label || order.status}
+              </span>
+            </div>
+            <div className="od-summary-row">
+              <span className="od-summary-label">Paiement</span>
+              <span className={`ao-payment ao-payment-${order.payment}`}>
+                {PAYMENT_LABELS[order.payment] || order.payment || "—"}
+              </span>
+            </div>
+            <div className="od-summary-row">
+              <span className="od-summary-label">Articles</span>
+              <span className="od-summary-value">{order.products?.length || 0}</span>
+            </div>
+            <div className="od-summary-row od-summary-total">
+              <span className="od-summary-label">Total</span>
+              <span className="od-total-value">{(order.total || 0).toLocaleString()} €</span>
+            </div>
+          </div>
+
+          {/* ── Paiement complémentaire ── */}
+          <details className="od-acc">
+            <summary>
+              Paiement complémentaire
+              <span className="od-acc-chevron">▸</span>
+            </summary>
+            <div className="od-acc-body">
+              <p className="od-status-hint">
+                Génère un lien de paiement Stripe à montant libre (ex. frais de réexpédition
+                suite à une correction d&apos;adresse) et l&apos;envoie par email au client.
+              </p>
+              <div className="od-customer-form">
+                <div className="od-ship-form-field">
+                  <label className="od-ship-form-label">Motif</label>
+                  <input
+                    className="od-ship-input"
+                    placeholder="Ex. Frais de réexpédition"
+                    value={extraReason}
+                    onChange={(e) => setExtraReason(e.target.value)}
+                  />
+                </div>
+                <div className="od-ship-form-field">
+                  <label className="od-ship-form-label">Montant (€)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    className="od-ship-input"
+                    value={extraAmount}
+                    onChange={(e) => setExtraAmount(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="od-ship-generate-btn"
+                  disabled={sendingExtraPayment}
+                  onClick={sendExtraPayment}
+                >
+                  {sendingExtraPayment ? "Envoi…" : "Envoyer le lien de paiement"}
+                </button>
+              </div>
+
+              {order.extraPayments?.length > 0 && (
+                <div className="od-extra-payments-list">
+                  {order.extraPayments.slice().reverse().map((ep) => (
+                    <div key={ep._id} className="od-extra-payment-row">
+                      <span className="od-extra-payment-reason">{ep.reason || "Paiement complémentaire"}</span>
+                      <span className="od-extra-payment-amount">{Number(ep.amount).toFixed(2)} €</span>
+                      <span className={`od-extra-payment-status od-extra-payment-${ep.status}`}>
+                        {ep.status === "paid" ? "✅ Payé" : ep.status === "cancelled" ? "✕ Annulé" : "⏳ En attente"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </details>
+
+          {/* ── Remboursement ── */}
+          <details className="od-acc">
+            <summary>
+              Remboursement
+              {order.paymentIntentId && refundable > 0 && (
+                <span className="od-acc-hint-inline">{refundable.toFixed(2)} € remboursables</span>
+              )}
+            </summary>
+            <div className="od-acc-body">
+              {order.paymentIntentId ? (
+                <>
+                  <p className="od-status-hint">
+                    Rembourse le client via Stripe (droit de rétractation, litige, erreur de commande…).
+                    {refundedTotal > 0 && ` Déjà remboursé : ${refundedTotal.toFixed(2)} €.`}
+                    {" "}Reste remboursable : {refundable.toFixed(2)} €.
+                  </p>
+                  {refundable > 0 && (
+                    <div className="od-customer-form">
+                      <div className="od-ship-form-field">
+                        <label className="od-ship-form-label">Motif (optionnel)</label>
+                        <input
+                          className="od-ship-input"
+                          placeholder="Ex. Rétractation client"
+                          value={refundReason}
+                          onChange={(e) => setRefundReason(e.target.value)}
+                        />
                       </div>
-                    </td>
-                    <td className="od-product-ref">
-                      {p._id ? p._id.toString().slice(-8).toUpperCase() : "—"}
-                    </td>
-                    <td className="od-product-qty">× {item.quantity || 1}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <div className="od-ship-form-field">
+                        <label className="od-ship-form-label">Montant (€)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          max={refundable}
+                          className="od-ship-input"
+                          value={refundAmount}
+                          onChange={(e) => setRefundAmount(e.target.value)}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="od-ship-cancel-btn"
+                        disabled={refunding}
+                        onClick={sendRefund}
+                      >
+                        {refunding ? "Remboursement…" : "Rembourser"}
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="od-status-hint">
+                  Aucun paiement Stripe associé à cette commande (paiement hors ligne) — remboursement à effectuer manuellement.
+                </p>
+              )}
+
+              {order.refunds?.length > 0 && (
+                <div className="od-extra-payments-list">
+                  {order.refunds.slice().reverse().map((r, i) => (
+                    <div key={r.stripeRefundId || i} className="od-extra-payment-row">
+                      <span className="od-extra-payment-reason">{r.reason || "Remboursement"}</span>
+                      <span className="od-extra-payment-amount">{Number(r.amount).toFixed(2)} €</span>
+                      <span className={`od-extra-payment-status od-extra-payment-${r.status === "succeeded" ? "paid" : r.status === "failed" ? "cancelled" : "pending"}`}>
+                        {r.status === "succeeded" ? "✅ Remboursé" : r.status === "failed" ? "✕ Échoué" : "⏳ En attente"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </details>
+
         </div>
-      )}
+      </div>
 
     </div>
   );

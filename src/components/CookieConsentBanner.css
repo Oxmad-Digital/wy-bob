@@ -67,12 +67,13 @@
 .cookie-banner-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 10px;
 }
 
 .cookie-btn {
-  border-radius: 50px;
+  border-radius: 12px;
   padding: 10px 22px;
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
@@ -90,10 +91,6 @@
 .cookie-btn-primary {
   background: #F9C464;
   color: #1B1843;
-}
-
-.cookie-btn-save {
-  border-radius: 12px;
 }
 
 .cookie-option {
