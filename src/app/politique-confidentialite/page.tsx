@@ -28,9 +28,9 @@ export default function PolitiqueConfidentialite() {
               Le responsable du traitement des données personnelles collectées sur le site est :
             </p>
             <ul className={styles.list}>
-              <li><span className={styles.label}>Société :</span> Wybob — [Nom de l'entreprise ou Nom/Prénom]</li>
-              <li><span className={styles.label}>Siège social :</span> [Adresse complète]</li>
-              <li><span className={styles.label}>Contact :</span> [Email] | [Téléphone]</li>
+              <li><span className={styles.label}>Société :</span> WYBOB — Penelope WYBO, entrepreneur individuel</li>
+              <li><span className={styles.label}>Siège social :</span> 10 rue André Lefebvre, 75015 Paris, France</li>
+              <li><span className={styles.label}>Contact :</span> <a href="mailto:contact@wybob.fr" className={styles.link}>contact@wybob.fr</a></li>
             </ul>
           </section>
 
@@ -103,7 +103,7 @@ export default function PolitiqueConfidentialite() {
             <ul className={styles.list}>
               <li><span className={styles.label}>Stripe :</span> Prestataire de paiement en ligne sécurisé.</li>
               <li><span className={styles.label}>Transporteurs :</span> Partenaires logistiques pour la livraison des commandes.</li>
-              <li><span className={styles.label}>Hébergeur :</span> [Nom de l'hébergeur] pour l'hébergement du site et des données.</li>
+              <li><span className={styles.label}>Hébergeur :</span> Vercel Inc. pour l'hébergement du site et des données.</li>
               <li><span className={styles.label}>Google Analytics :</span> Analyse de la fréquentation du site (données anonymisées).</li>
             </ul>
             <p className={styles.text}>

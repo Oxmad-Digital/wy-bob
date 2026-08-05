@@ -102,6 +102,8 @@ export default function AdminOrderDetailPage() {
   const [refundAmount, setRefundAmount] = useState("");
   const [refundReason, setRefundReason] = useState("");
   const [refunding, setRefunding] = useState(false);
+  const [invoice, setInvoice] = useState(null);
+  const [invoiceGenerating, setInvoiceGenerating] = useState(false);
 
   const showToast = (msg, type = "success") => {
     setToast({ message: msg, type });
@@ -123,6 +125,14 @@ export default function AdminOrderDetailPage() {
       }
     };
     fetchOrder();
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/admin/orders/${id}/invoice`);
+        const data = await res.json();
+        if (data.success) setInvoice(data.invoice);
+      } catch {}
+    })();
   }, [id, router]);
 
   const updateStatus = async (newStatus) => {
@@ -263,6 +273,21 @@ export default function AdminOrderDetailPage() {
       showToast("Erreur serveur", "error");
     } finally {
       setRefunding(false);
+    }
+  };
+
+  const generateInvoice = async () => {
+    setInvoiceGenerating(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${id}/invoice`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Erreur", "error"); return; }
+      setInvoice(data.invoice);
+      showToast("Facture générée");
+    } catch {
+      showToast("Erreur serveur", "error");
+    } finally {
+      setInvoiceGenerating(false);
     }
   };
 
@@ -784,6 +809,50 @@ export default function AdminOrderDetailPage() {
               <span className="od-total-value">{(order.total || 0).toLocaleString()} €</span>
             </div>
           </div>
+
+          {/* ── Facture ── */}
+          {["paid", "processing", "shipped", "delivered"].includes(order.status) && (
+            <div className="od-card">
+              <h2 className="od-card-title">Facture</h2>
+              {invoice ? (
+                <>
+                  <div className="od-summary-row">
+                    <span className="od-summary-label">Numéro</span>
+                    <span className="od-summary-value">{invoice.invoiceNumber}</span>
+                  </div>
+                  <div className="od-summary-row">
+                    <span className="od-summary-label">Émise le</span>
+                    <span className="od-summary-value">
+                      {new Date(invoice.issuedAt).toLocaleDateString("fr-FR")}
+                    </span>
+                  </div>
+                  <a
+                    href={`/api/admin/invoices/${invoice._id}/pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="od-ship-download-btn"
+                    style={{ marginTop: 10 }}
+                  >
+                    📄 Télécharger la facture
+                  </a>
+                </>
+              ) : (
+                <>
+                  <p className="od-status-hint">
+                    Aucune facture générée pour cette commande — la génération automatique a peut-être échoué.
+                  </p>
+                  <button
+                    type="button"
+                    className="od-ship-generate-btn"
+                    disabled={invoiceGenerating}
+                    onClick={generateInvoice}
+                  >
+                    {invoiceGenerating ? "Génération…" : "Générer la facture"}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
 
           {/* ── Paiement complémentaire ── */}
           <details className="od-acc">

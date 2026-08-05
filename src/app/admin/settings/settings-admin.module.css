@@ -124,6 +124,51 @@
 .badgeActive  { display:inline-block; padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:600; background:#fee2e2; color:#991b1b; }
 .badgeInactive { display:inline-block; padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:600; background:#dcfce7; color:#166534; }
 
+.billingGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 18px;
+}
+
+.billingField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.billingInput {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  color: #1c1917;
+  padding: 9px 12px;
+  border: 1px solid #e7e5e4;
+  border-radius: 8px;
+  background: #fafaf9;
+  outline: none;
+}
+.billingInput:focus {
+  border-color: #1B1843;
+  background: #fff;
+}
+
+.saveButton {
+  margin-top: 20px;
+  background: #1B1843;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+}
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 700px) {
   .page { padding: 16px; }
+  .billingGrid { grid-template-columns: 1fr; }
 }

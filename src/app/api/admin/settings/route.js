@@ -38,10 +38,15 @@ export async function PATCH(req) {
 
     await connectDB();
     const body = await req.json();
-    const { maintenanceMode } = body;
+    const { maintenanceMode, billing } = body;
 
     const update = {};
     if (maintenanceMode !== undefined) update.maintenanceMode = maintenanceMode;
+    if (billing !== undefined) {
+      for (const [key, value] of Object.entries(billing)) {
+        update[`billing.${key}`] = value;
+      }
+    }
 
     const settings = await SiteSettings.findOneAndUpdate({}, { $set: update }, { new: true, upsert: true });
     return NextResponse.json({ success: true, settings });

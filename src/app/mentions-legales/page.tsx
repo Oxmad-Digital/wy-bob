@@ -26,19 +26,20 @@ export default function MentionsLegales() {
             </h2>
             <p className={styles.text}>
               Le présent site, accessible à l'URL{' '}
-              <a href="https://www.exemple.com" className={styles.link}>
-                https://www.exemple.com
+              <a href="https://www.wybob.fr" className={styles.link}>
+                https://www.wybob.fr
               </a>
               , est édité par :
             </p>
             <ul className={styles.list}>
-              <li><span className={styles.label}>Dénomination sociale :</span> [Nom de l'entreprise ou Nom/Prénom]</li>
-              <li><span className={styles.label}>Forme juridique :</span> [Ex: SAS, auto-entrepreneur, etc.]</li>
-              <li><span className={styles.label}>Siège social :</span> [Adresse complète]</li>
-              <li><span className={styles.label}>SIRET :</span> [Numéro SIRET]</li>
-              <li><span className={styles.label}>Numéro de TVA Intracommunautaire :</span> [Numéro ou "Franchise en base de TVA"]</li>
-              <li><span className={styles.label}>Directeur de la publication :</span> [Nom du responsable]</li>
-              <li><span className={styles.label}>Contact :</span> [Email] | [Téléphone]</li>
+              <li><span className={styles.label}>Dénomination :</span> Penelope WYBO (nom commercial : WYBOB)</li>
+              <li><span className={styles.label}>Forme juridique :</span> Entrepreneur individuel</li>
+              <li><span className={styles.label}>Siège social :</span> 10 rue André Lefebvre, 75015 Paris, France</li>
+              <li><span className={styles.label}>SIRET :</span> 106 049 539 00013</li>
+              <li><span className={styles.label}>Immatriculation :</span> Registre National des Entreprises (RNE)</li>
+              <li><span className={styles.label}>TVA :</span> TVA non applicable, article 293 B du Code général des impôts</li>
+              <li><span className={styles.label}>Directrice de la publication :</span> Penelope WYBO</li>
+              <li><span className={styles.label}>Contact :</span> <a href="mailto:contact@wybob.fr" className={styles.link}>contact@wybob.fr</a></li>
             </ul>
           </section>
 
@@ -49,8 +50,8 @@ export default function MentionsLegales() {
               Hébergement
             </h2>
             <p className={styles.text}>
-              Le Site est hébergé par la société [Nom de l'hébergeur], situé au [Adresse de
-              l'hébergeur]. Contact : [Téléphone ou email de l'hébergeur]
+              Le Site est hébergé par la société Vercel Inc., dont le siège social est situé au
+              340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis.
             </p>
           </section>
 
@@ -62,7 +63,7 @@ export default function MentionsLegales() {
             </h2>
             <p className={styles.text}>
               L'ensemble du contenu de ce site (textes, logos, graphismes, icônes, structures
-              techniques) est la propriété exclusive de [Nom de l'entreprise]. Toute reproduction,
+              techniques) est la propriété exclusive de Penelope WYBO (WYBOB). Toute reproduction,
               représentation, modification ou adaptation de tout ou partie des éléments du site est
               strictement interdite sans autorisation écrite préalable.
             </p>
@@ -79,9 +80,9 @@ export default function MentionsLegales() {
               de ses utilisateurs.
             </p>
             <ul className={styles.list}>
-              <li><span className={styles.label}>Responsable du traitement :</span> [Nom du responsable]</li>
+              <li><span className={styles.label}>Responsable du traitement :</span> Penelope WYBO</li>
               <li><span className={styles.label}>Finalités :</span> Gestion des commandes, envois de newsletters (si applicable), amélioration de la navigation via cookies.</li>
-              <li><span className={styles.label}>Droits des utilisateurs :</span> Vous disposez d'un droit d'accès, de rectification, de suppression et d'opposition. Pour exercer ce droit, contactez-nous à : [Votre Email de contact].</li>
+              <li><span className={styles.label}>Droits des utilisateurs :</span> Vous disposez d'un droit d'accès, de rectification, de suppression et d'opposition. Pour exercer ce droit, contactez-nous à : <a href="mailto:contact@wybob.fr" className={styles.link}>contact@wybob.fr</a>.</li>
             </ul>
           </section>
 
