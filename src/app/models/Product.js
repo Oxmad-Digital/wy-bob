@@ -22,11 +22,10 @@ const ProductSchema = new mongoose.Schema({
 
 // Le stock global reste toujours la somme des stocks par variante (dès qu'il y en a) —
 // il n'existe pas d'entrée manuelle indépendante pour éviter que les deux nombres divergent.
-ProductSchema.pre("save", function (next) {
+ProductSchema.pre("save", function () {
   if (this.variants && this.variants.length > 0) {
     this.stock = this.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
   }
-  next();
 });
 
 export default mongoose.models.Product || mongoose.model("Product", ProductSchema);
