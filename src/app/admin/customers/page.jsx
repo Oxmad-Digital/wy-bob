@@ -1,11 +1,42 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import "./customers.css";
 import { TOAST_DURATION } from "../_constants";
 
 const PER_PAGE = 25;
+
+const TOGGLEABLE_COLUMNS = [
+  { key: "contact",   label: "Contact"           },
+  { key: "city",      label: "Ville"             },
+  { key: "lastOrder", label: "Dernière commande" },
+  { key: "orders",    label: "Commandes"         },
+  { key: "spent",     label: "Total dépensé"     },
+  { key: "status",    label: "Statut"            },
+];
+
+const COLUMNS_STORAGE_KEY = "wybob_admin_customers_columns";
+
+function getDefaultVisibleColumns() {
+  if (typeof window === "undefined") {
+    return { contact: true, city: true, lastOrder: true, orders: true, spent: true, status: true };
+  }
+  const w = window.innerWidth;
+  if (w >= 1600) return { contact: true,  city: true,  lastOrder: true,  orders: true, spent: true,  status: true };
+  if (w >= 1280) return { contact: true,  city: false, lastOrder: true,  orders: true, spent: true,  status: false };
+  return          { contact: false, city: false, lastOrder: false, orders: true, spent: true,  status: false };
+}
+
+function loadVisibleColumns() {
+  const fallback = getDefaultVisibleColumns();
+  if (typeof window === "undefined") return fallback;
+  try {
+    const saved = window.localStorage.getItem(COLUMNS_STORAGE_KEY);
+    if (saved) return { ...fallback, ...JSON.parse(saved) };
+  } catch {}
+  return fallback;
+}
 
 export default function CustomersPage() {
   const [customers, setCustomers]           = useState([]);
@@ -21,6 +52,17 @@ export default function CustomersPage() {
   const [exporting, setExporting]           = useState(false);
   const [toast, setToast]                   = useState(null);
   const [confirmModal, setConfirmModal]     = useState(null);
+  const [columnsOpen, setColumnsOpen]       = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState(loadVisibleColumns);
+  const columnsRef = useRef(null);
+
+  const toggleColumn = (key) => {
+    setVisibleColumns(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { window.localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   const showToast = (msg, type = "success") => {
     setToast({ message: msg, type });
@@ -44,6 +86,14 @@ export default function CustomersPage() {
     loadCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, statusFilter, sort, sortDir, page]);
+
+  useEffect(() => {
+    const close = (e) => {
+      if (columnsRef.current && !columnsRef.current.contains(e.target)) setColumnsOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
 
   const loadCustomers = async () => {
     try {
@@ -270,6 +320,29 @@ export default function CustomersPage() {
           ))}
         </div>
         <div className="ap-divider" />
+        <div className="ap-columns-wrap" ref={columnsRef}>
+          <button className="ap-sort-trigger" onClick={() => setColumnsOpen(o => !o)}>
+            Colonnes
+            <span className={`ap-sort-trigger-arrow ${columnsOpen ? "open" : ""}`} aria-hidden="true">▼</span>
+          </button>
+          {columnsOpen && (
+            <ul className="ap-sort-dropdown ap-columns-dropdown">
+              {TOGGLEABLE_COLUMNS.map(col => (
+                <li
+                  key={col.key}
+                  className="ap-column-option"
+                  onClick={() => toggleColumn(col.key)}
+                >
+                  <span className={`ap-column-checkbox ${visibleColumns[col.key] ? "checked" : ""}`} aria-hidden="true">
+                    {visibleColumns[col.key] && "✓"}
+                  </span>
+                  {col.label}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="ap-divider" />
         <div className="ap-stats-inline">
           <div className="ap-stat-chip">
             <span className="ap-stat-chip-value">{pagination.total}</span>
@@ -301,18 +374,24 @@ export default function CustomersPage() {
               <thead>
                 <tr>
                   <th>Client</th>
-                  <th>Contact</th>
-                  <th>Ville</th>
-                  <th className="ac-th-sort" onClick={() => handleSort("lastOrderAt")}>
-                    Dernière commande<SortIcon field="lastOrderAt" />
-                  </th>
-                  <th className="ac-th-sort" onClick={() => handleSort("totalOrders")}>
-                    Commandes<SortIcon field="totalOrders" />
-                  </th>
-                  <th className="ac-th-sort" onClick={() => handleSort("totalSpent")}>
-                    Total dépensé<SortIcon field="totalSpent" />
-                  </th>
-                  <th>Statut</th>
+                  {visibleColumns.contact   && <th>Contact</th>}
+                  {visibleColumns.city      && <th>Ville</th>}
+                  {visibleColumns.lastOrder && (
+                    <th className="ac-th-sort" onClick={() => handleSort("lastOrderAt")}>
+                      Dernière commande<SortIcon field="lastOrderAt" />
+                    </th>
+                  )}
+                  {visibleColumns.orders && (
+                    <th className="ac-th-sort" onClick={() => handleSort("totalOrders")}>
+                      Commandes<SortIcon field="totalOrders" />
+                    </th>
+                  )}
+                  {visibleColumns.spent && (
+                    <th className="ac-th-sort" onClick={() => handleSort("totalSpent")}>
+                      Total dépensé<SortIcon field="totalSpent" />
+                    </th>
+                  )}
+                  {visibleColumns.status && <th>Statut</th>}
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -339,40 +418,52 @@ export default function CustomersPage() {
                         </div>
                       </div>
                     </td>
-                    <td>
-                      <div className="ac-contact">
-                        <a href={`mailto:${customer.email}`} className="ac-email-link">{customer.email}</a>
-                        {customer.phone && <span>{customer.phone}</span>}
-                      </div>
-                    </td>
-                    <td className="ac-city">
-                      {customer.city || <span className="ac-empty">—</span>}
-                    </td>
-                    <td>
-                      {customer.lastOrderAt ? (
-                        <span
-                          className="ac-last-order"
-                          title={new Date(customer.lastOrderAt).toLocaleDateString("fr-FR")}
-                        >
-                          {formatLastOrder(customer.lastOrderAt)}
+                    {visibleColumns.contact && (
+                      <td>
+                        <div className="ac-contact">
+                          <a href={`mailto:${customer.email}`} className="ac-email-link">{customer.email}</a>
+                          {customer.phone && <span>{customer.phone}</span>}
+                        </div>
+                      </td>
+                    )}
+                    {visibleColumns.city && (
+                      <td className="ac-city">
+                        {customer.city || <span className="ac-empty">—</span>}
+                      </td>
+                    )}
+                    {visibleColumns.lastOrder && (
+                      <td>
+                        {customer.lastOrderAt ? (
+                          <span
+                            className="ac-last-order"
+                            title={new Date(customer.lastOrderAt).toLocaleDateString("fr-FR")}
+                          >
+                            {formatLastOrder(customer.lastOrderAt)}
+                          </span>
+                        ) : (
+                          <span className="ac-empty">—</span>
+                        )}
+                      </td>
+                    )}
+                    {visibleColumns.orders && (
+                      <td>
+                        <span className="ac-orders-badge">{customer.totalOrders}</span>
+                      </td>
+                    )}
+                    {visibleColumns.spent && (
+                      <td>
+                        <span className="ac-total-spent">
+                          {(customer.totalSpent || 0).toLocaleString()} €
                         </span>
-                      ) : (
-                        <span className="ac-empty">—</span>
-                      )}
-                    </td>
-                    <td>
-                      <span className="ac-orders-badge">{customer.totalOrders}</span>
-                    </td>
-                    <td>
-                      <span className="ac-total-spent">
-                        {(customer.totalSpent || 0).toLocaleString()} €
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`ap-badge ${customer.status === "active" ? "ap-badge-ok" : "ap-badge-out"}`}>
-                        {customer.status === "active" ? "Actif" : "Bloqué"}
-                      </span>
-                    </td>
+                      </td>
+                    )}
+                    {visibleColumns.status && (
+                      <td>
+                        <span className={`ap-badge ${customer.status === "active" ? "ap-badge-ok" : "ap-badge-out"}`}>
+                          {customer.status === "active" ? "Actif" : "Bloqué"}
+                        </span>
+                      </td>
+                    )}
                     <td>
                       <div className="ap-actions">
                         <Link href={`/admin/customers/${customer._id}`} className="ap-btn-view" aria-label="Voir le profil du client">↗</Link>
