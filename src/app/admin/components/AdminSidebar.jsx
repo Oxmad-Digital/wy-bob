@@ -189,12 +189,21 @@ const bottomNavLinks = [
   internalLinks[2], // Commandes
   internalLinks[1], // Produits & Stock
   internalLinks[3], // Clients
+];
+
+const moreNavLinks = [
+  internalLinks[4], // Factures
   internalLinks[6], // Codes promo
+  internalLinks[5], // Galerie photo
+  internalLinks[7], // Parrainage
+  internalLinks[8], // Réglages
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const isMoreActive = moreNavLinks.some((link) => pathname.startsWith(link.href));
 
   return (
     <>
@@ -259,6 +268,42 @@ export default function AdminSidebar() {
         </nav>
       </aside>
 
+      {/* ── More pages sheet (mobile) ── */}
+      {moreOpen && (
+        <>
+          <div className={styles.moreOverlay} onClick={() => setMoreOpen(false)} />
+          <div className={styles.moreSheet}>
+            <div className={styles.moreSheetHeader}>
+              <span>Autres pages</span>
+              <button
+                type="button"
+                className={styles.moreSheetClose}
+                onClick={() => setMoreOpen(false)}
+                aria-label="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className={styles.moreSheetGrid}>
+              {moreNavLinks.map((link) => {
+                const isActive = pathname.startsWith(link.href);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMoreOpen(false)}
+                    className={`${styles.moreSheetItem} ${isActive ? styles.moreSheetItemActive : ''}`}
+                  >
+                    <span className={styles.moreSheetIcon}>{link.icon}</span>
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
       {/* ── Bottom nav mobile ── */}
       <nav className={styles.bottomNav}>
         {bottomNavLinks.map((link) => {
@@ -274,6 +319,19 @@ export default function AdminSidebar() {
             </Link>
           );
         })}
+        <button
+          type="button"
+          className={`${styles.bottomNavItem} ${isMoreActive ? styles.bottomNavItemActive : ''}`}
+          onClick={() => setMoreOpen((open) => !open)}
+          aria-expanded={moreOpen}
+        >
+          <span className={styles.bottomNavIcon}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>
+            </svg>
+          </span>
+          <span>Plus</span>
+        </button>
       </nav>
     </>
   );

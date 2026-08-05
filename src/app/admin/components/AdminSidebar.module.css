@@ -253,4 +253,87 @@
     justify-content: center;
     line-height: 1;
   }
+
+  /* ── More pages sheet ── */
+  .moreOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 150;
+  }
+
+  .moreSheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 56px;
+    background: #1B1843;
+    border-top: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 16px 16px 0 0;
+    z-index: 151;
+    padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .moreSheetHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 6px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .moreSheetClose {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .moreSheetGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .moreSheetItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.75);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.04);
+    transition: background 0.12s, color 0.12s;
+  }
+
+  .moreSheetItem:active {
+    background: rgba(255, 255, 255, 0.10);
+  }
+
+  .moreSheetItemActive {
+    background: rgba(249, 196, 100, 0.15);
+    color: #F9C464;
+  }
+
+  .moreSheetIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
 }

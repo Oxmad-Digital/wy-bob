@@ -21,14 +21,14 @@ export default function Footer() {
         </button>
       </div>
       <div className="footerRight">
-        <a href="#" aria-label="Instagram">
+        <a href="https://www.instagram.com/wy_bob" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#1B1843' }}>
             <rect x="2" y="2" width="20" height="20" rx="5" ry="5" strokeWidth="2"/>
             <circle cx="12" cy="12" r="4" strokeWidth="2"/>
             <circle cx="17.5" cy="6.5" r="1" fill="currentColor" strokeWidth="0"/>
           </svg>
         </a>
-        <a href="#" aria-label="Facebook">
+        <a href="https://www.facebook.com/profile.php?id=61592807902090" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style={{ color: '#1B1843' }}>
             <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/>
           </svg>

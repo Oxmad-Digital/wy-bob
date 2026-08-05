@@ -26,14 +26,14 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://wybob.shop'
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'WYBOB — Le bob premium fait main',
+    default: 'WYBOB — Bob premium fait main en coton bio, Madagascar',
     template: '%s — WYBOB',
   },
-  description: "WYBOB, le bob premium pensé dans les moindres détails : caractère, confort et savoir-faire artisanal.",
+  description: "Bob premium fait main en 100% coton bio, façonné par des artisans à Madagascar. Caractère, confort et savoir-faire artisanal, pensés dans les moindres détails.",
   keywords: ['WYBOB', 'bob', 'chapeau', 'bob premium', 'bob artisanal', 'accessoire mode'],
   openGraph: {
-    title: 'WYBOB — Le bob premium fait main',
-    description: "Pensé dans les moindres détails, le WYBOB allie caractère, confort et savoir-faire artisanal.",
+    title: 'WYBOB — Bob premium fait main en coton bio, Madagascar',
+    description: "Bob premium fait main en 100% coton bio, façonné par des artisans à Madagascar. Caractère, confort et savoir-faire artisanal, pensés dans les moindres détails.",
     url: siteUrl,
     siteName: 'WYBOB',
     locale: 'fr_FR',
@@ -42,8 +42,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'WYBOB — Le bob premium fait main',
-    description: "Pensé dans les moindres détails, le WYBOB allie caractère, confort et savoir-faire artisanal.",
+    title: 'WYBOB — Bob premium fait main en coton bio, Madagascar',
+    description: "Bob premium fait main en 100% coton bio, façonné par des artisans à Madagascar. Caractère, confort et savoir-faire artisanal, pensés dans les moindres détails.",
     images: ['/images/wybob_bleu.webp'],
   },
   robots: {

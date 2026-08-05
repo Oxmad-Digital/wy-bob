@@ -113,4 +113,18 @@ body:has(.admin-root) {
   .admin-root .db-header-logout {
     padding: 5px 8px;
   }
+
+  .admin-root .db-header {
+    grid-template-columns: 1fr auto auto;
+  }
+
+  .admin-root .db-header-logo {
+    visibility: visible;
+    order: 2;
+    justify-self: end;
+  }
+
+  .admin-root .db-header-actions {
+    order: 1;
+  }
 }
