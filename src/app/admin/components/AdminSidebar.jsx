@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import styles from './AdminSidebar.module.css';
@@ -80,6 +81,16 @@ const internalLinks = [
         <line x1="12" y1="22" x2="12" y2="7"/>
         <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
         <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/admin/settings',
+    label: 'Réglages',
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
       </svg>
     ),
   },
@@ -171,6 +182,7 @@ const bottomNavLinks = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   return (
     <>
@@ -201,20 +213,37 @@ export default function AdminSidebar() {
             );
           })}
 
-          <p className={styles.section}>Outils</p>
-          {externalTools.map((tool) => (
-            <a
-              key={tool.href}
-              href={tool.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.link}
+          <button
+            type="button"
+            className={styles.sectionToggle}
+            onClick={() => setToolsOpen((open) => !open)}
+            aria-expanded={toolsOpen}
+          >
+            <span>Outils</span>
+            <svg
+              className={`${styles.chevron} ${toolsOpen ? styles.chevronOpen : ''}`}
+              width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
             >
-              <span className={styles.linkIcon}>{tool.icon}</span>
-              <span className={styles.linkLabel}>{tool.label}</span>
-              <span className={styles.externalIcon} aria-hidden="true">↗</span>
-            </a>
-          ))}
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          {toolsOpen && (
+            <div className={styles.toolsList}>
+              {externalTools.map((tool) => (
+                <a
+                  key={tool.href}
+                  href={tool.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.link}
+                >
+                  <span className={styles.linkIcon}>{tool.icon}</span>
+                  <span className={styles.linkLabel}>{tool.label}</span>
+                  <span className={styles.externalIcon} aria-hidden="true">↗</span>
+                </a>
+              ))}
+            </div>
+          )}
         </nav>
       </aside>
 

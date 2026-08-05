@@ -90,6 +90,45 @@
   margin-top: 4px;
 }
 
+/* ── Section toggle (dépliant) ── */
+.sectionToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+  margin: 14px 0 5px;
+  padding: 4px 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.12s;
+}
+
+.sectionToggle:hover {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.chevron {
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.toolsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
 /* ── Link ── */
 .link {
   display: flex;
