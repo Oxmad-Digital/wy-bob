@@ -357,3 +357,7 @@
   margin: 4px 0 0;
   grid-column: 1 / -1;
 }
+
+@media (max-width: 768px) {
+  .toast { bottom: 72px; }
+}

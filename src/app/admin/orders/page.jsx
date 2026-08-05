@@ -266,19 +266,18 @@ export default function AdminOrdersPage() {
         </div>
       )}
 
-      {/* Topbar */}
-      <div className="ap-topbar">
-<div className="ap-topbar-title-group">
+      {/* Header */}
+      <div className="ap-header">
+        <div className="ap-topbar-title-group">
           <h1 className="ap-topbar-title">Commandes</h1>
           <p className="ap-topbar-subtitle">Suivez et gérez toutes les commandes</p>
         </div>
         <button className="ac-btn-export" onClick={exportCSV} disabled={exporting}>
           {exporting ? "Export…" : (<>Export CSV <ExportCsvIcon /></>)}
         </button>
-      </div>
 
-      {/* Toolbar */}
-      <div className="ap-toolbar">
+        {/* Toolbar */}
+        <div className="ap-toolbar">
         <input
           type="text"
           placeholder="Rechercher par nom, email, ville, n° commande…"
@@ -387,6 +386,7 @@ export default function AdminOrdersPage() {
             </div>
           </>
         )}
+        </div>
       </div>
 
       {/* Table */}

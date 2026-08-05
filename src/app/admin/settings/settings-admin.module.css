@@ -172,3 +172,7 @@
   .page { padding: 16px; }
   .billingGrid { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 768px) {
+  .toast { bottom: 72px; }
+}

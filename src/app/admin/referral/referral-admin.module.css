@@ -469,3 +469,7 @@
   .grid { grid-template-columns: 1fr; }
   .statRow { flex-direction: column; }
 }
+
+@media (max-width: 768px) {
+  .toast { bottom: 72px; }
+}

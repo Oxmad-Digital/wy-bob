@@ -10,12 +10,15 @@
   font-family: 'DM Sans', sans-serif;
 }
 
-/* ── Topbar ── */
-.ap-topbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
+/* ── Header ── */
+.ap-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "title  export"
+    "toolbar toolbar";
+  column-gap: 16px;
+  row-gap: 16px;
 }
 
 
@@ -36,12 +39,14 @@
 }
 
 .ap-topbar-title-group {
-  flex: 1;
+  grid-area: title;
 }
 
 .ac-btn-export {
+  grid-area: export;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 9px 16px;
   background: #fff;
@@ -54,6 +59,7 @@
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
+  align-self: start;
   transition: all 0.15s;
 }
 .ac-btn-export:hover:not(:disabled) { border-color: #0f172a; background: #f5f5f4; }
@@ -61,6 +67,8 @@
 
 /* ── Toolbar ── */
 .ap-toolbar {
+  grid-area: toolbar;
+  position: relative;
   background: #fff;
   border: 1px solid #e7e5e4;
   border-radius: 12px;
@@ -577,22 +585,33 @@
 }
 
 @media (max-width: 640px) {
-  .ap-topbar {
-    flex-wrap: wrap;
-    row-gap: 10px;
-  }
-
-  .ap-topbar-title-group {
-    order: 3;
-    width: 100%;
-    flex-basis: 100%;
+  .ap-header {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "toolbar"
+      "export";
+    row-gap: 12px;
   }
 
   .ac-btn-export {
-    order: 2;
-    flex: 1;
     justify-content: center;
     padding: 7px 14px;
     font-size: 13px;
+  }
+
+  /* Dropdowns anchor to the toolbar instead of their trigger so they
+     can never spill past the screen edge on narrow viewports. */
+  .ap-status-wrap,
+  .ap-sort-wrap,
+  .ap-columns-wrap {
+    position: static;
+  }
+
+  .ap-sort-dropdown {
+    left: 16px;
+    right: 16px;
+    width: auto;
+    min-width: 0;
   }
 }

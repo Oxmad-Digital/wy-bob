@@ -7,6 +7,19 @@ import { TOAST_DURATION } from "../_constants";
 
 const PER_PAGE = 25;
 
+function ExportCsvIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="M8 13h2" />
+      <path d="M14 13h2" />
+      <path d="M8 17h2" />
+      <path d="M14 17h2" />
+    </svg>
+  );
+}
+
 const TOGGLEABLE_COLUMNS = [
   { key: "contact",   label: "Contact"           },
   { key: "city",      label: "Ville"             },
@@ -284,22 +297,21 @@ export default function CustomersPage() {
         </div>
       )}
 
-      {/* Topbar */}
-      <div className="ap-topbar">
-<div className="ap-topbar-title-group">
+      {/* Header */}
+      <div className="ap-header">
+        <div className="ap-topbar-title-group">
           <h1 className="ap-topbar-title">Clients</h1>
           <p className="ap-topbar-subtitle">Gérez vos clients et leur historique d'achats</p>
         </div>
         <button className="ac-btn-export" onClick={exportCSV} disabled={exporting}>
-          {exporting ? "Export…" : "↓ Export CSV"}
+          {exporting ? "Export…" : (<>Export CSV <ExportCsvIcon /></>)}
         </button>
         <button className="ap-btn-add" onClick={syncFromOrders} disabled={syncing}>
           {syncing ? "Synchronisation…" : "Sync commandes"}
         </button>
-      </div>
 
-      {/* Toolbar */}
-      <div className="ap-toolbar">
+        {/* Toolbar */}
+        <div className="ap-toolbar">
         <input
           type="text"
           placeholder="Rechercher par nom, email, téléphone…"
@@ -353,6 +365,7 @@ export default function CustomersPage() {
             <span className="ap-stat-chip-value">{pagination.totalPages}</span>
             <span className="ap-stat-chip-label">Pages</span>
           </div>
+        </div>
         </div>
       </div>
 
