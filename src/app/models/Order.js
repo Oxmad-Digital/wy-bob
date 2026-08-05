@@ -28,6 +28,8 @@ const OrderSchema = new mongoose.Schema(
           required: true,
         },
         quantity: Number,
+        color: { type: String, default: null }, // libellé de la variante au moment de la commande
+        variantId: { type: mongoose.Schema.Types.ObjectId, default: null }, // pour restituer le bon stock si la commande est annulée
       },
     ],
     total: Number,

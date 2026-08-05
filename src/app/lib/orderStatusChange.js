@@ -38,11 +38,42 @@ export async function applyOrderStatusChange(orderId, status) {
   if (!order) return null;
 
   // Le stock avait été réservé à la création de la commande — on le restitue à
-  // l'annulation, une seule fois (pas de double restitution si déjà annulée).
+  // l'annulation, une seule fois (pas de double restitution si déjà annulée). Si la
+  // ligne référence une variante (couleur), on restitue son stock puis on recalcule
+  // le stock total du produit (voir la décrémentation symétrique dans /api/order).
   if (status === "cancelled" && !wasAlreadyCancelled) {
     await Promise.all(
       previousOrder.products.map((line) =>
-        Product.updateOne({ _id: line.product }, { $inc: { stock: line.quantity } })
+        line.variantId
+          ? Product.updateOne(
+              { _id: line.product, "variants._id": line.variantId },
+              [
+                {
+                  $set: {
+                    variants: {
+                      $map: {
+                        input: "$variants",
+                        as: "v",
+                        in: {
+                          $cond: [
+                            { $eq: ["$$v._id", line.variantId] },
+                            {
+                              $mergeObjects: [
+                                "$$v",
+                                { stock: { $add: [{ $ifNull: ["$$v.stock", 0] }, line.quantity] } },
+                              ],
+                            },
+                            "$$v",
+                          ],
+                        },
+                      },
+                    },
+                  },
+                },
+                { $set: { stock: { $sum: "$variants.stock" } } },
+              ]
+            )
+          : Product.updateOne({ _id: line.product }, { $inc: { stock: line.quantity } })
       )
     );
   }

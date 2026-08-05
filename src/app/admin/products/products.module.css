@@ -86,6 +86,36 @@
   margin-bottom: 20px;
 }
 
+.stockBreakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -8px 0 20px;
+}
+
+.stockChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #f5f5f4;
+  border: 1px solid #e7e5e4;
+  font-size: 12px;
+  font-weight: 600;
+  color: #57534e;
+}
+.stockChipLow  { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+.stockChipZero { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+
+.stockChipSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+
 .sectionActions { display: flex; justify-content: flex-end; }
 
 .btnSave {
@@ -226,6 +256,33 @@
   color: #0f172a;
 }
 
+.stockRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px 8px;
+}
+
+.stockBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f0fdf4;
+  color: #15803d;
+}
+.stockBadgeLow  { background: #fffbeb; color: #b45309; }
+.stockBadgeZero { background: #fef2f2; color: #b91c1c; }
+
+.fieldHint {
+  font-size: 12px;
+  color: #a8a29e;
+  margin: 0;
+}
+
 .variantSwatch {
   width: 20px;
   height: 20px;
@@ -324,6 +381,12 @@
 }
 .fieldInput:focus        { border-color: #F9C464; background: #fff; }
 .fieldInput::placeholder { color: #a8a29e; }
+
+.fieldInputReadonly {
+  background: #f0efed;
+  color: #57534e;
+  cursor: not-allowed;
+}
 
 .fieldTextarea {
   padding: 10px 13px;

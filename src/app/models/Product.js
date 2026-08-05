@@ -6,6 +6,7 @@ const VariantSchema = new mongoose.Schema({
   textColor:  { type: String, default: "#ffffff" }, // couleur du texte du bouton commander
   description: { type: String, default: "" }, // texte affiché sous le sélecteur de couleur sur la fiche produit
   image:      { type: String, default: "" },
+  stock:      { type: Number, default: 0 }, // stock disponible pour cette couleur
 }, { _id: true });
 
 const ProductSchema = new mongoose.Schema({
@@ -18,5 +19,14 @@ const ProductSchema = new mongoose.Schema({
   weight:     { type: Number, default: 100 }, // grammes — utilisé pour calculer le poids total des colis Chronopost
   customsDescriptionEn: { type: String, default: "" }, // description anglaise pour <content1> (envois internationaux)
 }, { timestamps: true });
+
+// Le stock global reste toujours la somme des stocks par variante (dès qu'il y en a) —
+// il n'existe pas d'entrée manuelle indépendante pour éviter que les deux nombres divergent.
+ProductSchema.pre("save", function (next) {
+  if (this.variants && this.variants.length > 0) {
+    this.stock = this.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+  }
+  next();
+});
 
 export default mongoose.models.Product || mongoose.model("Product", ProductSchema);

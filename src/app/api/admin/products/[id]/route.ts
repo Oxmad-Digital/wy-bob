@@ -46,6 +46,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
         textColor:   v.textColor,
         description: v.description,
         image:       v.image,
+        stock:       v.stock ?? 0,
       })),
     },
   });

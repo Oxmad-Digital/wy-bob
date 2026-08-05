@@ -34,6 +34,7 @@ function VariantModal({ variant, onClose, onSave }) {
     textColor:   variant?.textColor   ?? "#ffffff",
     description: variant?.description ?? "",
     image:       variant?.image       ?? "",
+    stock:       variant?.stock       ?? 0,
   });
   const [imageFile,  setImageFile]  = useState(null);
   const [uploading,  setUploading]  = useState(false);
@@ -78,7 +79,8 @@ function VariantModal({ variant, onClose, onSave }) {
     e.preventDefault();
     if (!form.colorName.trim()) return setError("Le nom de la couleur est requis");
     if (!form.colorCode)        return setError("Le code couleur est requis");
-    onSave({ ...variant, ...form });
+    if (form.stock === "" || Number(form.stock) < 0) return setError("Le stock doit être un nombre positif");
+    onSave({ ...variant, ...form, stock: Number(form.stock) });
   };
 
   return (
@@ -98,6 +100,17 @@ function VariantModal({ variant, onClose, onSave }) {
               placeholder="Ex : Bleu"
               value={form.colorName}
               onChange={e => setForm(f => ({ ...f, colorName: e.target.value }))}
+              className={styles.fieldInput}
+            />
+          </div>
+
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>STOCK DISPONIBLE <span className={styles.required}>*</span></label>
+            <input
+              type="number"
+              min="0"
+              value={form.stock}
+              onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
               className={styles.fieldInput}
             />
           </div>
@@ -239,6 +252,16 @@ const SortableVariantCard = memo(function SortableVariantCard({ variant, index, 
         <div className={styles.variantSwatch} style={{ backgroundColor: variant.colorCode }} title={variant.colorCode} />
       </div>
 
+      <div className={styles.stockRow}>
+        <span
+          className={`${styles.stockBadge} ${
+            variant.stock === 0 ? styles.stockBadgeZero : variant.stock <= 3 ? styles.stockBadgeLow : ""
+          }`}
+        >
+          {variant.stock === 0 ? "Rupture de stock" : `${variant.stock} en stock`}
+        </span>
+      </div>
+
       <div className={styles.previewBtnWrap}>
         <button
           className={styles.previewBtnSmall}
@@ -278,7 +301,7 @@ export default function AdminProductsPage() {
   const [variantModal,  setVariantModal]  = useState(null);
   const [activeId,      setActiveId]      = useState(null);
 
-  const [fields, setFields] = useState({ name: "", price: "", pricePromo: "", stock: "" });
+  const [fields, setFields] = useState({ name: "", price: "", pricePromo: "" });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -313,7 +336,6 @@ export default function AdminProductsPage() {
           name:       data.product.name,
           price:      String(data.product.price),
           pricePromo: data.product.pricePromo ? String(data.product.pricePromo) : "",
-          stock:      String(data.product.stock),
         });
       }
     } catch (err) {
@@ -334,7 +356,6 @@ export default function AdminProductsPage() {
           name:       fields.name.trim(),
           price:      Number(fields.price),
           pricePromo: fields.pricePromo ? Number(fields.pricePromo) : null,
-          stock:      Number(fields.stock),
         }),
       });
       const data = await res.json();
@@ -508,14 +529,18 @@ export default function AdminProductsPage() {
               </div>
 
               <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>STOCK</label>
+                <label className={styles.fieldLabel}>STOCK TOTAL</label>
                 <input
-                  type="number"
-                  min="0"
-                  value={fields.stock}
-                  onChange={e => setFields(f => ({ ...f, stock: e.target.value }))}
-                  className={styles.fieldInput}
+                  type="text"
+                  readOnly
+                  value={product.variants.length
+                    ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
+                    : product.stock}
+                  className={`${styles.fieldInput} ${styles.fieldInputReadonly}`}
                 />
+                {product.variants.length > 0 && (
+                  <p className={styles.fieldHint}>Calculé à partir du stock de chaque couleur ci-dessous</p>
+                )}
               </div>
 
               <div className={styles.fieldGroup}>
@@ -543,6 +568,22 @@ export default function AdminProductsPage() {
                 />
               </div>
             </div>
+
+            {product.variants.length > 0 && (
+              <div className={styles.stockBreakdown}>
+                {product.variants.map(v => (
+                  <span
+                    key={v._id}
+                    className={`${styles.stockChip} ${
+                      v.stock === 0 ? styles.stockChipZero : v.stock <= 3 ? styles.stockChipLow : ""
+                    }`}
+                  >
+                    <span className={styles.stockChipSwatch} style={{ backgroundColor: v.colorCode }} />
+                    {v.colorName} · {v.stock ?? 0}
+                  </span>
+                ))}
+              </div>
+            )}
 
             <div className={styles.sectionActions}>
               <button className={styles.btnSave} onClick={saveFields} disabled={saving}>

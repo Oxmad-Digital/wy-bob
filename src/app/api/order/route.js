@@ -104,14 +104,23 @@ export async function POST(req) {
     for (const item of cartItems) {
       if (!mongoose.Types.ObjectId.isValid(item.productId)) continue;
 
-      const product = await Product.findById(item.productId).select("price name weight");
+      const product = await Product.findById(item.productId).select("price name weight variants");
       if (!product) continue;
 
       const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
       total += product.price * qty;
+
+      // On résout la variante commandée par son nom de couleur pour retrouver son _id
+      // stable — indispensable pour décrémenter/restituer le bon stock de couleur, y
+      // compris si la couleur est renommée par la suite dans l'admin.
+      const matchedVariant = product.variants?.find((v) => v.colorName === item.color)
+        ?? (product.variants?.length ? product.variants[0] : null);
+
       products.push({
         product: new mongoose.Types.ObjectId(item.productId),
         quantity: qty,
+        color: matchedVariant?.colorName ?? null,
+        variantId: matchedVariant?._id ?? null,
       });
       productPriceById.set(item.productId, product.price);
       weighableLines.push({ product: { weight: product.weight }, quantity: qty });
@@ -228,14 +237,46 @@ export async function POST(req) {
     console.log("✅ Commande créée:", order._id, "N°", order.orderNumber);
 
     // Le stock est réservé dès la création de la commande (avant même le paiement) ; il
-    // est restauré si la commande est annulée — voir applyOrderStatusChange.
+    // est restauré si la commande est annulée — voir applyOrderStatusChange. Quand la
+    // ligne a une variante (couleur), c'est le stock de cette variante qui est décrémenté,
+    // puis le stock total du produit est recalculé comme somme des variantes.
     await Promise.all(
       products.map((line) =>
-        Product.updateOne(
-          { _id: line.product },
-          [{ $set: { stock: { $max: [0, { $subtract: ["$stock", line.quantity] }] } } }],
-          { updatePipeline: true }
-        )
+        line.variantId
+          ? Product.updateOne(
+              { _id: line.product, "variants._id": line.variantId },
+              [
+                {
+                  $set: {
+                    variants: {
+                      $map: {
+                        input: "$variants",
+                        as: "v",
+                        in: {
+                          $cond: [
+                            { $eq: ["$$v._id", line.variantId] },
+                            {
+                              $mergeObjects: [
+                                "$$v",
+                                { stock: { $max: [0, { $subtract: [{ $ifNull: ["$$v.stock", 0] }, line.quantity] }] } },
+                              ],
+                            },
+                            "$$v",
+                          ],
+                        },
+                      },
+                    },
+                  },
+                },
+                { $set: { stock: { $sum: "$variants.stock" } } },
+              ],
+              { updatePipeline: true }
+            )
+          : Product.updateOne(
+              { _id: line.product },
+              [{ $set: { stock: { $max: [0, { $subtract: ["$stock", line.quantity] }] } } }],
+              { updatePipeline: true }
+            )
       )
     );
 

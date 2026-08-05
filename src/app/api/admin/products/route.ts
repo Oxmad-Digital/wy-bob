@@ -25,6 +25,7 @@ function serialize(product: any) {
       textColor:   v.textColor,
       description: v.description,
       image:       v.image,
+      stock:       v.stock ?? 0,
     })),
   };
 }
