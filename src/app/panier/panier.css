@@ -209,12 +209,13 @@
 @media (max-width: 767px) {
   .cart-page { padding: 16px 12px; gap: 12px; overflow: visible; }
   .cart-wrapper { flex-direction: column; gap: 15px; }
-  .cart-left { width: 100%; flex: none; padding: 16px; height: auto !important; max-height: 300px; }
+  .cart-left { width: 100%; flex: none; padding: 20px; height: auto !important; max-height: 300px; }
   .cart-right { width: 100%; align-self: auto; }
   .cart-promo,
-  .cart-summary { padding: 16px; }
+  .cart-summary { padding: 20px; }
   .cart-item { height: auto !important; min-height: 70px !important; max-height: none !important; padding: 10px 0 !important; }
+  .cart-scroll-inner { padding-right: 0; }
   .promo-input-row { flex-direction: column; }
-  .promo-input-row input { background: rgba(255, 255, 255, 0.85); }
+  .promo-input-row input { width: 100%; box-sizing: border-box; background: rgba(255, 255, 255, 0.85); }
   .promo-input-row button { width: 100%; text-align: center; }
 }

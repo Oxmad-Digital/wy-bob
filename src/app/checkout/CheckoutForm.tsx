@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 import { useCart } from "@/components/panier-context";
 import RelayPointPicker, { type RelayPoint } from "./RelayPointPicker";
+import CountrySelect from "./CountrySelect";
 import { computeOrderTotals } from "@/app/lib/pricing";
 import { formatDeliveryLabel } from "@/app/lib/shipping/delivery";
 import { isValidPostalCode } from "@/app/lib/shipping/postalCode";
@@ -270,11 +271,14 @@ export default function CheckoutForm() {
                 ))}
               </select>
             )}
-            <select value={country} onChange={(e) => setCountry(e.target.value)} className="checkout-input">
-              {COUNTRY_OPTIONS.map((c) => (
-                <option key={c.code} value={c.code}>{t.checkout.countries[c.code as keyof typeof t.checkout.countries] ?? c.label}</option>
-              ))}
-            </select>
+            <CountrySelect
+              value={country}
+              onChange={setCountry}
+              options={COUNTRY_OPTIONS.map((c) => ({
+                code: c.code,
+                label: t.checkout.countries[c.code as keyof typeof t.checkout.countries] ?? c.label,
+              }))}
+            />
             <div className="checkout-row">
               <input type="text" placeholder={t.checkout.firstnamePlaceholder} value={firstname} onChange={(e) => setFirstname(e.target.value)} className="checkout-input" required />
               <input type="text" placeholder={t.checkout.lastnamePlaceholder} value={lastname} onChange={(e) => setLastname(e.target.value)} className="checkout-input" required />

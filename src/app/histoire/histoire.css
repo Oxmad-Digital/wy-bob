@@ -469,6 +469,14 @@
     overflow: visible;
   }
 
+  .container:has(.histoireScroll) .navbar {
+    margin-bottom: 20px;
+  }
+
+  .container:has(.histoireScroll) .footer {
+    margin-top: 20px;
+  }
+
   .histoireScroll {
     gap: 20px;
     padding: 20px 10px 0;

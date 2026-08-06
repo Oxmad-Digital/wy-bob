@@ -128,6 +128,79 @@
   color: #aaa;
 }
 
+/* Normalise le rendu natif des <select> (ex: adresse enregistrée) pour qu'ils
+   fassent exactement la même taille que les <input> texte sur tous les navigateurs. */
+select.checkout-input {
+  -webkit-appearance: none;
+  appearance: none;
+  font-family: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%231B1843' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 38px;
+}
+
+/* SÉLECTEUR PAYS — menu maison à hauteur limitée (le <select> natif s'ouvrirait
+   en plein écran sur mobile avec ~40 pays). */
+.checkout-select {
+  position: relative;
+  width: 100%;
+}
+
+.checkout-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.checkout-select-arrow {
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.checkout-select-trigger[aria-expanded="true"] .checkout-select-arrow {
+  transform: rotate(180deg);
+}
+
+.checkout-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  max-height: min(260px, 45vh);
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+.checkout-select-option {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #111;
+  cursor: pointer;
+}
+
+.checkout-select-option:hover {
+  background: rgba(27, 24, 67, 0.08);
+}
+
+.checkout-select-option.active {
+  background: rgba(27, 24, 67, 0.12);
+  font-weight: 600;
+  color: #1B1843;
+}
+
 /* LIGNE 2 INPUTS */
 .checkout-row {
   display: flex;

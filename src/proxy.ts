@@ -29,6 +29,10 @@ async function isMaintenanceModeActive() {
 }
 
 export async function proxy(request: NextRequest) {
+  if (process.env.NODE_ENV !== 'production') {
+    return NextResponse.next()
+  }
+
   const host = request.headers.get('host') ?? ''
   if (host.endsWith('.vercel.app')) {
     return NextResponse.next()

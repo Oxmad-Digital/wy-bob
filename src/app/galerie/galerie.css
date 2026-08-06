@@ -302,8 +302,8 @@
 
   .galerieZone {
     flex-direction: column;
-    padding: 12px 16px;
-    gap: 24px;
+    padding: 0;
+    gap: 20px;
     overflow: visible;
     flex: none;
     min-height: 0;

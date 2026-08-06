@@ -66,7 +66,6 @@
 .container:has(.loginZone),
 .container:has(.mentionsZone),
 .container:has(.cgvZone),
-.container:has(.privacyZone),
 .container:has(.conceptZone) {
   overflow: hidden !important;
   height: calc(100dvh - 20px) !important;
@@ -77,7 +76,6 @@ body:has(.checkoutZone),
 body:has(.loginZone),
 body:has(.mentionsZone),
 body:has(.cgvZone),
-body:has(.privacyZone),
 body:has(.conceptZone) {
   overflow: hidden !important;
   height: 100vh !important;
@@ -87,10 +85,23 @@ html:has(.checkoutZone),
 html:has(.loginZone),
 html:has(.mentionsZone),
 html:has(.cgvZone),
-html:has(.privacyZone),
 html:has(.conceptZone) {
   overflow: hidden !important;
   height: 100vh !important;
+}
+
+/* Page politique de confidentialité — scroll interne sur desktop/tablette.
+   Pas de !important : la spécificité de :has() suffit à l'emporter. */
+.container:has(.privacyZone) {
+  overflow: hidden;
+  height: calc(100dvh - 20px);
+  justify-content: flex-start;
+}
+
+body:has(.privacyZone),
+html:has(.privacyZone) {
+  overflow: hidden;
+  height: 100vh;
 }
 
 /* Sur mobile/tablette (portrait ou paysage), la page concept scrolle
@@ -126,6 +137,38 @@ html:has(.conceptZone) {
   html:has(.checkoutZone) {
     overflow: visible !important;
     height: auto !important;
+  }
+}
+
+/* Sur mobile, concept / galerie / contact partagent le même espacement
+   navbar → contenu → footer. */
+@media (max-width: 767px) {
+  .container:has(.conceptZone) .navbar,
+  .container:has(.galerieZone) .navbar,
+  .container:has(.contactZone) .navbar {
+    margin-bottom: 20px;
+  }
+
+  .container:has(.conceptZone) .footer,
+  .container:has(.galerieZone) .footer,
+  .container:has(.contactZone) .footer {
+    margin-top: 20px;
+  }
+}
+
+/* Sur mobile, la page politique de confidentialité scrolle normalement :
+   pas de scroll interne, donc pas de hauteur/overflow figés (sans !important,
+   la spécificité de :has() suffit). */
+@media (max-width: 767px) {
+  .container:has(.privacyZone) {
+    overflow: visible;
+    height: auto;
+    min-height: calc(100dvh - 40px);
+  }
+  body:has(.privacyZone),
+  html:has(.privacyZone) {
+    overflow: visible;
+    height: auto;
   }
 }
 

@@ -154,7 +154,7 @@
     flex: none;
     min-height: 0;
     overflow-y: visible;
-    padding: 24px 16px;
+    padding: 24px 0;
   }
 
   .content {

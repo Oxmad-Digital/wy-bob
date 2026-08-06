@@ -151,6 +151,10 @@
 }
 
 @media (max-width: 767px) {
+  .conceptZone {
+    gap: 20px;
+  }
+
   .imageCol {
     height: 200px;
   }
