@@ -323,7 +323,7 @@ export default function PromosPage() {
           <p className={styles.topbarSub}>{promos.length} code{promos.length !== 1 ? "s" : ""} au total</p>
         </div>
         <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => setShowCreateModal(true)} style={{ marginLeft: "auto" }}>
-          + Nouveau code
+          Nouveau code
         </button>
       </div>
 

@@ -144,7 +144,12 @@ export default function AdminInvoicesPage() {
                         rel="noopener noreferrer"
                         className="ai-btn-download"
                       >
-                        Télécharger ↓
+                        Télécharger
+                        <svg className="ai-download-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 3v12" />
+                          <path d="M7 10l5 5 5-5" />
+                          <path d="M5 21h14" />
+                        </svg>
                       </a>
                     </td>
                   </tr>

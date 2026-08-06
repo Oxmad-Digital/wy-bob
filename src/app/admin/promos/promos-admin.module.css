@@ -359,5 +359,6 @@
 }
 
 @media (max-width: 768px) {
+  .page { padding: 16px; }
   .toast { bottom: 72px; }
 }
