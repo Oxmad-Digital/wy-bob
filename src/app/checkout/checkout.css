@@ -534,4 +534,7 @@ select.checkout-input {
   .checkout-row {
     flex-direction: column;
   }
+  .checkout-input {
+    height: auto;
+  }
 }
