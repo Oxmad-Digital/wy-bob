@@ -681,12 +681,11 @@
 
 @media (max-width: 640px) {
   .ap-header {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     grid-template-areas:
-      "title"
-      "toolbar"
-      "export"
-      "sync";
+      "title   title"
+      "toolbar toolbar"
+      "export  sync";
     row-gap: 12px;
   }
 
@@ -694,9 +693,17 @@
     justify-content: center;
     padding: 7px 14px;
     font-size: 13px;
+    width: 100%;
   }
 
-  .ap-btn-add { width: 100%; justify-content: center; }
+  .ap-btn-add {
+    width: 100%;
+    justify-content: center;
+    padding: 7px 10px;
+    font-size: 12px;
+    white-space: normal;
+    text-align: center;
+  }
 
   /* Dropdown anchors to the toolbar instead of its trigger so it
      can never spill past the screen edge on narrow viewports. */

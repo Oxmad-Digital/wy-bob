@@ -604,6 +604,8 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal {
@@ -616,6 +618,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  margin: auto 0;
 }
 
 .modalHeader {
@@ -720,7 +723,8 @@
 @media (max-width: 640px) {
   .topbar    { flex-wrap: wrap; row-gap: 10px; }
   .topbarTitleGroup { width: 100%; flex-basis: 100%; }
-  .modal     { max-height: 95vh; border-radius: 12px; }
+  .modalOverlay { align-items: flex-start; padding: 16px 12px; }
+  .modal     { max-height: none; max-height: calc(100dvh - 32px); border-radius: 12px; margin: 0 auto; }
   .fieldRow  { grid-template-columns: 1fr; }
   .variantsGrid { grid-template-columns: 1fr 1fr; }
   .variantActions { flex-direction: column; }

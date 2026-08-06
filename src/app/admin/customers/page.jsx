@@ -307,7 +307,7 @@ export default function CustomersPage() {
           {exporting ? "Export…" : (<>Export CSV <ExportCsvIcon /></>)}
         </button>
         <button className="ap-btn-add" onClick={syncFromOrders} disabled={syncing}>
-          {syncing ? "Synchronisation…" : "Sync commandes"}
+          {syncing ? "Synchronisation…" : "Synchroniser les clients"}
         </button>
 
         {/* Toolbar */}
