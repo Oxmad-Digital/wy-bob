@@ -140,6 +140,23 @@ html:has(.privacyZone) {
   }
 }
 
+/* La galerie reste en no-scroll (pagination sur un seul écran) sur tablette
+   et mobile, contrairement aux autres pages qui scrollent normalement à ces
+   tailles — la règle globale (globals.css) doit être surchargée ici.
+   La hauteur/overflow du .container restent gérés par galerie.css. */
+@media (max-width: 1024px) {
+  body:has(.galerieZone),
+  html:has(.galerieZone) {
+    overflow: hidden !important;
+    height: 100dvh !important;
+  }
+  body:has(.galerieZone) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
 /* Sur mobile, concept / galerie / contact partagent le même espacement
    navbar → contenu → footer. */
 @media (max-width: 767px) {

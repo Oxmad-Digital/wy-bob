@@ -192,18 +192,17 @@
 
   .contactTextarea {
     flex: 1;
-    min-height: 0;
+    min-height: 160px;
     width: 100%;
     font-size: 14px;
   }
 
   .contactImage {
-    flex: 1;
-    min-height: 0;
+    flex: none;
     width: 100%;
+    aspect-ratio: 4 / 3;
     position: relative;
     clip-path: inset(0 round 16px);
-    order: -1;
   }
 }
 
@@ -238,7 +237,7 @@
   .contactTextarea {
     width: 100%;
     flex: 1;
-    min-height: 0;
+    min-height: 140px;
     font-size: 14px;
   }
 

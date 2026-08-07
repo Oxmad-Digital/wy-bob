@@ -211,17 +211,17 @@
 @media (max-width: 1024px) and (min-width: 768px) {
   .container {
     width: calc(100vw - 32px);
-    height: auto;
-    min-height: calc(100dvh - 32px);
-    overflow: visible;
+    height: calc(100dvh - 32px);
+    min-height: unset;
+    overflow: hidden;
   }
 
   .galerieZone {
     flex-direction: column;
     padding: 16px 20px;
     gap: 40px;
-    overflow: visible;
-    flex: none;
+    overflow: hidden;
+    flex: 1;
     min-height: 0;
   }
 
@@ -265,18 +265,17 @@
   }
 
   .galerieGrid {
-    flex: none;
+    flex: 1;
     min-height: 0;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: unset !important;
-    grid-auto-rows: auto;
+    grid-auto-rows: 1fr;
     gap: 15px;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .galeriePhoto {
     border-radius: 12px;
-    aspect-ratio: 1 / 1;
   }
 
   .lightboxPrev { left: 8px; }
@@ -296,17 +295,16 @@
 /* ===== MOBILE ===== */
 @media (max-width: 767px) {
   .container {
-    height: auto;
-    min-height: calc(100dvh - 40px);
-    overflow: visible;
+    height: calc(100dvh - 40px);
+    overflow: hidden;
   }
 
   .galerieZone {
     flex-direction: column;
     padding: 0;
     gap: 20px;
-    overflow: visible;
-    flex: none;
+    overflow: hidden;
+    flex: 1;
     min-height: 0;
   }
 
@@ -351,17 +349,16 @@
   }
 
   .galerieGrid {
-    flex: none;
+    flex: 1;
     min-height: 0;
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: unset !important;
-    grid-auto-rows: auto;
-    overflow: visible;
+    grid-auto-rows: 1fr;
+    overflow: hidden;
   }
 
   .galeriePhoto {
     border-radius: 12px;
-    aspect-ratio: 1 / 1;
   }
 
   .lightboxPrev { left: 8px; }

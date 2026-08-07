@@ -105,7 +105,7 @@
 
 /* Sur les grands écrans (hauteur importante), le contenu calé en haut
    laisse un vide disproportionné en bas : on centre verticalement. */
-@media (min-height: 900px) {
+@media (min-height: 900px) and (min-width: 1025px) {
   .histoireSection--full .histoireContent {
     justify-content: center;
   }
@@ -422,8 +422,8 @@
 
   .histoirePlaceholder--split {
     width: 100%;
-    aspect-ratio: auto;
-    height: 240px;
+    aspect-ratio: 4 / 3;
+    height: auto;
     flex: none;
     order: -1;
   }
@@ -485,10 +485,6 @@
   .histoireSection--split .histoireContent,
   .histoireSection--full .histoireContent {
     gap: 20px;
-  }
-
-  .histoirePlaceholder--split {
-    height: 200px;
   }
 
   .histoireText,
