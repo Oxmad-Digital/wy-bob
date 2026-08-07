@@ -1022,6 +1022,81 @@ body:has(.db-root) {
     padding-bottom: 60px;
   }
 
+  /* ── More sheet ── */
+  .bottom-nav-more-overlay {
+    position: fixed;
+    inset: 0;
+    background: transparent;
+    z-index: 150;
+  }
+
+  .bottom-nav-more-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 60px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 16px 16px 0 0;
+    z-index: 151;
+    padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .bottom-nav-more-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 6px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #888;
+  }
+
+  .bottom-nav-more-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: #888;
+    line-height: 1;
+  }
+
+  .bottom-nav-more-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .bottom-nav-more-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 8px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.03);
+    color: #555;
+    font-size: 11px;
+    font-weight: 500;
+    text-decoration: none;
+    font-family: 'DM Sans', sans-serif;
+    border: none;
+    cursor: pointer;
+  }
+
+  .bottom-nav-more-item.active {
+    background: rgba(249, 196, 100, 0.18);
+    color: #1B1843;
+  }
+
   .db-kpis {
     grid-template-columns: repeat(2, 1fr);
     padding: 0 16px;
@@ -1046,6 +1121,9 @@ body:has(.db-root) {
     overflow-y: auto;
     margin: 0;
     border-radius: 16px;
+    background: #fff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }
 
@@ -1122,7 +1200,7 @@ body:has(.db-root) {
 .db-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;

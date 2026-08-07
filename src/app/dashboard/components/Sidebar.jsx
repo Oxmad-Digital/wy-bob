@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
@@ -58,6 +59,7 @@ export default function Sidebar({ user }) {
   const router = useRouter();
   const { t, locale, toggleLocale } = useLanguage();
   const s = t.dashboard.sidebar;
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const menuItems = [
     { icon: <IconHome />,    label: s.overview,  short: s.overview,  path: "/dashboard" },
@@ -66,6 +68,10 @@ export default function Sidebar({ user }) {
     { icon: <IconMapPin />,  label: s.addresses, short: s.addresses, path: "/dashboard/addresses" },
     { icon: <IconGift />,    label: s.referral,  short: s.referral,  path: "/dashboard/referral" },
   ];
+
+  const bottomNavLinks = menuItems.slice(0, 4);
+  const moreNavLinks = menuItems.slice(4);
+  const isMoreActive = moreNavLinks.some((item) => pathname === item.path);
 
   return (
     <>
@@ -119,37 +125,91 @@ export default function Sidebar({ user }) {
         </div>
       </aside>
 
+      {/* More sheet mobile */}
+      {moreOpen && (
+        <>
+          <div className="bottom-nav-more-overlay" onClick={() => setMoreOpen(false)} />
+          <div className="bottom-nav-more-sheet">
+            <div className="bottom-nav-more-header">
+              <span>{s.more}</span>
+              <button
+                type="button"
+                className="bottom-nav-more-close"
+                onClick={() => setMoreOpen(false)}
+                aria-label="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="bottom-nav-more-grid">
+              {moreNavLinks.map((item) => (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  onClick={() => setMoreOpen(false)}
+                  className={`bottom-nav-more-item ${pathname === item.path ? "active" : ""}`}
+                >
+                  <span className="bottom-nav-icon">{item.icon}</span>
+                  <span>{item.short}</span>
+                </Link>
+              ))}
+              <button
+                type="button"
+                className="bottom-nav-more-item"
+                onClick={() => { toggleLocale(); setMoreOpen(false); }}
+              >
+                <span className="bottom-nav-icon">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  </svg>
+                </span>
+                <span>{locale === 'fr' ? 'EN' : 'FR'}</span>
+              </button>
+              <button
+                type="button"
+                className="bottom-nav-more-item"
+                onClick={() => signOut({ redirect: false }).then(() => router.push("/"))}
+              >
+                <span className="bottom-nav-icon">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                </span>
+                <span>{s.exit}</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Bottom nav mobile */}
       <nav className="bottom-nav">
-        {menuItems.map((item) => (
+        {bottomNavLinks.map((item) => (
           <Link
             key={item.path}
             href={item.path}
             className={`bottom-nav-item ${pathname === item.path ? "active" : ""}`}
           >
             <span className="bottom-nav-icon">{item.icon}</span>
-            <span>{item.short}</span>
+            <span>{item.short.split(' ')[0]}</span>
           </Link>
         ))}
-        <button className="bottom-nav-item" onClick={toggleLocale} aria-label="Switch language">
+        <button
+          type="button"
+          className={`bottom-nav-item ${isMoreActive ? "active" : ""}`}
+          onClick={() => setMoreOpen((open) => !open)}
+          aria-expanded={moreOpen}
+        >
           <span className="bottom-nav-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>
             </svg>
           </span>
-          <span>{locale === 'fr' ? 'EN' : 'FR'}</span>
-        </button>
-        <button className="bottom-nav-item" onClick={() => signOut({ redirect: false }).then(() => router.push("/"))}>
-          <span className="bottom-nav-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-          </span>
-          <span>{s.exit}</span>
+          <span>{s.more}</span>
         </button>
       </nav>
     </>

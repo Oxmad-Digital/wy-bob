@@ -103,9 +103,6 @@ export default function ReferralPage() {
       )}
 
       <h1 className={styles.title}>Parrainage</h1>
-      <p className={styles.subtitle}>
-        Partagez votre code et gagnez une réduction sur votre prochaine commande.
-      </p>
 
       {/* Code block */}
       <div className={styles.codeCard}>

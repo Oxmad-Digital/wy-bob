@@ -268,4 +268,6 @@
 /* RESPONSIVE */
 @media (max-width: 640px) {
   .login-card { padding: 28px 20px; }
+  .login-footer p,
+  .login-footer a { font-size: 12px !important; }
 }

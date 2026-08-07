@@ -312,6 +312,7 @@ export const translations = {
         referral: "Parrainage",
         logout: "Déconnexion",
         exit: "Sortir",
+        more: "Plus",
       },
       overview: {
         title: "Vue d'ensemble",
@@ -711,6 +712,7 @@ export const translations = {
         referral: "Referral",
         logout: "Sign out",
         exit: "Exit",
+        more: "More",
       },
       overview: {
         title: "Overview",
