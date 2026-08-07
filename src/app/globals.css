@@ -28,9 +28,9 @@ p, span, a, li {
   font-family: var(--font-dm-sans), sans-serif;
 }
 
-/* Mobile — scroll activé */
+/* Mobile / tablette — scroll activé. Seul le desktop reste en no-scroll. */
 
-@media (max-width: 767px) {
+@media (max-width: 1024px) {
   html {
     height: auto;
     min-height: 100dvh;
@@ -50,15 +50,7 @@ p, span, a, li {
   }
 }
 @media (max-width: 1024px) and (min-width: 768px) {
-  html, body {
-    height: 100vh;
-    overflow: hidden;
-  }
-
   body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 16px;  /* ✅ 16px partout */
   }
-} 
+}

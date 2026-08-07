@@ -29,8 +29,8 @@
   overflow: hidden !important;
 }
 
-/* Sur mobile, le panier scrolle normalement : pas de hauteur/overflow figés. */
-@media (max-width: 767px) {
+/* Sur mobile/tablette, le panier scrolle normalement : pas de hauteur/overflow figés. */
+@media (max-width: 1024px) {
   .container:has(.cart-page) {
     overflow: visible !important;
     height: auto !important;
@@ -119,9 +119,9 @@ html:has(.privacyZone) {
   }
 }
 
-/* Sur mobile, les pages CGV / Mentions légales / Checkout scrollent
+/* Sur mobile/tablette, les pages CGV / Mentions légales / Checkout scrollent
    normalement : pas de scroll interne, donc pas de hauteur/overflow figés. */
-@media (max-width: 767px) {
+@media (max-width: 1024px) {
   .container:has(.cgvZone),
   .container:has(.mentionsZone),
   .container:has(.checkoutZone) {
@@ -156,10 +156,10 @@ html:has(.privacyZone) {
   }
 }
 
-/* Sur mobile, la page politique de confidentialité scrolle normalement :
+/* Sur mobile/tablette, la page politique de confidentialité scrolle normalement :
    pas de scroll interne, donc pas de hauteur/overflow figés (sans !important,
    la spécificité de :has() suffit). */
-@media (max-width: 767px) {
+@media (max-width: 1024px) {
   .container:has(.privacyZone) {
     overflow: visible;
     height: auto;

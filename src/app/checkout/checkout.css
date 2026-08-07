@@ -520,6 +520,16 @@ select.checkout-input {
   }
 }
 
+/* Tablette — la page checkout scrolle normalement, comme sur mobile. */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .checkoutZone {
+    flex: none;
+    min-height: 0;
+    overflow: visible;
+    padding: 20px;
+  }
+}
+
 @media (max-width: 767px) {
   .checkoutZone {
     flex: none;
