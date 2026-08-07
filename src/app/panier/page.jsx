@@ -79,7 +79,7 @@ export default function Panier() {
   return (
     <div className="container">
       <Navbar />
-      <div className="cart-page">
+      <div className="cart-page panierZone">
 
         <div className="cart-wrapper">
 

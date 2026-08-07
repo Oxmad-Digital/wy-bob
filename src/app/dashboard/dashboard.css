@@ -6,6 +6,7 @@
 
 /* ── Racine no-scroll ── */
 .db-root {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: calc(100vw - 40px);
@@ -901,83 +902,11 @@ body:has(.db-root) {
 
 /* ── Responsive ── */
 
-/* Tablette (810px – 1200px) : sidebar icon-only */
-@media (max-width: 1200px) and (min-width: 811px) {
-  .sidebar {
-    width: 60px;
-  }
-
-  .sidebar-header {
-    padding: 20px 10px;
-    justify-content: center;
-  }
-
-  .user-info {
-    display: none;
-  }
-
-  .nav-item {
-    padding: 12px 0;
-    justify-content: center;
-    border-left: none;
-    border-radius: 8px;
-    margin: 0 8px;
-  }
-
-  .nav-item.active {
-    border-left: none;
-    background: rgba(249, 196, 100, 0.12);
-  }
-
-  .nav-label {
-    display: none;
-  }
-
-  .nav-icon {
-    font-size: 18px;
-    width: auto;
-  }
-
-  .sidebar-footer {
-    padding: 12px 0;
-    display: flex;
-    justify-content: center;
-  }
-
-  .logout-btn {
-    justify-content: center;
-    padding: 10px 0;
-    width: auto;
-  }
-
-  .logout-btn span {
-    display: none;
-  }
-}
-
-/* Mobile (≤810px) : sidebar masquée, bottom nav visible */
-@media (max-width: 810px) {
-  body:has(.db-root) {
-    padding: 0 !important;
-  }
-
-  .db-root {
-    width: 100vw;
-    height: 100dvh;
-    border-radius: 0;
-    border: none;
-    box-shadow: none;
-  }
-
+/* Tablette + mobile (≤1200px) : sidebar masquée, bottom nav visible
+   (même menu de navigation que sur mobile — la sidebar icon-only prenait
+   trop de place sur tablette). */
+@media (max-width: 1200px) {
   .db-footer {
-    display: none;
-  }
-
-  .db-header {
-    grid-template-columns: 1fr auto;
-  }
-
-  .db-header-links {
     display: none;
   }
 
@@ -987,7 +916,7 @@ body:has(.db-root) {
 
   .bottom-nav {
     display: flex;
-    position: fixed;
+    position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
@@ -1041,14 +970,14 @@ body:has(.db-root) {
 
   /* ── More sheet ── */
   .bottom-nav-more-overlay {
-    position: fixed;
+    position: absolute;
     inset: 0;
     background: transparent;
     z-index: 150;
   }
 
   .bottom-nav-more-sheet {
-    position: fixed;
+    position: absolute;
     left: 0;
     right: 0;
     bottom: 60px;
@@ -1112,6 +1041,29 @@ body:has(.db-root) {
   .bottom-nav-more-item.active {
     background: rgba(249, 196, 100, 0.18);
     color: #1B1843;
+  }
+}
+
+/* Mobile (≤810px) : mise en page pleine largeur */
+@media (max-width: 810px) {
+  body:has(.db-root) {
+    padding: 0 !important;
+  }
+
+  .db-root {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  .db-header {
+    grid-template-columns: 1fr auto;
+  }
+
+  .db-header-links {
+    display: none;
   }
 
   .db-kpis {

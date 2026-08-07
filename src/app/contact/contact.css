@@ -136,19 +136,20 @@
   position: relative;
   clip-path: inset(0 round 20px);
 }
-/* TABLETTE — la page contact scrolle normalement (portrait + paysage) :
-   pas de scroll interne, donc pas de hauteur/overflow figés. */
+/* TABLETTE — la page contact reste en no-scroll (comme le desktop) : le
+   formulaire scrolle en interne (contactBloc) si le contenu dépasse, jamais
+   la page — la règle globale (globals.css) doit être surchargée ici. */
 @media (max-width: 1024px) and (min-width: 768px) {
   html:has(.contactZone),
   body:has(.contactZone) {
-    height: auto !important;
-    overflow: visible !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
   }
 
-  .container:has(.contactZone) {
-    height: auto !important;
-    min-height: calc(100dvh - 32px) !important;
-    overflow: visible !important;
+  body:has(.contactZone) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 }
 
@@ -164,20 +165,20 @@
   }
 
   .contactInner {
-    flex: none;
+    flex: 1;
     min-height: 0;
     flex-direction: column;
     align-items: stretch;
-    gap: 30px;
+    gap: 20px;
   }
 
   .contactBloc {
-    flex: none;
+    flex: 1;
     min-height: 0;
     width: 100%;
     padding: 24px;
     gap: 12px;
-    overflow-y: visible;
+    overflow-y: auto;
   }
 
   .contactTitre {
@@ -200,7 +201,7 @@
   .contactImage {
     flex: none;
     width: 100%;
-    aspect-ratio: 4 / 3;
+    height: 26dvh;
     position: relative;
     clip-path: inset(0 round 16px);
   }
@@ -222,7 +223,7 @@
     min-height: 0;
     padding: 20px;
     gap: 10px;
-    overflow-y: visible;
+    overflow-y: auto;
   }
   .contactTitre {
     font-size: 36px;

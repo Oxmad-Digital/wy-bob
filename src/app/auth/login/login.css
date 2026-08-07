@@ -265,6 +265,32 @@
 
 .login-footer a:hover { text-decoration: underline; }
 
+/* TABLETTE — la card reste minuscule par rapport à l'espace disponible
+   (page en no-scroll, container fixe) : on l'agrandit pour combler l'écran. */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .login-card {
+    max-width: 640px;
+    padding: 44px 48px;
+    gap: 28px;
+  }
+
+  .login-logo { font-size: 30px; }
+  .login-welcome { font-size: 15px; }
+
+  .login-field label { font-size: 14px; }
+
+  .login-input-wrap { height: 56px; padding: 12px 18px; }
+  .login-input-wrap input { font-size: 14px; }
+
+  .login-remember,
+  .login-options a { font-size: 14px; }
+
+  .login-btn { height: 56px; font-size: 14px; }
+
+  .login-footer p,
+  .login-footer a { font-size: 14px !important; }
+}
+
 /* RESPONSIVE */
 @media (max-width: 640px) {
   .login-card { padding: 28px 20px; }

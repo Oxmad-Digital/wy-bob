@@ -157,6 +157,23 @@ html:has(.privacyZone) {
   }
 }
 
+/* Le panier reste en no-scroll sur tablette uniquement (même disposition
+   empilée que le mobile, mais contenue dans l'écran) — la règle globale
+   (globals.css) doit être surchargée ici. Le mobile continue de scroller
+   normalement. */
+@media (max-width: 1024px) and (min-width: 768px) {
+  body:has(.panierZone),
+  html:has(.panierZone) {
+    overflow: hidden !important;
+    height: 100dvh !important;
+  }
+  body:has(.panierZone) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
 /* Sur mobile, concept / galerie / contact partagent le même espacement
    navbar → contenu → footer. */
 @media (max-width: 767px) {

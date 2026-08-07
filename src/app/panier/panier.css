@@ -204,12 +204,20 @@
 }
 .panierRetour:hover { background: #f5f5f5; border-color: #ccc; }
 
-/* TABLETTE */
-@media (max-width: 1024px) {
-  .cart-page { overflow: visible; }
-  .cart-wrapper { flex-direction: row; gap: 15px; }
-  .cart-left { width: 307px; flex: none; padding: 20px; height: auto !important; max-height: 386px; }
-  .cart-right { width: 100%; flex: 1; gap: 15px; }
+/* TABLETTE — même disposition empilée que le mobile, mais en no-scroll
+   (contenue dans l'écran, cf. règle body:has(.panierZone) dans page.css) */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .cart-page { padding: 16px 0; gap: 12px; overflow: hidden; max-height: 100dvh; }
+  .cart-wrapper { flex-direction: column; gap: 15px; overflow: hidden; min-height: 0; }
+  .cart-left { width: 100%; max-width: none; flex: none; padding: 20px; height: auto !important; max-height: 32dvh; }
+  .cart-right { width: 100%; align-self: auto; }
+  .cart-promo,
+  .cart-summary { padding: 20px; }
+  .cart-item { height: auto !important; min-height: 70px !important; max-height: none !important; padding: 10px 0 !important; }
+  .cart-scroll-inner { padding-right: 0; }
+  .promo-input-row { flex-direction: column; }
+  .promo-input-row input { width: 100%; box-sizing: border-box; background: rgba(255, 255, 255, 0.85); padding: 12px; }
+  .promo-input-row button { width: 100%; text-align: center; }
 }
 
 /* MOBILE */
