@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { connectDB } from "@/app/lib/db";
 import Order from "@/app/models/Order";
+import Invoice from "@/app/models/Invoice";
 import OrdersListClient from "./OrdersListClient";
 
 export default async function OrdersPage() {
@@ -20,6 +21,11 @@ export default async function OrdersPage() {
     .populate("products.product", "name image")
     .lean() as any[];
 
+  const invoicedOrderIds = new Set(
+    (await Invoice.find({ order: { $in: raw.map((o) => o._id) } }).select("order").lean() as any[])
+      .map((inv) => inv.order.toString())
+  );
+
   const orders = raw.map((o) => ({
     _id: o._id.toString(),
     status: o.status,
@@ -27,6 +33,7 @@ export default async function OrdersPage() {
     total: Number(o.total) || 0,
     delivery: o.delivery ?? null,
     payment: o.payment ?? null,
+    hasInvoice: invoicedOrderIds.has(o._id.toString()),
     products: (o.products ?? []).map((item: any) => ({
       name: item.product?.name ?? null,
       image: item.product?.image ?? null,

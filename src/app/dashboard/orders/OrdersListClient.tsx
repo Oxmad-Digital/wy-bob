@@ -10,6 +10,7 @@ type Order = {
   total: number;
   delivery?: string;
   payment?: string;
+  hasInvoice?: boolean;
   products?: Product[];
   customer?: { address?: string; city?: string };
 };
@@ -77,6 +78,22 @@ export default function OrdersListClient({ orders }: { orders: Order[] }) {
                       <span className={STATUS_BADGE[order.status] ?? "db-badge db-badge-pending"}>
                         {o.statuses[order.status as keyof typeof o.statuses] ?? order.status}
                       </span>
+                      {order.hasInvoice && (
+                        <a
+                          href={`/api/orders/${order._id}/invoice`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="order-invoice-btn"
+                          title={o.downloadInvoice}
+                        >
+                          {o.downloadInvoice}
+                          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 3v12" />
+                            <path d="M7 10l5 5 5-5" />
+                            <path d="M5 21h14" />
+                          </svg>
+                        </a>
+                      )}
                     </div>
                   </div>
 

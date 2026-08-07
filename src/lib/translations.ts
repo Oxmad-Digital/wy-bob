@@ -345,6 +345,7 @@ export const translations = {
         articles: "Articles :",
         address: "Adresse :",
         productRemoved: "Produit supprimé",
+        downloadInvoice: "Facture",
         statuses: {
           pending: "En attente",
           paid: "Payée",
@@ -745,6 +746,7 @@ export const translations = {
         articles: "Items:",
         address: "Address:",
         productRemoved: "Removed product",
+        downloadInvoice: "Invoice",
         statuses: {
           pending: "Pending",
           paid: "Paid",
