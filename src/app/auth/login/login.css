@@ -1,9 +1,11 @@
 .loginZone {
+  width: 100%;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  box-sizing: border-box;
 }
 
 /* CARD — glassmorphism cohérent avec le design system */
@@ -242,7 +244,7 @@
 /* FOOTER */
 .login-footer {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   gap: 8px;
   padding-top: 4px;
@@ -266,29 +268,13 @@
 .login-footer a:hover { text-decoration: underline; }
 
 /* TABLETTE — la card reste minuscule par rapport à l'espace disponible
-   (page en no-scroll, container fixe) : on l'agrandit pour combler l'écran. */
-@media (min-width: 768px) and (max-width: 1024px) {
+   (page en no-scroll, container fixe) : on l'agrandit pour combler l'écran.
+   Va jusqu'à 1200px pour couvrir aussi les tablettes en paysage (iPad Air,
+   iPad Pro 11" etc. dépassent 1024px de large). */
+@media (min-width: 768px) and (max-width: 1200px) {
   .login-card {
-    max-width: 640px;
-    padding: 44px 48px;
-    gap: 28px;
+    max-width: 480px;
   }
-
-  .login-logo { font-size: 30px; }
-  .login-welcome { font-size: 15px; }
-
-  .login-field label { font-size: 14px; }
-
-  .login-input-wrap { height: 56px; padding: 12px 18px; }
-  .login-input-wrap input { font-size: 14px; }
-
-  .login-remember,
-  .login-options a { font-size: 14px; }
-
-  .login-btn { height: 56px; font-size: 14px; }
-
-  .login-footer p,
-  .login-footer a { font-size: 14px !important; }
 }
 
 /* RESPONSIVE */

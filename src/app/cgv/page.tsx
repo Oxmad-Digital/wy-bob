@@ -87,7 +87,7 @@ export default function CGV() {
             <p className={styles.text}>
               Le paiement s'effectue en ligne, de manière sécurisée, via la plateforme Stripe.
               Les moyens de paiement acceptés sont : carte bancaire (Visa, Mastercard, American
-              Express). Le débit est effectué au moment de la validation de la commande. Les
+              Express) et Amazon Pay. Le débit est effectué au moment de la validation de la commande. Les
               données bancaires sont cryptées et ne sont jamais stockées sur nos serveurs.
             </p>
           </section>

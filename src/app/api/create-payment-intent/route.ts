@@ -66,6 +66,7 @@ export async function POST(req: Request) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalCents,
       currency: "eur",
+      payment_method_types: ["card", "amazon_pay"],
     });
 
     return NextResponse.json({
