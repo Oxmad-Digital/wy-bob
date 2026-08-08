@@ -494,7 +494,7 @@
 .acd-btn-ghost.acd-btn-sm:disabled { color: #a8a29e; cursor: not-allowed; }
 
 /* ── Responsive ── */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .acd-page  { padding: 16px; }
   .acd-grid  { grid-template-columns: 1fr; }
 }

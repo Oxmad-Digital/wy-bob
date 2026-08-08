@@ -332,7 +332,7 @@
 .confirmOk:hover { background: #e6af4e; }
 
 /* ── Responsive ── */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .page       { padding: 16px; }
   .topbarTitle { font-size: 20px; }
 }

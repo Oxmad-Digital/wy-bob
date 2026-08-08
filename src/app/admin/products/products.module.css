@@ -714,7 +714,7 @@
 .btnCancelModal:hover { background: #e7e5e4; }
 
 /* ── Responsive ── */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .page      { padding: 16px; }
   .topbarTitle { font-size: 20px; }
   .fieldsGrid  { grid-template-columns: 1fr; }

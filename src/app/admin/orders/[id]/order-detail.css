@@ -195,7 +195,7 @@
 /* ── Two-column layout ── */
 .od-layout {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
   gap: 16px;
   align-items: start;
 }
@@ -686,7 +686,7 @@ a.od-client-item-value.od-client-email:hover { text-decoration: underline; }
 .od-ship-generate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── Responsive ── */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .od-page    { padding: 16px; }
   .od-title   { font-size: 18px; }
   .od-layout  { grid-template-columns: 1fr; }

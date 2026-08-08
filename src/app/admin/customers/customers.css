@@ -673,7 +673,7 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .ap-page         { padding: 16px; }
   .ap-topbar-title { font-size: 20px; }
   .ap-stats-inline { display: none; }
