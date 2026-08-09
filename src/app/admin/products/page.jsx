@@ -1,26 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, memo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  TouchSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  DragOverlay,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import dynamic from "next/dynamic";
 import styles from "./products.module.css";
+
+// @dnd-kit (~30-40 Ko gzip) n'est nécessaire qu'une fois les variantes chargées
+// et affichées — évite de le charger au premier rendu de la page.
+const VariantsSortableGrid = dynamic(() => import("./VariantsSortableGrid"), { ssr: false });
 
 const CLOUD_NAME = "dnm9txjhm";
 const TOAST_DURATION = 3000;
@@ -215,82 +202,6 @@ function VariantModal({ variant, onClose, onSave }) {
   );
 }
 
-/* ── Carte variante draggable ── */
-const SortableVariantCard = memo(function SortableVariantCard({ variant, index, onEdit, onDelete }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: variant._id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.35 : 1,
-    zIndex:  isDragging ? 10 : "auto",
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className={styles.variantCard}>
-      <div className={styles.dragHandle} {...attributes} {...listeners} title="Déplacer">
-        <span className={styles.dragDots}>⠿</span>
-        {index === 0 && <span className={styles.firstBadge}>Affiché en 1er</span>}
-      </div>
-
-      <div className={styles.variantImgWrap}>
-        {variant.image
-          ? <img src={variant.image} alt={variant.colorName} className={styles.variantImg} />
-          : <div className={styles.variantImgPlaceholder} style={{ backgroundColor: variant.colorCode }} />
-        }
-      </div>
-
-      <div className={styles.variantInfo}>
-        <span className={styles.variantName}>{variant.colorName}</span>
-        <div className={styles.variantSwatch} style={{ backgroundColor: variant.colorCode }} title={variant.colorCode} />
-      </div>
-
-      <div className={styles.stockRow}>
-        <span
-          className={`${styles.stockBadge} ${
-            variant.stock === 0 ? styles.stockBadgeZero : variant.stock <= 3 ? styles.stockBadgeLow : ""
-          }`}
-        >
-          {variant.stock === 0 ? "Rupture de stock" : `${variant.stock} en stock`}
-        </span>
-      </div>
-
-      <div className={styles.previewBtnWrap}>
-        <button
-          className={styles.previewBtnSmall}
-          style={{ backgroundColor: variant.colorCode, color: variant.textColor }}
-        >
-          Commander
-        </button>
-      </div>
-
-      <div className={styles.variantActions}>
-        <button
-          className={styles.btnEdit}
-          onPointerDown={e => e.stopPropagation()}
-          onClick={() => onEdit(variant)}
-        >
-          Modifier
-        </button>
-        <button
-          className={styles.btnDelete}
-          onPointerDown={e => e.stopPropagation()}
-          onClick={() => onDelete(variant._id, variant.colorName)}
-        >
-          Supprimer
-        </button>
-      </div>
-    </div>
-  );
-});
-
 /* ── Page principale ── */
 export default function AdminProductsPage() {
   const [product,       setProduct]       = useState(null);
@@ -299,15 +210,8 @@ export default function AdminProductsPage() {
   const [toast,         setToast]         = useState(null);
   const [confirmModal,  setConfirmModal]  = useState(null);
   const [variantModal,  setVariantModal]  = useState(null);
-  const [activeId,      setActiveId]      = useState(null);
 
   const [fields, setFields] = useState({ name: "", price: "", pricePromo: "" });
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor,   { activationConstraint: { delay: 200, tolerance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
 
   const showToast = useCallback((msg, type = "success") => {
     setToast({ message: msg, type });
@@ -428,23 +332,12 @@ export default function AdminProductsPage() {
     );
   }, [product, saveVariants, askConfirm, showToast]);
 
-  const handleDragStart = ({ active }) => setActiveId(active.id);
-
-  const handleDragEnd = async ({ active, over }) => {
-    setActiveId(null);
-    if (!over || active.id === over.id || !product) return;
-
-    const oldIndex = product.variants.findIndex(v => v._id === active.id);
-    const newIndex = product.variants.findIndex(v => v._id === over.id);
-    const reordered = arrayMove(product.variants, oldIndex, newIndex);
-
+  const handleVariantsReorder = useCallback(async (reordered) => {
     setProduct(prev => ({ ...prev, variants: reordered }));
     const ok = await saveVariants(reordered);
     if (ok) showToast("Ordre des variantes sauvegardé");
     else    showToast("Erreur lors de la sauvegarde", "error");
-  };
-
-  const activeVariant = product?.variants?.find(v => v._id === activeId);
+  }, [saveVariants, showToast]);
 
   return (
     <div className={styles.page}>
@@ -610,46 +503,12 @@ export default function AdminProductsPage() {
             {product.variants.length === 0 ? (
               <p className={styles.emptyVariants}>Aucune variante — ajoutez des couleurs.</p>
             ) : (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={product.variants.map(v => v._id)}
-                  strategy={rectSortingStrategy}
-                >
-                  <div className={styles.variantsGrid}>
-                    {product.variants.map((v, i) => (
-                      <SortableVariantCard
-                        key={v._id}
-                        variant={v}
-                        index={i}
-                        onEdit={handleVariantEdit}
-                        onDelete={handleVariantDelete}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-
-                <DragOverlay>
-                  {activeVariant && (
-                    <div className={`${styles.variantCard} ${styles.draggingOverlay}`}>
-                      <div className={styles.variantImgWrap}>
-                        {activeVariant.image
-                          ? <img src={activeVariant.image} alt={activeVariant.colorName} className={styles.variantImg} />
-                          : <div className={styles.variantImgPlaceholder} style={{ backgroundColor: activeVariant.colorCode }} />
-                        }
-                      </div>
-                      <div className={styles.variantInfo}>
-                        <span className={styles.variantName}>{activeVariant.colorName}</span>
-                        <div className={styles.variantSwatch} style={{ backgroundColor: activeVariant.colorCode }} />
-                      </div>
-                    </div>
-                  )}
-                </DragOverlay>
-              </DndContext>
+              <VariantsSortableGrid
+                variants={product.variants}
+                onEdit={handleVariantEdit}
+                onDelete={handleVariantDelete}
+                onReorder={handleVariantsReorder}
+              />
             )}
           </section>
         </>

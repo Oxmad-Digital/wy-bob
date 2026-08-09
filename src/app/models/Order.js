@@ -109,4 +109,9 @@ const OrderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Le listing admin filtre par status et trie par createdAt (api/admin/orders),
+// et le dashboard client filtre par userId — évite un scan complet de la collection.
+OrderSchema.index({ status: 1, createdAt: -1 });
+OrderSchema.index({ userId: 1 });
+
 export default mongoose.models.Order || mongoose.model("Order", OrderSchema);

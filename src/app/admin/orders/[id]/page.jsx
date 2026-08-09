@@ -7,6 +7,7 @@ import "./order-detail.css";
 import { TOAST_DURATION } from "../../_constants";
 import { FR_PRODUCTS, INTL_PRODUCTS } from "@/app/lib/chronopost/constants";
 import { COUNTRY_OPTIONS } from "@/app/lib/shipping/countries";
+import { cloudinaryThumb } from "@/app/lib/cloudinary";
 
 const EMPTY_CUSTOMER_FORM = {
   firstname: "", lastname: "", email: "", phone: "", company: "",
@@ -558,7 +559,7 @@ export default function AdminOrderDetailPage() {
                         <td>
                           <div className="od-product-cell">
                             {p.image
-                              ? <img src={p.image} alt={p.name} className="od-product-img" />
+                              ? <img src={cloudinaryThumb(p.image, 90)} alt={p.name} className="od-product-img" />
                               : <div className="od-product-no-img">👕</div>
                             }
                             <div>

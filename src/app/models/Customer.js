@@ -15,4 +15,7 @@ const CustomerSchema = new mongoose.Schema({
   timestamps: true,
 })
 
+// api/admin/stats filtre par status et lastOrderAt à chaque appel — évite un scan complet.
+CustomerSchema.index({ status: 1, lastOrderAt: 1 })
+
 export default mongoose.models.Customer || mongoose.model('Customer', CustomerSchema)

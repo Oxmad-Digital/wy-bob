@@ -235,21 +235,19 @@ async function syncCustomersFromOrders() {
     let created = 0;
     let updated = 0;
 
-    for (const email in customersMap) {
-      const data = customersMap[email];
-
-      const before = await Customer.findOne({ email });
-      await Customer.findOneAndUpdate(
-        { email },
-        { $set: data },
-        { upsert: true, new: true }
+    const emails = Object.keys(customersMap);
+    if (emails.length > 0) {
+      const result = await Customer.bulkWrite(
+        emails.map((email) => ({
+          updateOne: {
+            filter: { email },
+            update: { $set: customersMap[email] },
+            upsert: true,
+          },
+        }))
       );
-
-      if (!before) {
-        created++;
-      } else {
-        updated++;
-      }
+      created = result.upsertedCount ?? 0;
+      updated = result.matchedCount ?? 0;
     }
 
     return NextResponse.json({

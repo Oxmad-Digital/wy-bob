@@ -1,32 +1,27 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { unstable_cache } from 'next/cache'
 import { connectDB } from '@/app/lib/db'
 import SiteSettings from '@/app/models/SiteSettings'
 
-const CACHE_TTL_MS = 5000
-
-let cachedMaintenanceMode = false
-let cachedAt = 0
-
-async function isMaintenanceModeActive() {
-  const now = Date.now()
-  if (now - cachedAt < CACHE_TTL_MS) {
-    return cachedMaintenanceMode
-  }
-
-  try {
-    await connectDB()
-    const settings = await SiteSettings.findOne().lean()
-    cachedMaintenanceMode = settings?.maintenanceMode ?? false
-    cachedAt = now
-  } catch {
-    // En cas d'erreur DB, on ne bloque pas le site (fail open).
-    cachedMaintenanceMode = false
-    cachedAt = now
-  }
-
-  return cachedMaintenanceMode
-}
+// Mis en cache via le Data Cache de Next.js (partagé entre instances), plutôt
+// qu'un cache mémoire par instance : évite un aller-retour MongoDB devant
+// (quasi) chaque page. Invalidé immédiatement via revalidateTag côté
+// api/admin/settings quand l'admin bascule le mode maintenance.
+const isMaintenanceModeActive = unstable_cache(
+  async () => {
+    try {
+      await connectDB()
+      const settings = await SiteSettings.findOne().lean()
+      return settings?.maintenanceMode ?? false
+    } catch {
+      // En cas d'erreur DB, on ne bloque pas le site (fail open).
+      return false
+    }
+  },
+  ['maintenance-mode'],
+  { tags: ['maintenance-mode'], revalidate: 60 }
+)
 
 export async function proxy(request: NextRequest) {
   if (process.env.NODE_ENV !== 'production') {

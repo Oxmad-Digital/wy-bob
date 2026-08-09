@@ -1,17 +1,23 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 import { useCart } from "@/components/panier-context";
-import RelayPointPicker, { type RelayPoint } from "./RelayPointPicker";
+import type { RelayPoint } from "./RelayPointPicker";
+
+// Le SDK Google Maps (via RelayPointMap) n'est nécessaire que si l'utilisateur choisit
+// la livraison en point relais — évite de le charger sur tout le tunnel de checkout.
+const RelayPointPicker = dynamic(() => import("./RelayPointPicker"), { ssr: false });
 import CountrySelect from "./CountrySelect";
 import { computeOrderTotals } from "@/app/lib/pricing";
 import { formatDeliveryLabel } from "@/app/lib/shipping/delivery";
 import { isValidPostalCode } from "@/app/lib/shipping/postalCode";
 import { COUNTRY_OPTIONS } from "@/app/lib/shipping/countries";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { cloudinaryThumb } from "@/app/lib/cloudinary";
 import "./checkout.css";
 
 export default function CheckoutForm() {
@@ -341,7 +347,7 @@ export default function CheckoutForm() {
               {cartItems.map((item: any) => (
                 <div key={item._id} className="checkout-item">
                   <div className="checkout-item-image">
-                    {item.image && <img src={item.image} alt={item.name} />}
+                    {item.image && <img src={cloudinaryThumb(item.image, 100)} alt={item.name} />}
                   </div>
                   <div className="checkout-item-info">
                     <strong>{item.name}</strong>

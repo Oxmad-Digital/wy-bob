@@ -6,6 +6,7 @@ import { useCart } from '@/components/panier-context'
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { cloudinaryThumb } from "@/app/lib/cloudinary";
 import "../page.css";
 import "./panier.css";
 
@@ -109,7 +110,7 @@ export default function Panier() {
 
                     <div className="cart-item-image">
                       {item.image ? (
-                        <img src={item.image} alt={item.name} />
+                        <img src={cloudinaryThumb(item.image, 120)} alt={item.name} />
                       ) : null}
                     </div>
 

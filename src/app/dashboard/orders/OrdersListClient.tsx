@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
+import { cloudinaryThumb } from "@/app/lib/cloudinary";
 
 type Product = { name?: string | null; image?: string | null; quantity?: number };
 type Order = {
@@ -140,7 +141,7 @@ export default function OrdersListClient({ orders }: { orders: Order[] }) {
                         {order.products.map((p, i) => (
                           <div key={i} className="order-product">
                             {p.image
-                              ? <img src={p.image} alt={p.name ?? ""} className="order-product-image" />
+                              ? <img src={cloudinaryThumb(p.image, 80)} alt={p.name ?? ""} className="order-product-image" />
                               : <div className="order-product-image order-product-image-empty" />
                             }
                             <span className="order-product-name">{p.name ?? o.productRemoved}</span>

@@ -95,7 +95,15 @@ export async function POST(req) {
       return NextResponse.json({ message: "Panier vide" }, { status: 400 });
     }
 
-    // Calculate total strictly server-side — fetch each product price from the database
+    // Calculate total strictly server-side — fetch all cart products in one query
+    const validItemIds = [...new Set(
+      cartItems
+        .filter((item) => mongoose.Types.ObjectId.isValid(item.productId))
+        .map((item) => item.productId)
+    )];
+    const productDocs = await Product.find({ _id: { $in: validItemIds } }).select("price name weight variants");
+    const productById = new Map(productDocs.map((p) => [p._id.toString(), p]));
+
     const products = [];
     const productPriceById = new Map();
     const weighableLines = [];
@@ -104,7 +112,7 @@ export async function POST(req) {
     for (const item of cartItems) {
       if (!mongoose.Types.ObjectId.isValid(item.productId)) continue;
 
-      const product = await Product.findById(item.productId).select("price name weight variants");
+      const product = productById.get(item.productId);
       if (!product) continue;
 
       const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));

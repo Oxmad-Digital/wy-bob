@@ -5,10 +5,11 @@ import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { cloudinaryThumb } from '@/app/lib/cloudinary'
 import '../page.css'
 import styles from './concept.module.css'
 
-const CONCEPT_IMAGE = 'https://res.cloudinary.com/dnm9txjhm/image/upload/v1780598136/galerie/poue9ehom5m91pdrgdik.jpg'
+const CONCEPT_IMAGE = cloudinaryThumb('https://res.cloudinary.com/dnm9txjhm/image/upload/v1780598136/galerie/poue9ehom5m91pdrgdik.jpg', 1920)
 
 export default function Concept() {
   const { t } = useLanguage()
