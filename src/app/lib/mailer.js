@@ -9,7 +9,7 @@ function getResendClient() {
   return resend
 }
 
-export async function sendEmail({ to, subject, html, replyTo }) {
+export async function sendEmail({ to, subject, html, replyTo, attachments }) {
   try {
     const { data, error } = await getResendClient().emails.send({
       from: `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM}>`,
@@ -17,6 +17,7 @@ export async function sendEmail({ to, subject, html, replyTo }) {
       subject,
       html,
       ...(replyTo ? { replyTo } : {}),
+      ...(attachments && attachments.length ? { attachments } : {}),
     })
     if (error) throw error
     console.log('✅ Email envoyé:', data.id)

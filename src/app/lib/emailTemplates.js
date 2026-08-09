@@ -7,10 +7,19 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-export function getContactFormEmailTemplate({ name, email, phone, message }) {
+const CONTACT_SUBJECT_LABELS = {
+  produit: 'Question produit',
+  sav: 'SAV / Retour',
+  commande: 'Suivi de commande',
+  autre: 'Autre',
+};
+
+export function getContactFormEmailTemplate({ name, email, phone, subject, orderNumber, message, hasAttachment }) {
   const safeName = escapeHtml(name);
   const safeEmail = escapeHtml(email);
   const safePhone = phone ? escapeHtml(phone) : '';
+  const safeSubject = subject ? escapeHtml(CONTACT_SUBJECT_LABELS[subject] || subject) : '';
+  const safeOrderNumber = orderNumber ? escapeHtml(orderNumber) : '';
   const safeMessage = escapeHtml(message);
   return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background: #f9f9f9; border-radius: 16px;">
@@ -27,9 +36,13 @@ export function getContactFormEmailTemplate({ name, email, phone, message }) {
         <tr><td style="padding: 6px 0; font-weight: 700; width: 100px;">Nom</td><td>${safeName}</td></tr>
         <tr><td style="padding: 6px 0; font-weight: 700;">Email</td><td>${safeEmail}</td></tr>
         ${safePhone ? `<tr><td style="padding: 6px 0; font-weight: 700;">Téléphone</td><td>${safePhone}</td></tr>` : ''}
+        ${safeSubject ? `<tr><td style="padding: 6px 0; font-weight: 700;">Sujet</td><td>${safeSubject}</td></tr>` : ''}
+        ${safeOrderNumber ? `<tr><td style="padding: 6px 0; font-weight: 700;">Commande</td><td>#${safeOrderNumber}</td></tr>` : ''}
       </table>
 
       <div style="background: white; border-radius: 8px; padding: 20px; color: #444; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">${safeMessage}</div>
+
+      ${hasAttachment ? '<p style="color: #444; font-size: 13px; margin: 16px 0 0;">📎 Photo jointe à cet email</p>' : ''}
 
       <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
 
