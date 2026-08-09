@@ -17,7 +17,8 @@ export async function GET() {
 
     const codes = await PromoCode.find({ isReferral: true })
       .populate("referrerId", "name email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json({ success: true, codes });
   } catch (error) {

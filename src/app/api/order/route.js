@@ -578,14 +578,15 @@ export async function GET(req) {
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
-    const limit = parseInt(searchParams.get("limit")) || 50;
+    const limit = Math.min(200, parseInt(searchParams.get("limit")) || 50);
 
     const query = status ? { status } : {};
 
     const orders = await Order.find(query)
       .sort({ createdAt: -1 })
       .limit(limit)
-      .populate("products.product");
+      .populate("products.product")
+      .lean();
 
     return NextResponse.json({ success: true, count: orders.length, orders });
 

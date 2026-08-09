@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import ChevronIcon from '@/components/icons/ChevronIcon'
 import { useCart } from '@/components/panier-context'
 import { useLanguage } from '@/contexts/LanguageContext'
 import './page.css'
@@ -244,8 +245,8 @@ export default function HomeClient({ product }: Props) {
       {lightboxIndex !== null && (
         <div className="lightboxOverlay" onClick={closeLightbox}>
           <button className="lightboxClose" onClick={closeLightbox} aria-label="Fermer">×</button>
-          <button className="lightboxPrev" onClick={(e) => { e.stopPropagation(); goPrevLightbox() }}>
-            <Image src="https://res.cloudinary.com/dnm9txjhm/image/upload/q_auto/f_auto/v1780172685/chevron_left_qr2oga.png" alt="Précédent" width={24} height={24} />
+          <button className="lightboxPrev" onClick={(e) => { e.stopPropagation(); goPrevLightbox() }} aria-label="Précédent">
+            <ChevronIcon direction="left" color="#ffffff" />
           </button>
           <div className="lightboxContent" onClick={(e) => e.stopPropagation()}>
             <Image
@@ -257,8 +258,8 @@ export default function HomeClient({ product }: Props) {
               style={{ objectFit: 'contain', width: 'auto', height: 'auto', maxWidth: '88vw', maxHeight: '82vh' }}
             />
           </div>
-          <button className="lightboxNext" onClick={(e) => { e.stopPropagation(); goNextLightbox() }}>
-            <Image src="https://res.cloudinary.com/dnm9txjhm/image/upload/q_auto/f_auto/v1780172686/chevron_right_vlhter.png" alt="Suivant" width={24} height={24} />
+          <button className="lightboxNext" onClick={(e) => { e.stopPropagation(); goNextLightbox() }} aria-label="Suivant">
+            <ChevronIcon direction="right" color="#ffffff" />
           </button>
         </div>
       )}

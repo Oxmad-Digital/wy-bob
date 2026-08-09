@@ -4,11 +4,10 @@ import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import ChevronIcon from '@/components/icons/ChevronIcon'
 import { useLanguage } from '@/contexts/LanguageContext'
 import '../page.css'
 import './galerie.css'
-
-const CDN = 'https://res.cloudinary.com/dnm9txjhm/image/upload/q_auto/f_auto'
 
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = []
@@ -69,10 +68,10 @@ export default function GalerieClient({ images }: Props) {
             </div>
             <div className="galerieNav">
               <button className="galerieNavBtn" onClick={goPrev} aria-label={t.galerie.prevPage}>
-                <Image src={`${CDN}/v1780172685/chevron_left_qr2oga.png`} alt="" width={24} height={24} />
+                <ChevronIcon direction="left" color="#1B1843" />
               </button>
               <button className="galerieNavBtn" onClick={goNext} aria-label={t.galerie.nextPage}>
-                <Image src={`${CDN}/v1780172686/chevron_right_vlhter.png`} alt="" width={24} height={24} />
+                <ChevronIcon direction="right" color="#1B1843" />
               </button>
             </div>
           </div>
@@ -110,10 +109,10 @@ export default function GalerieClient({ images }: Props) {
           </div>
           <div className="galerieNav">
             <button className="galerieNavBtn" onClick={goPrev} aria-label={t.galerie.prevPage}>
-              <Image src={`${CDN}/v1780172685/chevron_left_qr2oga.png`} alt="" width={24} height={24} />
+              <ChevronIcon direction="left" color="#1B1843" />
             </button>
             <button className="galerieNavBtn" onClick={goNext} aria-label={t.galerie.nextPage}>
-              <Image src={`${CDN}/v1780172686/chevron_right_vlhter.png`} alt="" width={24} height={24} />
+              <ChevronIcon direction="right" color="#1B1843" />
             </button>
           </div>
         </div>
@@ -124,8 +123,8 @@ export default function GalerieClient({ images }: Props) {
       {lightboxIndex !== null && (
         <div className="lightboxOverlay" onClick={closeLightbox}>
           <button className="lightboxClose" onClick={closeLightbox} aria-label="Fermer la galerie">×</button>
-          <button className="lightboxPrev" onClick={(e) => { e.stopPropagation(); goPrevLightbox() }}>
-            <Image src={`${CDN}/v1780172685/chevron_left_qr2oga.png`} alt={t.galerie.prev} width={24} height={24} />
+          <button className="lightboxPrev" onClick={(e) => { e.stopPropagation(); goPrevLightbox() }} aria-label={t.galerie.prev}>
+            <ChevronIcon direction="left" color="#ffffff" />
           </button>
           <div className="lightboxContent" onClick={(e) => e.stopPropagation()}>
             <Image
@@ -136,8 +135,8 @@ export default function GalerieClient({ images }: Props) {
               style={{ objectFit: 'contain', width: 'auto', height: 'auto', maxWidth: '88vw', maxHeight: '82vh' }}
             />
           </div>
-          <button className="lightboxNext" onClick={(e) => { e.stopPropagation(); goNextLightbox() }}>
-            <Image src={`${CDN}/v1780172686/chevron_right_vlhter.png`} alt={t.galerie.next} width={24} height={24} />
+          <button className="lightboxNext" onClick={(e) => { e.stopPropagation(); goNextLightbox() }} aria-label={t.galerie.next}>
+            <ChevronIcon direction="right" color="#ffffff" />
           </button>
         </div>
       )}

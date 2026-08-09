@@ -37,7 +37,7 @@ export async function GET(request) {
     const skip = (page - 1) * limit;
 
     const [invoices, total, totalAll, sumAgg] = await Promise.all([
-      Invoice.find(filter).select("-pdfBase64").sort({ issuedAt: -1 }).skip(skip).limit(limit),
+      Invoice.find(filter).select("-pdfBase64").sort({ issuedAt: -1 }).skip(skip).limit(limit).lean(),
       Invoice.countDocuments(filter),
       Invoice.countDocuments(),
       Invoice.aggregate([{ $group: { _id: null, total: { $sum: "$totalTtc" } } }]),

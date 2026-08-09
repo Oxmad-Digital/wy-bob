@@ -28,7 +28,7 @@ export async function GET(req, { params }) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
-    const order = await Order.findById(id).populate("products.product");
+    const order = await Order.findById(id).populate("products.product").lean();
 
     if (!order) {
       return NextResponse.json({ message: "Commande introuvable" }, { status: 404 });

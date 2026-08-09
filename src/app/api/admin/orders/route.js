@@ -42,7 +42,7 @@ export async function GET(request) {
     const skip    = (page - 1) * limit;
 
     const [orders, total, statsAgg, totalAll] = await Promise.all([
-      Order.find(filter).populate("products.product").sort(sortObj).skip(skip).limit(limit),
+      Order.find(filter).populate("products.product").sort(sortObj).skip(skip).limit(limit).lean(),
       Order.countDocuments(filter),
       Order.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
       Order.countDocuments(),

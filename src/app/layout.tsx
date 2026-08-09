@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
+import dynamic from 'next/dynamic'
 import { DM_Sans, Quicksand } from 'next/font/google'
 import { CartProvider } from '@/components/panier-context'
 import SessionWrapper from '@/components/SessionWrapper'
 import { LanguageProvider } from '@/contexts/LanguageContext'
-import CookieConsentBanner from '@/components/CookieConsentBanner'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import './globals.css'
+
+const CookieConsentBanner = dynamic(() => import('@/components/CookieConsentBanner'))
 
 const dmSans = DM_Sans({
   subsets: ['latin'],

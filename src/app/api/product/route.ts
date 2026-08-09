@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/app/lib/db";
 import Product from "@/app/models/Product";
 
+export const revalidate = 60;
+
 const DEFAULT_PRODUCT = {
   name:     "WYBOB Essentials",
   price:    85,
