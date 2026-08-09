@@ -160,6 +160,10 @@ export const translations = {
       phone: 'Numéro de téléphone (optionnel)',
       message: 'Message',
       send: 'ENVOYER',
+      sending: 'ENVOI EN COURS...',
+      success: 'Votre message a bien été envoyé, merci !',
+      error: 'Une erreur est survenue, veuillez réessayer.',
+      networkError: 'Impossible de contacter le serveur. Vérifiez votre connexion.',
     },
     cart: {
       empty: 'Votre panier est vide 🛒',
@@ -561,6 +565,10 @@ export const translations = {
       phone: 'Phone number (optional)',
       message: 'Message',
       send: 'SEND',
+      sending: 'SENDING...',
+      success: 'Your message has been sent, thank you!',
+      error: 'Something went wrong, please try again.',
+      networkError: 'Could not reach the server. Check your connection.',
     },
     cart: {
       empty: 'Your cart is empty 🛒',

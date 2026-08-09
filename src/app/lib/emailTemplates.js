@@ -1,3 +1,46 @@
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export function getContactFormEmailTemplate({ name, email, phone, message }) {
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safePhone = phone ? escapeHtml(phone) : '';
+  const safeMessage = escapeHtml(message);
+  return `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background: #f9f9f9; border-radius: 16px;">
+
+      <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="color: #1B1843; font-size: 28px; font-weight: 700;">WYBOB 🎩</h1>
+      </div>
+
+      <h2 style="color: #1B1843; font-size: 22px; text-align: center;">
+        Nouveau message de contact
+      </h2>
+
+      <table style="width: 100%; margin: 24px 0; font-size: 15px; color: #444;">
+        <tr><td style="padding: 6px 0; font-weight: 700; width: 100px;">Nom</td><td>${safeName}</td></tr>
+        <tr><td style="padding: 6px 0; font-weight: 700;">Email</td><td>${safeEmail}</td></tr>
+        ${safePhone ? `<tr><td style="padding: 6px 0; font-weight: 700;">Téléphone</td><td>${safePhone}</td></tr>` : ''}
+      </table>
+
+      <div style="background: white; border-radius: 8px; padding: 20px; color: #444; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">${safeMessage}</div>
+
+      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+
+      <p style="color: #888; font-size: 12px; text-align: center;">
+        © 2026 WYBOB
+      </p>
+
+    </div>
+  `;
+}
+
 export function getPasswordResetEmailTemplate(name, resetUrl) {
   return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background: #f9f9f9; border-radius: 16px;">
