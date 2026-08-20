@@ -66,6 +66,7 @@ const OrderSchema = new mongoose.Schema(
         id: String,
         name: String,
         address1: String,
+        address2: String,
         zipCode: String,
         city: String,
         country: String,

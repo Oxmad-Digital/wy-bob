@@ -231,6 +231,7 @@ export async function POST(req) {
                 id: relayPoint.id,
                 name: relayPoint.name || "",
                 address1: relayPoint.address1 || "",
+                address2: relayPoint.address2 || "",
                 zipCode: relayPoint.zipCode || "",
                 city: relayPoint.city || "",
                 country: relayPoint.country || country || "FR",

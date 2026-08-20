@@ -4,6 +4,7 @@ import { createShipment } from "./shipping";
 import { ChronopostError } from "./client";
 import type { BusinessType, DeliveryMethod, ShipmentParty } from "./types";
 import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
+import { countryLabel } from "@/app/lib/shipping/countries";
 
 interface GenerateOverrides {
   saturday?: boolean;
@@ -57,10 +58,11 @@ export async function generateShipmentForOrder(orderId: string, overrides: Gener
       ? {
           name: order.shipping.relayPoint.name || "",
           address1: order.shipping.relayPoint.address1 || "",
+          address2: order.shipping.relayPoint.address2 || "",
           zipCode: order.shipping.relayPoint.zipCode || "",
           city: order.shipping.relayPoint.city || "",
           country: order.shipping.relayPoint.country || country,
-          countryName: order.shipping.relayPoint.country || country,
+          countryName: countryLabel(order.shipping.relayPoint.country || country),
           contactName: `${order.customer?.firstname || ""} ${order.customer?.lastname || ""}`.trim(),
           phone: order.customer?.phone,
           email: order.customer?.email,
@@ -74,7 +76,7 @@ export async function generateShipmentForOrder(orderId: string, overrides: Gener
           zipCode: order.customer?.postalCode || "",
           city: order.customer?.city || "",
           country,
-          countryName: country,
+          countryName: countryLabel(country),
           phone: order.customer?.phone,
           email: order.customer?.email,
         };

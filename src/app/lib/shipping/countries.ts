@@ -52,3 +52,12 @@ export const COUNTRY_OPTIONS = [
   { code: "UA", label: "Ukraine" },
   { code: "VA", label: "Vatican" },
 ];
+
+// Nom complet du pays (majuscules, cf. exemples Chronopost "FRANCE"/"BELGIQUE") à partir
+// d'un code ISO2, pour renseigner recipientCountryName/shipperCountryName sur les
+// étiquettes. Retombe sur le code lui-même si absent de la liste (pays hors zone
+// livrable ou code déjà invalide en amont).
+export function countryLabel(code: string): string {
+  const match = COUNTRY_OPTIONS.find((c) => c.code === (code || "").toUpperCase());
+  return match ? match.label.toUpperCase() : (code || "").toUpperCase();
+}
