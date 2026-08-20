@@ -87,6 +87,7 @@ export const translations = {
         'Ne pas repasser directement sur le tissu',
       ],
       order: 'COMMANDER',
+      stockLabel: 'restants · édition limitée',
     },
     histoire: {
       title: 'Notre histoire',
@@ -508,6 +509,7 @@ export const translations = {
         'Do not iron directly on the fabric',
       ],
       order: 'ORDER',
+      stockLabel: 'left · limited edition',
     },
     histoire: {
       title: 'Our story',

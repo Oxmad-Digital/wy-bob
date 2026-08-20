@@ -320,6 +320,7 @@ html:has(.privacyZone) {
   gap: 12px;
   align-items: center;
   padding-left: 10px;
+  margin-top: 12px;
 }
 
 .swatchDot {
@@ -409,6 +410,62 @@ html:has(.privacyZone) {
   font-weight: 700;
   color: #1B1843;
   letter-spacing: 0.3px;
+}
+
+.stockBadgeRow {
+  margin: 12px 0 16px;
+}
+
+.stockGauge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stockGaugeTrack {
+  width: 90px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(27, 24, 67, 0.08);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.stockGaugeFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #1B1843;
+  transition: width 0.3s ease;
+}
+
+.stockGauge.low .stockGaugeFill { background: #b45309; }
+.stockGauge.critical .stockGaugeFill { background: #c0392b; animation: stockPulse 1.8s ease-in-out infinite; }
+
+.stockGaugeLabel {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(27, 24, 67, 0.65);
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+}
+
+.stockGaugeLabel b {
+  font-weight: 700;
+  color: #1B1843;
+}
+
+.stockGauge.low .stockGaugeLabel b { color: #b45309; }
+.stockGauge.critical .stockGaugeLabel b { color: #c0392b; }
+
+@keyframes stockPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stockGauge.critical .stockGaugeFill { animation: none; }
 }
 
 /* CTA : sélecteur quantité + bouton commander */
@@ -705,6 +762,8 @@ html:has(.privacyZone) {
   .productDesc { font-size: 12px; line-height: 1.5; margin: 6px 0 4px; }
   .swatches    { margin: 8px 0 4px; }
   .colorStory  { font-size: 12px; margin: 8px 0 4px; }
+  .stockGaugeTrack { width: 70px; }
+  .stockGaugeLabel { font-size: 11px; }
   .featureList { margin: 8px 0 4px; }
   .ctaRow      { margin-top: 20px; }
   .commanderBtn { font-size: 12px; }

@@ -17,7 +17,10 @@ interface Variant {
   textColor: string
   description?: string
   image: string
+  stock?: number
 }
+
+const EDITION_SIZE = 50
 
 interface ProductData {
   _id: string
@@ -101,7 +104,9 @@ export default function HomeClient({ product }: Props) {
     }, 150)
   }
 
-  const colorStory = t.home.colorStories[selectedVariant.colorName as keyof typeof t.home.colorStories]
+  const colorStory  = t.home.colorStories[selectedVariant.colorName as keyof typeof t.home.colorStories]
+  const stockLeft   = Math.max(0, Math.min(EDITION_SIZE, selectedVariant.stock ?? EDITION_SIZE))
+  const stockLevel  = stockLeft <= 5 ? 'critical' : stockLeft <= 15 ? 'low' : 'normal'
 
   const handleCommander = () => {
     if (!product?._id) return
@@ -154,6 +159,17 @@ export default function HomeClient({ product }: Props) {
             ) : (
               <p className="priceTag">{product?.price ?? 85}€</p>
             )}
+          </div>
+
+          <div className="stockBadgeRow">
+            <div className={`stockGauge ${stockLevel}`}>
+              <span className="stockGaugeTrack">
+                <span className="stockGaugeFill" style={{ width: `${(stockLeft / EDITION_SIZE) * 100}%` }} />
+              </span>
+              <span className="stockGaugeLabel">
+                <b>{stockLeft}</b> / {EDITION_SIZE} {t.home.stockLabel}
+              </span>
+            </div>
           </div>
 
           <div className="productFeature" onClick={() => toggleSection('description')}>

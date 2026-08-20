@@ -26,6 +26,7 @@ export default async function Home() {
           textColor:   v.textColor,
           description: v.description,
           image:       v.image,
+          stock:       v.stock ?? 0,
         })),
       }
     }
