@@ -129,6 +129,14 @@
 .ap-table tbody tr { transition: background 0.1s; }
 .ap-table tbody tr:hover { background: #fafaf9; }
 
+/* Colonne actions : largeur au contenu pour ne pas hériter de tout l'espace
+   restant (peu de colonnes sur cette page → grand vide sinon). */
+.ap-table th:last-child,
+.ap-table td:last-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
 .ap-state { padding: 60px 24px; text-align: center; color: #a8a29e; font-size: 15px; }
 .ap-state-icon { font-size: 34px; display: block; margin-bottom: 10px; }
 
@@ -206,6 +214,27 @@
   white-space: nowrap;
 }
 .ai-btn-download:hover { background: #0f172a; color: #fff; border-color: #0f172a; }
+
+.ai-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ap-btn-delete {
+  padding: 6px 12px;
+  background: #fef9ec;
+  color: #c58b00;
+  border: 1.5px solid #F9C464;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.ap-btn-delete:hover { background: #F9C464; color: #0f172a; border-color: #F9C464; }
 
 /* ── Responsive ── */
 @media (max-width: 1200px) {

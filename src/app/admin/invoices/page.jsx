@@ -46,6 +46,24 @@ export default function AdminInvoicesPage() {
     }
   };
 
+  const deleteInvoice = (id) => {
+    if (!confirm("Supprimer cette facture définitivement ?")) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/admin/invoices/${id}`, { method: "DELETE" });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert(data.message || "Erreur lors de la suppression");
+          return;
+        }
+        fetchInvoices();
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors de la suppression");
+      }
+    })();
+  };
+
   return (
     <div className="ap-page">
 
@@ -138,19 +156,24 @@ export default function AdminInvoicesPage() {
                     <td><span className="ai-total">{(inv.totalTtc || 0).toLocaleString("fr-FR")} €</span></td>
                     <td><span className="ap-date">{inv.issuedAt ? new Date(inv.issuedAt).toLocaleDateString("fr-FR") : "—"}</span></td>
                     <td>
-                      <a
-                        href={`/api/admin/invoices/${inv._id}/pdf`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ai-btn-download"
-                      >
-                        Télécharger
-                        <svg className="ai-download-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 3v12" />
-                          <path d="M7 10l5 5 5-5" />
-                          <path d="M5 21h14" />
-                        </svg>
-                      </a>
+                      <div className="ai-actions">
+                        <a
+                          href={`/api/admin/invoices/${inv._id}/pdf`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ai-btn-download"
+                        >
+                          Télécharger
+                          <svg className="ai-download-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 3v12" />
+                            <path d="M7 10l5 5 5-5" />
+                            <path d="M5 21h14" />
+                          </svg>
+                        </a>
+                        <button className="ap-btn-delete" onClick={() => deleteInvoice(inv._id)}>
+                          Supprimer
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
