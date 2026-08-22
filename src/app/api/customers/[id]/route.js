@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { connectDB } from "@/app/lib/db";
 import Customer from "@/app/models/Customer";
 import Order from "@/app/models/Order";
 import User from "@/app/models/User";
+import PromoCode from "@/app/models/PromoCode";
 
 // GET - Détails d'un client
 export async function GET(req, { params }) {
   try {
+    const session = await auth();
+    if (!session || session.user.role !== "admin") {
+      return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
+    }
+
     await connectDB();
 
     const resolvedParams = await params;
@@ -70,6 +77,11 @@ export async function GET(req, { params }) {
 // PUT - Modifier un client
 export async function PUT(req, { params }) {
   try {
+    const session = await auth();
+    if (!session || session.user.role !== "admin") {
+      return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
+    }
+
     await connectDB();
 
     const { id } = await params;
@@ -128,10 +140,15 @@ export async function PUT(req, { params }) {
 // DELETE - Supprimer ou Anonymiser un client
 export async function DELETE(req, { params }) {
   try {
+    const session = await auth();
+    if (!session || session.user.role !== "admin") {
+      return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
+    }
+
     await connectDB();
 
     const { id } = await params; // ✅ Correction ici aussi
-    
+
     const { searchParams } = new URL(req.url);
     const action = searchParams.get("action");
 
@@ -149,7 +166,11 @@ export async function DELETE(req, { params }) {
       customer = await Customer.findOne({ email: user.email });
       if (!customer) {
         // Utilisateur sans fiche Customer et sans commandes → suppression directe du User
-        await User.findByIdAndDelete(id);
+        // et des codes de parrainage qu'il a générés (sinon ils restent orphelins).
+        await Promise.all([
+          User.findByIdAndDelete(id),
+          PromoCode.deleteMany({ referrerId: id, isReferral: true }),
+        ]);
         return NextResponse.json({ success: true, message: "Utilisateur supprimé", action: "deleted" });
       }
     }
@@ -159,7 +180,20 @@ export async function DELETE(req, { params }) {
     });
 
     if (ordersCount === 0) {
-      await Customer.findByIdAndDelete(id);
+      // Supprime la fiche CRM et le compte de connexion associé (même email) :
+      // sans ça, le User reste en base et réapparaît dans la liste au prochain
+      // chargement (jointure User ← Customer dans GET /api/customers).
+      const deletedUser = await User.findOneAndDelete({
+        email: customer.email,
+        role: { $ne: "admin" },
+      });
+
+      await Promise.all([
+        Customer.findByIdAndDelete(customer._id),
+        deletedUser
+          ? PromoCode.deleteMany({ referrerId: deletedUser._id, isReferral: true })
+          : Promise.resolve(),
+      ]);
       return NextResponse.json({
         success: true,
         message: "Client supprimé avec succès",

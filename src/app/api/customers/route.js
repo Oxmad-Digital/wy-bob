@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { connectDB } from "@/app/lib/db";
 import Customer from "@/app/models/Customer";
 import Order from "@/app/models/Order";
@@ -14,6 +15,11 @@ const ALLOWED_SORT_FIELDS = new Set([
 ========================= */
 export async function GET(req) {
   try {
+    const session = await auth();
+    if (!session || session.user.role !== "admin") {
+      return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
+    }
+
     await connectDB();
 
     const { searchParams } = new URL(req.url);
@@ -131,6 +137,11 @@ export async function GET(req) {
 ========================= */
 export async function POST(req) {
   try {
+    const session = await auth();
+    if (!session || session.user.role !== "admin") {
+      return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
+    }
+
     await connectDB();
     const body = await req.json();
 
