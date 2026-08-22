@@ -47,6 +47,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
         description: v.description,
         image:       v.image,
         stock:       v.stock ?? 0,
+        editionSize: v.editionSize ?? 50,
       })),
     },
   });

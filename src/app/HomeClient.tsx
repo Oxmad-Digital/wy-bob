@@ -18,9 +18,10 @@ interface Variant {
   description?: string
   image: string
   stock?: number
+  editionSize?: number
 }
 
-const EDITION_SIZE = 50
+const DEFAULT_EDITION_SIZE = 50
 
 interface ProductData {
   _id: string
@@ -104,9 +105,10 @@ export default function HomeClient({ product }: Props) {
     }, 150)
   }
 
-  const colorStory  = t.home.colorStories[selectedVariant.colorName as keyof typeof t.home.colorStories]
-  const stockLeft   = Math.max(0, Math.min(EDITION_SIZE, selectedVariant.stock ?? EDITION_SIZE))
-  const stockLevel  = stockLeft <= 5 ? 'critical' : stockLeft <= 15 ? 'low' : 'normal'
+  const colorStory   = t.home.colorStories[selectedVariant.colorName as keyof typeof t.home.colorStories]
+  const editionSize  = selectedVariant.editionSize ?? DEFAULT_EDITION_SIZE
+  const stockLeft    = Math.max(0, Math.min(editionSize, selectedVariant.stock ?? editionSize))
+  const stockLevel   = stockLeft <= 5 ? 'critical' : stockLeft <= 15 ? 'low' : 'normal'
 
   const handleCommander = () => {
     if (!product?._id) return
@@ -164,10 +166,10 @@ export default function HomeClient({ product }: Props) {
           <div className="stockBadgeRow">
             <div className={`stockGauge ${stockLevel}`}>
               <span className="stockGaugeTrack">
-                <span className="stockGaugeFill" style={{ width: `${(stockLeft / EDITION_SIZE) * 100}%` }} />
+                <span className="stockGaugeFill" style={{ width: `${(stockLeft / editionSize) * 100}%` }} />
               </span>
               <span className="stockGaugeLabel">
-                <b>{stockLeft}</b> / {EDITION_SIZE} {t.home.stockLabel}
+                <b>{stockLeft}</b> / {editionSize} {t.home.stockLabel}
               </span>
             </div>
           </div>

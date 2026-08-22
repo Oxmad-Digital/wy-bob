@@ -65,7 +65,7 @@ const SortableVariantCard = memo(function SortableVariantCard({ variant, index, 
             variant.stock === 0 ? styles.stockBadgeZero : variant.stock <= 3 ? styles.stockBadgeLow : ""
           }`}
         >
-          {variant.stock === 0 ? "Rupture de stock" : `${variant.stock} en stock`}
+          {variant.stock === 0 ? "Rupture de stock" : `${variant.stock} / ${variant.editionSize ?? 50} en stock`}
         </span>
       </div>
 

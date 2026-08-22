@@ -7,6 +7,7 @@ const VariantSchema = new mongoose.Schema({
   description: { type: String, default: "" }, // texte affiché sous le sélecteur de couleur sur la fiche produit
   image:      { type: String, default: "" },
   stock:      { type: Number, default: 0 }, // stock disponible pour cette couleur
+  editionSize: { type: Number, default: 50 }, // taille de la série limitée (jauge de stock fiche produit)
 }, { _id: true });
 
 const ProductSchema = new mongoose.Schema({

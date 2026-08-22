@@ -27,6 +27,7 @@ export default async function Home() {
           description: v.description,
           image:       v.image,
           stock:       v.stock ?? 0,
+          editionSize: v.editionSize ?? 50,
         })),
       }
     }

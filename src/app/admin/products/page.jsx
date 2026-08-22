@@ -22,6 +22,7 @@ function VariantModal({ variant, onClose, onSave }) {
     description: variant?.description ?? "",
     image:       variant?.image       ?? "",
     stock:       variant?.stock       ?? 0,
+    editionSize: variant?.editionSize ?? 50,
   });
   const [imageFile,  setImageFile]  = useState(null);
   const [uploading,  setUploading]  = useState(false);
@@ -67,7 +68,8 @@ function VariantModal({ variant, onClose, onSave }) {
     if (!form.colorName.trim()) return setError("Le nom de la couleur est requis");
     if (!form.colorCode)        return setError("Le code couleur est requis");
     if (form.stock === "" || Number(form.stock) < 0) return setError("Le stock doit être un nombre positif");
-    onSave({ ...variant, ...form, stock: Number(form.stock) });
+    if (form.editionSize === "" || Number(form.editionSize) <= 0) return setError("La taille de la série doit être un nombre positif");
+    onSave({ ...variant, ...form, stock: Number(form.stock), editionSize: Number(form.editionSize) });
   };
 
   return (
@@ -91,15 +93,29 @@ function VariantModal({ variant, onClose, onSave }) {
             />
           </div>
 
-          <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>STOCK DISPONIBLE <span className={styles.required}>*</span></label>
-            <input
-              type="number"
-              min="0"
-              value={form.stock}
-              onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
-              className={styles.fieldInput}
-            />
+          <div className={styles.fieldRow}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>STOCK DISPONIBLE <span className={styles.required}>*</span></label>
+              <input
+                type="number"
+                min="0"
+                value={form.stock}
+                onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
+                className={styles.fieldInput}
+              />
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>TAILLE DE LA SÉRIE <span className={styles.required}>*</span></label>
+              <input
+                type="number"
+                min="1"
+                value={form.editionSize}
+                onChange={e => setForm(f => ({ ...f, editionSize: e.target.value }))}
+                className={styles.fieldInput}
+              />
+              <p className={styles.fieldHint}>Valeur max de la jauge de stock affichée sur la fiche produit</p>
+            </div>
           </div>
 
           <div className={styles.fieldGroup}>
