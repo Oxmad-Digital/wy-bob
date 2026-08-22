@@ -20,8 +20,8 @@ type SectionMeta = {
 // Photos temporaires piochées dans la gallerie (mêmes URLs que /api/gallery), en attendant les vraies photos de la page Histoire
 const SECTIONS_META: SectionMeta[] = [
   { layout: 'full', imageLabel: 'Le chapeau du festival' },
-  { layout: 'split', imageSide: 'right', imageLabel: 'Pénélope Wybo', image: cloudinaryThumb('https://res.cloudinary.com/dnm9txjhm/image/upload/v1780598130/galerie/ntcjfrv2xyli9ilkdozp.jpg', 1920) },
-  { layout: 'split', imageSide: 'left', imageLabel: 'Savoir-faire & artisanat malgache', image: cloudinaryThumb('https://res.cloudinary.com/dnm9txjhm/image/upload/v1780598144/galerie/hmxampzuyhi9roiqfftz.jpg', 1920) },
+  { layout: 'split', imageSide: 'right', imageLabel: 'Pénélope Wybo', image: cloudinaryThumb('https://res.cloudinary.com/dnm9txjhm/image/upload/v1787318463/galerie/xrn3s4kzi5ytluavzcmo.jpg', 1920) },
+  { layout: 'split', imageSide: 'left', imageLabel: 'Savoir-faire & artisanat malgache', image: cloudinaryThumb('https://res.cloudinary.com/dnm9txjhm/image/upload/v1787409321/xzuuuj2lraidqgslo0fj.webp', 1920) },
 ]
 
 export default function Histoire() {

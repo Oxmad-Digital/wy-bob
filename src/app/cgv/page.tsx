@@ -27,7 +27,7 @@ export default function CGV() {
             <p className={styles.text}>
               Les présentes Conditions Générales de Vente (CGV) régissent l'ensemble des ventes
               conclues entre la société Wybob et ses clients via le site internet{' '}
-              <a href="https://www.exemple.com" className={styles.link}>https://www.exemple.com</a>.
+              <a href="https://www.wybob.fr" className={styles.link}>https://www.wybob.fr</a>.
               Tout achat implique l'acceptation pleine et entière des présentes CGV.
             </p>
           </section>
