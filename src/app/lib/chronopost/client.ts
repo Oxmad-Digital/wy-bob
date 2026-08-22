@@ -35,6 +35,7 @@ export function chronopostCredentials() {
   return {
     accountNumber: process.env.CHRONOPOST_ACCOUNT_NUMBER!,
     password: process.env.CHRONOPOST_PASSWORD!,
+    subAccount: process.env.CHRONOPOST_SUBACCOUNT || "",
   };
 }
 

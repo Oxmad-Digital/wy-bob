@@ -52,7 +52,7 @@ function partyXml(
 }
 
 function buildShippingXml(input: CreateShipmentInput, resolved: ReturnType<typeof resolveProductAndService>): string {
-  const { accountNumber, password } = chronopostCredentials();
+  const { accountNumber, password, subAccount } = chronopostCredentials();
   const shipper = shipperFromEnv();
 
   // recipientValue : si livraison en point relais, les coordonnées du point relais
@@ -75,7 +75,7 @@ function buildShippingXml(input: CreateShipmentInput, resolved: ReturnType<typeo
             <accountNumber>${escapeXml(accountNumber)}</accountNumber>
             <idEmit>CHRFR</idEmit>
             <identWebPro></identWebPro>
-            <subAccount></subAccount>
+            <subAccount>${escapeXml(subAccount)}</subAccount>
          </headerValue>
          ${partyXml("shipper", shipper, { civility: true, preAlert: true })}
          ${partyXml("customer", { ...shipper }, { civility: true, preAlert: true })}
