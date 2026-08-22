@@ -1,7 +1,6 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { connectDB } from "@/app/lib/db";
 import SiteSettings from "@/app/models/SiteSettings";
@@ -50,7 +49,6 @@ export async function PATCH(req) {
     }
 
     const settings = await SiteSettings.findOneAndUpdate({}, { $set: update }, { new: true, upsert: true });
-    if (maintenanceMode !== undefined) revalidateTag("maintenance-mode");
     return NextResponse.json({ success: true, settings });
   } catch (error) {
     return NextResponse.json({ message: error.message }, { status: 500 });

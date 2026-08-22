@@ -1,27 +1,34 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { unstable_cache } from 'next/cache'
 import { connectDB } from '@/app/lib/db'
 import SiteSettings from '@/app/models/SiteSettings'
 
-// Mis en cache via le Data Cache de Next.js (partagé entre instances), plutôt
-// qu'un cache mémoire par instance : évite un aller-retour MongoDB devant
-// (quasi) chaque page. Invalidé immédiatement via revalidateTag côté
-// api/admin/settings quand l'admin bascule le mode maintenance.
-const isMaintenanceModeActive = unstable_cache(
-  async () => {
-    try {
-      await connectDB()
-      const settings = await SiteSettings.findOne().lean()
-      return settings?.maintenanceMode ?? false
-    } catch {
-      // En cas d'erreur DB, on ne bloque pas le site (fail open).
-      return false
-    }
-  },
-  ['maintenance-mode'],
-  { tags: ['maintenance-mode'], revalidate: 60 }
-)
+// Next.js déconseille de dépendre du Data Cache (unstable_cache) dans le
+// Proxy : il s'exécute hors du pipeline de rendu et ce cache n'y est pas
+// garanti disponible. On utilise donc un simple cache mémoire par instance,
+// avec un TTL court pour limiter les allers-retours MongoDB.
+const CACHE_TTL_MS = 5000
+let cachedMaintenanceMode = false
+let cacheExpiresAt = 0
+
+async function isMaintenanceModeActive() {
+  const now = Date.now()
+  if (now < cacheExpiresAt) {
+    return cachedMaintenanceMode
+  }
+
+  try {
+    await connectDB()
+    const settings = await SiteSettings.findOne().lean()
+    cachedMaintenanceMode = settings?.maintenanceMode ?? false
+  } catch {
+    // En cas d'erreur DB, on ne bloque pas le site (fail open).
+    cachedMaintenanceMode = false
+  }
+
+  cacheExpiresAt = now + CACHE_TTL_MS
+  return cachedMaintenanceMode
+}
 
 export async function proxy(request: NextRequest) {
   if (process.env.NODE_ENV !== 'production') {
@@ -33,7 +40,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  if (!(await isMaintenanceModeActive())) {
+  let maintenanceActive = false
+  try {
+    maintenanceActive = await isMaintenanceModeActive()
+  } catch {
+    // En cas d'échec inattendu, on laisse passer plutôt que de bloquer le site.
+    return NextResponse.next()
+  }
+
+  if (!maintenanceActive) {
     return NextResponse.next()
   }
 
