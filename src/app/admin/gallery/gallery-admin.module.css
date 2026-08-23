@@ -206,6 +206,24 @@
 
 .photoActions {
   padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.altInput {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1.5px solid #e7e5e4;
+  border-radius: 7px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #0f172a;
+  background: #fff;
+}
+.altInput:focus {
+  outline: none;
+  border-color: #F9C464;
 }
 
 .btnDelete {

@@ -23,7 +23,7 @@ import { cloudinaryThumb } from "@/app/lib/cloudinary";
 import styles from "./gallery-admin.module.css";
 
 /* ── Carte photo draggable ── */
-function SortablePhoto({ photo, index, onDelete }) {
+function SortablePhoto({ photo, index, onDelete, onAltChange }) {
   const {
     attributes,
     listeners,
@@ -32,6 +32,8 @@ function SortablePhoto({ photo, index, onDelete }) {
     transition,
     isDragging,
   } = useSortable({ id: photo._id });
+
+  const [alt, setAlt] = useState(photo.alt ?? "");
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -50,6 +52,15 @@ function SortablePhoto({ photo, index, onDelete }) {
         <img src={cloudinaryThumb(photo.url, 360)} alt={`Photo galerie ${index + 1}`} className={styles.photoImg} />
       </div>
       <div className={styles.photoActions}>
+        <input
+          type="text"
+          className={styles.altInput}
+          placeholder="Texte alternatif (SEO)"
+          value={alt}
+          onChange={e => setAlt(e.target.value)}
+          onBlur={() => { if (alt !== (photo.alt ?? "")) onAltChange(photo, alt); }}
+          onPointerDown={e => e.stopPropagation()}
+        />
         <button
           className={styles.btnDelete}
           onPointerDown={e => e.stopPropagation()}
@@ -63,7 +74,7 @@ function SortablePhoto({ photo, index, onDelete }) {
 }
 
 /* ── Grille triable par glisser-déposer ── */
-export default function PhotosSortableGrid({ photos, onDelete, onReorder }) {
+export default function PhotosSortableGrid({ photos, onDelete, onReorder, onAltChange }) {
   const [activeId, setActiveId] = useState(null);
 
   const sensors = useSensors(
@@ -99,6 +110,7 @@ export default function PhotosSortableGrid({ photos, onDelete, onReorder }) {
               photo={photo}
               index={i}
               onDelete={onDelete}
+              onAltChange={onAltChange}
             />
           ))}
         </div>

@@ -6,6 +6,7 @@ import styles from './cgv.module.css';
 export const metadata = {
   title: 'Conditions Générales de Vente',
   description: 'Conditions générales de vente du site Wybob',
+  alternates: { canonical: '/cgv' },
 };
 
 export default function CGV() {

@@ -133,7 +133,7 @@ export default function HomeClient({ product }: Props) {
         <div className="imageCol">
           <Image
             src={selectedVariant.image}
-            alt="Chapeau WYBOB"
+            alt={`Chapeau WYBOB — ${selectedVariant.colorName}`}
             width={500}
             height={500}
             priority
@@ -148,7 +148,7 @@ export default function HomeClient({ product }: Props) {
         <div className="contentCol">
         <div className="contentScrollInner" ref={scrollRef}>
 
-          <h2 className="productName">{productName}</h2>
+          <h1 className="productName">{productName}</h1>
 
           <p className="productTagline">{t.home.tagline}</p>
 

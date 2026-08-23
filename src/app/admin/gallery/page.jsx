@@ -119,6 +119,20 @@ export default function AdminGalleryPage() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const handleAltChange = async (photo, alt) => {
+    setPhotos(prev => prev.map(p => p._id === photo._id ? { ...p, alt } : p));
+    try {
+      await fetch(`/api/admin/gallery/${photo._id}`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alt }),
+      });
+      showToast("Texte alternatif enregistré");
+    } catch {
+      showToast("Erreur lors de l'enregistrement", "error");
+    }
+  };
+
   const askDelete = (photo) => {
     setConfirm({
       message: "Supprimer cette photo de la galerie ?",
@@ -220,6 +234,7 @@ export default function AdminGalleryPage() {
             photos={photos}
             onDelete={askDelete}
             onReorder={handlePhotosReorder}
+            onAltChange={handleAltChange}
           />
         )}
       </section>

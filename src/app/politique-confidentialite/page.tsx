@@ -6,6 +6,7 @@ import styles from './politique-confidentialite.module.css';
 export const metadata = {
   title: 'Politique de Confidentialité',
   description: 'Politique de confidentialité et protection des données personnelles de Wybob',
+  alternates: { canonical: '/politique-confidentialite' },
 };
 
 export default function PolitiqueConfidentialite() {

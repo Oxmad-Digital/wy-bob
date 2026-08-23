@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import ChevronIcon from '@/components/icons/ChevronIcon'
 import { useLanguage } from '@/contexts/LanguageContext'
+import type { GalleryImage } from './page'
 import '../page.css'
 import './galerie.css'
 
@@ -16,7 +17,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
 }
 
 interface Props {
-  images: string[]
+  images: GalleryImage[]
 }
 
 export default function GalerieClient({ images }: Props) {
@@ -82,11 +83,11 @@ export default function GalerieClient({ images }: Props) {
           className="galerieGrid"
           style={{ gridTemplateRows: `repeat(${Math.ceil(currentImages.length / 3)}, 1fr)` }}
         >
-          {currentImages.map((src, i) => (
+          {currentImages.map((photo, i) => (
             <div key={i} className="galeriePhoto" style={{ position: 'relative' }} onClick={() => setLightboxIndex(i)}>
               <Image
-                src={src}
-                alt={`WYBOB — photo ${currentPage * 6 + i + 1}`}
+                src={photo.url}
+                alt={photo.alt || `Bob artisanal WYBOB en coton bio — vue ${currentPage * 6 + i + 1}`}
                 fill
                 priority={currentPage === 0 && i < 3}
                 style={{ objectFit: 'cover', objectPosition: 'center center' }}
@@ -128,8 +129,8 @@ export default function GalerieClient({ images }: Props) {
           </button>
           <div className="lightboxContent" onClick={(e) => e.stopPropagation()}>
             <Image
-              src={currentImages[lightboxIndex]}
-              alt="Photo galerie WYBOB"
+              src={currentImages[lightboxIndex].url}
+              alt={currentImages[lightboxIndex].alt || `Bob artisanal WYBOB en coton bio — vue ${currentPage * 6 + lightboxIndex + 1}`}
               width={1200}
               height={800}
               style={{ objectFit: 'contain', width: 'auto', height: 'auto', maxWidth: '88vw', maxHeight: '82vh' }}

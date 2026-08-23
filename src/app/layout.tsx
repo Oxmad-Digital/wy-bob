@@ -32,7 +32,6 @@ export const metadata: Metadata = {
     template: '%s — WYBOB',
   },
   description: "Bob premium fait main en 100% coton bio, façonné par des artisans à Madagascar. Caractère, confort et savoir-faire artisanal, pensés dans les moindres détails.",
-  keywords: ['WYBOB', 'bob', 'chapeau', 'bob premium', 'bob artisanal', 'accessoire mode'],
   openGraph: {
     title: 'WYBOB — Bob premium fait main en coton bio, Madagascar',
     description: "Bob premium fait main en 100% coton bio, façonné par des artisans à Madagascar. Caractère, confort et savoir-faire artisanal, pensés dans les moindres détails.",
@@ -54,6 +53,25 @@ export const metadata: Metadata = {
   },
 }
 
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'WYBOB',
+  url: siteUrl,
+  logo: `${siteUrl}/images/logo.png`,
+  sameAs: [
+    'https://www.instagram.com/wy_bob',
+    'https://www.facebook.com/profile.php?id=61592807902090',
+  ],
+}
+
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'WYBOB',
+  url: siteUrl,
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -62,6 +80,14 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${dmSans.variable} ${quicksand.variable}`}>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
         <GoogleAnalytics />
         <SessionWrapper>
           <LanguageProvider>

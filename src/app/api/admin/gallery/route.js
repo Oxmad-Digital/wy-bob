@@ -17,7 +17,7 @@ export async function GET() {
   const photos = await GalleryPhoto.find({}).sort({ order: 1, createdAt: 1 }).lean();
   return NextResponse.json({
     success: true,
-    photos: photos.map(p => ({ _id: p._id.toString(), url: p.url, publicId: p.publicId, order: p.order })),
+    photos: photos.map(p => ({ _id: p._id.toString(), url: p.url, publicId: p.publicId, order: p.order, alt: p.alt ?? null })),
   });
 }
 

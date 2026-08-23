@@ -6,6 +6,7 @@ import styles from './mentions-legales.module.css';
 export const metadata = {
   title: 'Mentions Légales',
   description: 'Mentions légales du site',
+  alternates: { canonical: '/mentions-legales' },
 };
 
 export default function MentionsLegales() {
