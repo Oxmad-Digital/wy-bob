@@ -25,7 +25,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { cartItems, promoCode, country, deliveryMethod } = await req.json();
+    const { cartItems, promoCode, country, deliveryMethod, idempotencyKey } = await req.json();
 
     if (!Array.isArray(cartItems) || cartItems.length === 0) {
       return NextResponse.json({ error: "Panier vide" }, { status: 400 });
@@ -63,11 +63,24 @@ export async function POST(req: Request) {
       apiVersion: "2026-04-22.dahlia",
     });
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: totalCents,
-      currency: "eur",
-      payment_method_types: ["card", "amazon_pay"],
-    });
+    // Réutilise le même PaymentIntent (donc la même tentative d'autorisation bancaire) tant
+    // que la tentative de checkout et le montant n'ont pas changé, pour éviter qu'un retry
+    // après échec (double-clic, décliné puis réessayé) ne génère une nouvelle autorisation
+    // sur la carte — enchaîner plusieurs autorisations distinctes est le genre de pattern
+    // que les systèmes anti-fraude bancaires bloquent.
+    const stripeIdempotencyKey =
+      typeof idempotencyKey === "string" && idempotencyKey
+        ? `${idempotencyKey}:${totalCents}`
+        : undefined;
+
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        amount: totalCents,
+        currency: "eur",
+        payment_method_types: ["card", "amazon_pay"],
+      },
+      stripeIdempotencyKey ? { idempotencyKey: stripeIdempotencyKey } : undefined
+    );
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,

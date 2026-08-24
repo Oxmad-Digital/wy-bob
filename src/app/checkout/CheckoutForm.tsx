@@ -173,6 +173,7 @@ export default function CheckoutForm() {
         promoCode: appliedPromo?.code ?? null,
         country,
         deliveryMethod,
+        idempotencyKey,
       }),
     });
     if (!res.ok) {
