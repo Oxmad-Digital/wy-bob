@@ -431,6 +431,16 @@ body:has(.db-root) {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
+/* Carte resserrée autour de son contenu (ex : formulaires de la page profil,
+   plus étroits que .db-form-input max-width) plutôt qu'étirée sur 960px.
+   Alignée à gauche (comme .db-page-title) : sans ça, le margin:auto hérité de
+   .db-card la centre dans .db-wrapper et la décale par rapport au titre. */
+.db-card-narrow {
+  max-width: 528px;
+  margin-left: 0;
+  margin-right: 0;
+}
+
 /* ── Section titre ── */
 .db-section-title {
   font-size: 13px;

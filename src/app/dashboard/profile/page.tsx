@@ -92,7 +92,7 @@ export default function ProfilePage() {
       <div className="db-wrapper">
 
         {/* Personal info */}
-        <div className="db-card">
+        <div className="db-card db-card-narrow">
           <p className="db-section-title">{p.personalInfo}</p>
           <form onSubmit={handleInfoSave} className="db-form">
 
@@ -143,7 +143,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Password */}
-        <div className="db-card">
+        <div className="db-card db-card-narrow">
           <p className="db-section-title">{p.changePassword}</p>
           <form onSubmit={handlePasswordSave} className="db-form">
 
