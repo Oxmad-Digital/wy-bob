@@ -1,8 +1,26 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { connectDB } from "@/app/lib/db";
 import User from "@/app/models/User";
 import bcrypt from "bcryptjs";
+
+// Auth.js v5 ne transmet au client que le `type`/`code` des erreurs de type
+// CredentialsSignin (tout le reste — y compris un Error générique — est réduit à
+// l'erreur générique "Configuration" côté client, le vrai message restant loggé
+// serveur uniquement). Voir node_modules/@auth/core/src/errors.ts (clientErrors)
+// et node_modules/@auth/core/src/index.ts. Le code sert de clé de traduction côté front.
+class UserNotFoundError extends CredentialsSignin {
+  code = "user-not-found";
+}
+class InvalidPasswordError extends CredentialsSignin {
+  code = "invalid-password";
+}
+class AccountLockedError extends CredentialsSignin {
+  code = "account-locked";
+}
+class EmailNotVerifiedError extends CredentialsSignin {
+  code = "email-not-verified";
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
@@ -19,11 +37,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         await connectDB();
 
         const user = await User.findOne({ email: credentials.email });
-        if (!user) throw new Error("Utilisateur introuvable");
+        if (!user) throw new UserNotFoundError();
 
         if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
-          const minutes = Math.ceil((user.accountLockedUntil.getTime() - Date.now()) / 60000);
-          throw new Error(`Compte verrouillé. Réessayez dans ${minutes} min.`);
+          throw new AccountLockedError();
         }
 
         const ok = await bcrypt.compare(credentials.password as string, user.password);
@@ -33,11 +50,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             user.accountLockedUntil = new Date(Date.now() + 15 * 60 * 1000);
           }
           await user.save();
-          throw new Error("Mot de passe incorrect");
+          throw new InvalidPasswordError();
         }
 
         if (!user.emailVerified) {
-          throw new Error("Email non vérifié. Consultez votre boîte mail.");
+          throw new EmailNotVerifiedError();
         }
 
         user.failedLoginAttempts = 0;

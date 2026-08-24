@@ -59,6 +59,7 @@ function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
@@ -81,6 +82,7 @@ function LoginContent() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setErrorCode(null);
 
     if (!email || !password) {
       setError(t.login.errors.fill);
@@ -103,7 +105,13 @@ function LoginContent() {
     setLoading(false);
 
     if (res?.error) {
-      setError(res.error === "CredentialsSignin" ? t.login.errors.invalid : res.error);
+      const code = res.code ?? undefined;
+      const message =
+        code === "account-locked" ? t.login.errors.accountLocked
+        : code === "email-not-verified" ? t.login.errors.emailNotVerified
+        : t.login.errors.invalid;
+      setErrorCode(code ?? null);
+      setError(message);
       return;
     }
 
@@ -111,7 +119,7 @@ function LoginContent() {
     router.push(updatedSession?.user?.role === "admin" ? "/admin" : redirectTo);
   }
 
-  const isUnverifiedError = /non vérifié|not verified/i.test(error);
+  const isUnverifiedError = errorCode === "email-not-verified";
 
   async function handleResendVerification() {
     setResendState("sending");
