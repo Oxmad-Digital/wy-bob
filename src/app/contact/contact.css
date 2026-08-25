@@ -95,8 +95,16 @@
   color: #c0392b;
 }
 
-.contactSelect {
+.contactInput.contactSelect {
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23444' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 11px 7px;
 }
 
 .contactFileLabel {
@@ -141,7 +149,7 @@
 .contactInput {
   width: 100%;
   height: 50px;
-  background: rgba(255, 255, 255, 0.5);
+  background: #fff;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 12px;
   padding: 10px 16px;
@@ -150,23 +158,22 @@
   color: #111;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s;
 }
 
 .contactInput::placeholder {
-  color: #bbb;
+  color: #767676;
 }
 
 .contactInput:focus {
   border-color: #1B1843;
-  background: rgba(255, 255, 255, 0.75);
 }
 
 .contactTextarea {
   width: 100%;
   flex: 1;
   min-height: 0;
-  background: rgba(255, 255, 255, 0.5);
+  background: #fff;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 12px;
   padding: 10px 16px;
@@ -176,16 +183,15 @@
   outline: none;
   resize: none;
   box-sizing: border-box;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s;
 }
 
 .contactTextarea::placeholder {
-  color: #bbb;
+  color: #767676;
 }
 
 .contactTextarea:focus {
   border-color: #1B1843;
-  background: rgba(255, 255, 255, 0.75);
 }
 
 .contactBtn {
@@ -216,22 +222,8 @@
   position: relative;
   clip-path: inset(0 round 20px);
 }
-/* TABLETTE — la page contact reste en no-scroll (comme le desktop) : le
-   formulaire scrolle en interne (contactBloc) si le contenu dépasse, jamais
-   la page — la règle globale (globals.css) doit être surchargée ici. */
-@media (max-width: 1024px) and (min-width: 768px) {
-  html:has(.contactZone),
-  body:has(.contactZone) {
-    height: 100dvh !important;
-    overflow: hidden !important;
-  }
-
-  body:has(.contactZone) {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-}
+/* TABLETTE — la page contact scrolle normalement (comme sur mobile) : plus
+   de hauteur figée ni de scroll interne au formulaire. */
 
 /* TABLETTE PORTRAIT */
 @media (max-width: 1024px) and (min-width: 768px) and (orientation: portrait) {
@@ -245,20 +237,18 @@
   }
 
   .contactInner {
-    flex: 1;
-    min-height: 0;
+    height: auto;
     flex-direction: column;
     align-items: stretch;
     gap: 20px;
   }
 
   .contactBloc {
-    flex: 1;
-    min-height: 0;
+    height: auto;
     width: 100%;
     padding: 24px;
     gap: 12px;
-    overflow-y: auto;
+    overflow-y: visible;
   }
 
   .contactTitre {
@@ -272,18 +262,20 @@
   }
 
   .contactTextarea {
-    flex: 1;
-    min-height: 160px;
     width: 100%;
+    flex: none;
+    height: 200px;
     font-size: 14px;
   }
 
   .contactImage {
     flex: none;
     width: 100%;
-    height: 26dvh;
+    aspect-ratio: 1 / 1;
+    height: auto;
     position: relative;
     clip-path: inset(0 round 16px);
+    order: -1;
   }
 }
 
@@ -300,10 +292,9 @@
  .contactBloc {
     flex: 1;
     min-width: 0;
-    min-height: 0;
     padding: 20px;
     gap: 10px;
-    overflow-y: auto;
+    overflow-y: visible;
   }
   .contactTitre {
     font-size: 36px;
@@ -317,14 +308,17 @@
 
   .contactTextarea {
     width: 100%;
-    flex: 1;
-    min-height: 140px;
+    flex: none;
+    height: 180px;
     font-size: 14px;
   }
 
    .contactImage {
-    flex: 1;
-    min-width: 0;
+    flex: none;
+    align-self: center;
+    height: 60dvh;
+    width: auto;
+    aspect-ratio: 1 / 1;
     position: relative;
     clip-path: inset(0 round 16px);
   }
@@ -364,6 +358,10 @@
 
   .contactTitre {
     font-size: 24px;
+  }
+
+  .contactRowPhone {
+    flex-direction: column;
   }
 
   .contactInput {

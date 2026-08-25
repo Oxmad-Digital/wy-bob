@@ -190,7 +190,7 @@ export default function Contact() {
               </div>
             </div>
 
-            <div className="contactRow">
+            <div className="contactRow contactRowPhone">
               <div className="contactField">
                 <label htmlFor="contact-phone" className="srOnly">{t.contact.phone}</label>
                 <input

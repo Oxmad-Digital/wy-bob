@@ -140,6 +140,21 @@ html:has(.privacyZone) {
   }
 }
 
+/* Sur mobile/tablette, la page contact scrolle normalement : pas de scroll
+   interne, donc pas de hauteur/overflow figés. */
+@media (max-width: 1024px) {
+  .container:has(.contactZone) {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: calc(100dvh - 40px) !important;
+  }
+  body:has(.contactZone),
+  html:has(.contactZone) {
+    overflow: visible !important;
+    height: auto !important;
+  }
+}
+
 /* La galerie scrolle normalement sur tablette et mobile (grille passée à
    2 / 1 colonne pour laisser plus de place aux photos), contrairement à la
    version desktop qui reste en pagination sur un seul écran — la règle
