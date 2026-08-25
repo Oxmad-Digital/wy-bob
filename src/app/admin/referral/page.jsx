@@ -15,6 +15,8 @@ export default function ReferralAdminPage() {
   const [referralCodes, setReferralCodes]       = useState([]);
   const [loadingCodes, setLoadingCodes]         = useState(true);
   const [showInfoModal, setShowInfoModal]       = useState(false);
+  const [confirmModal, setConfirmModal]         = useState(null);
+  const [deletingId, setDeletingId]             = useState(null);
 
   const [form, setForm] = useState({
     totalPercent: 10,
@@ -83,12 +85,51 @@ export default function ReferralAdminPage() {
   const formatDate = (d) =>
     d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
 
+  const handleDelete = (c) => {
+    setConfirmModal({
+      message: c.referrerId
+        ? `Supprimer le code "${c.code}" (${c.referrerId.name || c.referrerId.email}) ?`
+        : `Supprimer le code "${c.code}" ? L'utilisateur associé n'existe plus.`,
+      onConfirm: async () => {
+        setDeletingId(c._id);
+        try {
+          const res  = await fetch(`/api/admin/referral/codes/${c._id}`, { method: "DELETE" });
+          const data = await res.json();
+          if (!res.ok) { showToast(data.message || "Erreur", "error"); return; }
+          setReferralCodes((prev) => prev.filter((r) => r._id !== c._id));
+          showToast("Code supprimé");
+        } catch {
+          showToast("Erreur serveur", "error");
+        } finally {
+          setDeletingId(null);
+        }
+      },
+    });
+  };
+
   return (
     <div className={styles.page}>
 
       {toast && (
         <div className={`${styles.toast} ${toast.type === "error" ? styles.toastError : styles.toastSuccess}`}>
           {toast.message}
+        </div>
+      )}
+
+      {confirmModal && (
+        <div className={styles.confirmOverlay} onClick={() => setConfirmModal(null)}>
+          <div className={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
+            <p className={styles.confirmMsg}>{confirmModal.message}</p>
+            <div className={styles.confirmActions}>
+              <button className={styles.confirmCancel} onClick={() => setConfirmModal(null)}>Annuler</button>
+              <button
+                className={styles.confirmOk}
+                onClick={() => { confirmModal.onConfirm(); setConfirmModal(null); }}
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -263,18 +304,35 @@ export default function ReferralAdminPage() {
                     <th>% Filleul</th>
                     <th>Utilisations</th>
                     <th>Créé le</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   {referralCodes.map((c) => (
                     <tr key={c._id}>
                       <td><span className={styles.codeBadge}>{c.code}</span></td>
-                      <td className={styles.userName}>{c.referrerId?.name ?? <span className={styles.noUser}>—</span>}</td>
+                      <td className={styles.userName}>
+                        {c.referrerId?.name ?? (
+                          <span className={styles.orphanBadge} title="L'utilisateur associé à ce code a été supprimé">
+                            Utilisateur supprimé
+                          </span>
+                        )}
+                      </td>
                       <td className={styles.userEmail}>{c.referrerId?.email ?? <span className={styles.noUser}>—</span>}</td>
                       <td className={styles.pctCell}>{c.parrainPercent ?? 0}%</td>
                       <td className={styles.pctCell}>{c.filleulPercent ?? 0}%</td>
                       <td>{c.usedCount}</td>
                       <td>{formatDate(c.createdAt)}</td>
+                      <td>
+                        <button
+                          className={styles.deleteBtn}
+                          onClick={() => handleDelete(c)}
+                          disabled={deletingId === c._id}
+                          aria-label="Supprimer le code"
+                        >
+                          {deletingId === c._id ? "…" : "Supprimer"}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
