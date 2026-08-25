@@ -7,6 +7,7 @@ import { computeOrderTotals } from "@/app/lib/pricing";
 import { resolvePromoDiscount } from "@/app/lib/promo";
 import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
 import { computeShippingFee } from "@/app/lib/shipping/pricing";
+import { computeInsuranceFee } from "@/app/lib/shipping/insurance";
 import { checkRateLimit, getClientIp } from "@/app/lib/rateLimit";
 
 export async function POST(req: Request) {
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { cartItems, promoCode, country, deliveryMethod, idempotencyKey } = await req.json();
+    const { cartItems, promoCode, country, deliveryMethod, insuranceOpted, idempotencyKey } = await req.json();
 
     if (!Array.isArray(cartItems) || cartItems.length === 0) {
       return NextResponse.json({ error: "Panier vide" }, { status: 400 });
@@ -56,7 +57,9 @@ export async function POST(req: Request) {
     const weightKg = computeTotalWeightKg(productLines);
     const method = deliveryMethod === "relay" ? "relay" : "home";
     const shippingFee = computeShippingFee({ country, weightKg, deliveryMethod: method });
-    const { total } = computeOrderTotals(subtotal - discount, shippingFee);
+    const discountedSubtotal = subtotal - discount;
+    const insuranceFee = insuranceOpted ? computeInsuranceFee(discountedSubtotal) : 0;
+    const { total } = computeOrderTotals(discountedSubtotal, shippingFee, insuranceFee);
     const totalCents = Math.round(total * 100);
 
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {

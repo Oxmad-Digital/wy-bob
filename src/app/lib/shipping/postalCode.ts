@@ -1,7 +1,9 @@
 // Formats de code postal par pays ISO2 — sert à bloquer côté formulaire les codes postaux
 // syntaxiquement incohérents avec le pays sélectionné (ex: code français saisi avec pays
-// Allemagne), avant même l'appel à l'API de livraison. Doit couvrir exactement les mêmes
-// pays que COUNTRY_OPTIONS (CheckoutForm.tsx) / ZONE_BY_COUNTRY (zones.ts).
+// Allemagne), avant même l'appel à l'API de livraison. Ne couvre volontairement que
+// l'Europe (COUNTRY_OPTIONS dans shipping/countries.ts liste ~230 pays depuis l'ouverture
+// à l'international Chrono Express — isValidPostalCode retombe sur "pas de blocage" pour
+// tout pays absent d'ici, cf. plus bas).
 //
 // Ce contrôle ne vérifie que le FORMAT (nombre de chiffres/lettres, ponctuation) : il ne
 // garantit pas que le code postal existe réellement pour ce pays (ex: "33000" est un format

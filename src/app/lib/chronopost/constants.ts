@@ -1,4 +1,5 @@
 import type { BusinessType, DeliveryMethod } from "./types";
+import { resolveCountryShipping } from "@/app/lib/shipping/zones";
 
 // Codes produit/service — cahier des charges Chronopost transmis par la cliente (contrat 17895404)
 export const FR_PRODUCTS = {
@@ -55,9 +56,15 @@ export function resolveProductAndService(params: {
     };
   }
 
+  // Chrono Classic / Chronorelais Europe ne couvrent que les pays "classic" (UE + Europe
+  // proche) — cf. shipping/zones.ts. Pour tous les autres pays (~200, ouverts par l'offre
+  // Shopper Max+), seul Chrono Express dessert la destination, à domicile uniquement.
+  const isClassicEligible = resolveCountryShipping(country).product === "classic";
   const key: IntlProductKey =
     productKeyOverride && productKeyOverride in INTL_PRODUCTS
       ? (productKeyOverride as IntlProductKey)
+      : !isClassicEligible
+      ? "CHRONO_EXPRESS"
       : deliveryMethod === "relay"
       ? "CHRONO_RELAIS_EUROPE"
       : businessType === "BtoB"

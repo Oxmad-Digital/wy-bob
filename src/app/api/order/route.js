@@ -17,7 +17,10 @@ import { resolvePromoDiscount } from "@/app/lib/promo";
 import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
 import { computeShippingFee } from "@/app/lib/shipping/pricing";
 import { formatDeliveryLabel } from "@/app/lib/shipping/delivery";
+import { isRelayEligible } from "@/app/lib/shipping/zones";
+import { computeInsuranceFee, computeInsurableValue } from "@/app/lib/shipping/insurance";
 import { checkRateLimit, getClientIp } from "@/app/lib/rateLimit";
+import { escapeHtml } from "@/app/lib/emailTemplates";
 
 function generateRewardCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -45,7 +48,7 @@ export async function POST(req) {
 
     const body = await req.json();
     // 'total' is intentionally NOT destructured from body — it is calculated server-side below
-    const { customer, cartItems, payment, paymentIntentId, delivery, promoCode, promoDiscount, relayPoint, recipientPickupName, idempotencyKey } = body;
+    const { customer, cartItems, payment, paymentIntentId, delivery, promoCode, promoDiscount, relayPoint, recipientPickupName, insuranceOpted, idempotencyKey } = body;
 
     if (!customer) {
       return NextResponse.json({ message: "Client manquant" }, { status: 400 });
@@ -84,6 +87,13 @@ export async function POST(req) {
 
     if (delivery === "relais" && !relayPoint?.id) {
       return NextResponse.json({ message: "Veuillez sélectionner un point relais" }, { status: 400 });
+    }
+
+    // Chronorelais n'existe qu'en France et dans les pays "classic" (UE + Europe proche) —
+    // le checkout masque déjà l'option pour les autres pays, ceci est un filet de sécurité
+    // côté serveur (requête forgée, état client obsolète).
+    if (delivery === "relais" && !isRelayEligible(country)) {
+      return NextResponse.json({ message: "Le point relais n'est pas disponible pour ce pays" }, { status: 400 });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -197,7 +207,11 @@ export async function POST(req) {
     const weightKg = computeTotalWeightKg(weighableLines);
     const deliveryMethod = delivery === "relais" ? "relay" : "home";
     const shippingFee = computeShippingFee({ country, weightKg, deliveryMethod });
-    const { total: finalTotal } = computeOrderTotals(total - appliedDiscount, shippingFee);
+    const discountedSubtotal = total - appliedDiscount;
+    // Assurance colis optionnelle (au-delà des 250€ de responsabilité Chronopost déjà inclus) —
+    // le montant assuré/facturé est toujours recalculé ici, jamais celui envoyé par le client.
+    const insuranceFee = insuranceOpted ? computeInsuranceFee(discountedSubtotal) : 0;
+    const { total: finalTotal } = computeOrderTotals(discountedSubtotal, shippingFee, insuranceFee);
 
     const order = await Order.create({
       orderNumber: counter.seq,
@@ -217,6 +231,11 @@ export async function POST(req) {
       products,
       total: finalTotal,
       shippingFee,
+      insurance: {
+        opted: insuranceFee > 0,
+        declaredValue: insuranceFee > 0 ? computeInsurableValue(discountedSubtotal) : 0,
+        fee: insuranceFee,
+      },
       promoCode: validatedPromoCode,
       promoDiscount: appliedDiscount,
       payment: payment || "cash",
@@ -340,6 +359,16 @@ export async function POST(req) {
       relais: `📍 ${formatDeliveryLabel({ country, deliveryMethod: "relay" })}`,
     };
 
+    // Champs client interpolés tels quels dans les emails HTML ci-dessous : ils viennent
+    // directement du body de la requête (non authentifiée), donc échappés pour éviter
+    // toute injection HTML dans l'email envoyé à l'admin (et au client lui-même).
+    const safeFirstname = escapeHtml(firstname);
+    const safeLastname = escapeHtml(lastname);
+    const safeEmail = escapeHtml(email);
+    const safePhone = escapeHtml(phone);
+    const safeAddress = escapeHtml(address);
+    const safeCity = escapeHtml(city);
+
     const productListHtml = cartItems
       .map((item) => {
         const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
@@ -350,7 +379,7 @@ export async function POST(req) {
             : "-";
         return `
         <tr>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${item.name || "Produit"}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${item.name ? escapeHtml(item.name) : "Produit"}</td>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center;">${qty}</td>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">${lineTotal}</td>
         </tr>
@@ -374,10 +403,10 @@ export async function POST(req) {
             </div>
             <h2 style="color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">👤 Informations Client</h2>
             <table style="width: 100%; margin-bottom: 25px;">
-              <tr><td style="padding: 8px 0; color: #6b7280;">Nom complet</td><td style="padding: 8px 0; font-weight: bold;">${firstname} ${lastname}</td></tr>
-              <tr><td style="padding: 8px 0; color: #6b7280;">Email</td><td style="padding: 8px 0;"><a href="mailto:${email}" style="color: #3b82f6;">${email}</a></td></tr>
-              <tr><td style="padding: 8px 0; color: #6b7280;">Téléphone</td><td style="padding: 8px 0;">${phone || "Non renseigné"}</td></tr>
-              <tr><td style="padding: 8px 0; color: #6b7280;">Adresse</td><td style="padding: 8px 0;">${address}, ${city}</td></tr>
+              <tr><td style="padding: 8px 0; color: #6b7280;">Nom complet</td><td style="padding: 8px 0; font-weight: bold;">${safeFirstname} ${safeLastname}</td></tr>
+              <tr><td style="padding: 8px 0; color: #6b7280;">Email</td><td style="padding: 8px 0;"><a href="mailto:${safeEmail}" style="color: #3b82f6;">${safeEmail}</a></td></tr>
+              <tr><td style="padding: 8px 0; color: #6b7280;">Téléphone</td><td style="padding: 8px 0;">${safePhone || "Non renseigné"}</td></tr>
+              <tr><td style="padding: 8px 0; color: #6b7280;">Adresse</td><td style="padding: 8px 0;">${safeAddress}, ${safeCity}</td></tr>
             </table>
             <h2 style="color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">📦 Produits Commandés</h2>
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
@@ -398,6 +427,7 @@ export async function POST(req) {
               <p style="margin: 0; font-size: 14px; opacity: 0.9;">TOTAL À PAYER</p>
               <p style="margin: 10px 0 0 0; font-size: 32px; font-weight: bold;">${Number(finalTotal).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
               ${validatedPromoCode ? `<p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.85;">Code promo : ${validatedPromoCode} (−${Number(appliedDiscount).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €)</p>` : ""}
+              ${insuranceFee > 0 ? `<p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.85;">Assurance colis souscrite : +${insuranceFee.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € (valeur assurée : ${computeInsurableValue(discountedSubtotal).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €)</p>` : ""}
             </div>
           </div>
           <div style="background: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
@@ -416,7 +446,7 @@ export async function POST(req) {
         <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: white;">
           <div style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white; padding: 30px; text-align: center;">
             <h1 style="margin: 0; font-size: 28px;">✅ Commande Confirmée !</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;">Merci pour votre achat, ${firstname} !</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;">Merci pour votre achat, ${safeFirstname} !</p>
           </div>
           <div style="padding: 30px;">
             <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: center;">
@@ -437,7 +467,7 @@ export async function POST(req) {
             </table>
             <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
               <h3 style="margin: 0 0 15px 0; color: #1f2937;">📍 Détails de livraison</h3>
-              <p style="margin: 0 0 8px 0; color: #4b5563;"><strong>Adresse :</strong> ${address}, ${city}</p>
+              <p style="margin: 0 0 8px 0; color: #4b5563;"><strong>Adresse :</strong> ${safeAddress}, ${safeCity}</p>
               <p style="margin: 0 0 8px 0; color: #4b5563;"><strong>Mode :</strong> ${deliveryLabels[delivery] || delivery}</p>
               <p style="margin: 0; color: #4b5563;"><strong>Paiement :</strong> ${paymentLabels[payment] || payment}</p>
             </div>
@@ -445,6 +475,7 @@ export async function POST(req) {
               <p style="margin: 0; font-size: 14px; opacity: 0.9;">TOTAL</p>
               <p style="margin: 10px 0 0 0; font-size: 32px; font-weight: bold;">${Number(finalTotal).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
               ${validatedPromoCode ? `<p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.85;">Code promo : ${validatedPromoCode} (−${Number(appliedDiscount).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €)</p>` : ""}
+              ${insuranceFee > 0 ? `<p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.85;">Dont assurance colis : +${insuranceFee.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € (colis assuré jusqu'à ${computeInsurableValue(discountedSubtotal).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €)</p>` : ""}
             </div>
             <div style="margin-top: 30px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
               <h3 style="margin: 0 0 10px 0; color: #1f2937;">❓ Une question ?</h3>

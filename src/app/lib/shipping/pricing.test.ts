@@ -1,29 +1,30 @@
 import { describe, it, expect } from 'vitest'
 import { computeShippingFee } from './pricing'
-import { resolveZone } from './zones'
+import { resolveCountryShipping } from './zones'
 
-describe('resolveZone', () => {
-  it('resolves known countries to their zone', () => {
-    expect(resolveZone('FR')).toBe('FR')
-    expect(resolveZone('de')).toBe('EU_PROCHE') // case-insensitive
-    expect(resolveZone('CH')).toBe('EUROPE_LARGE')
+describe('resolveCountryShipping', () => {
+  it('resolves known countries to their product/zone', () => {
+    expect(resolveCountryShipping('FR')).toEqual({ product: 'national', zone: 0, delayDays: 1, relay: { zone: 0 } })
+    expect(resolveCountryShipping('de').product).toBe('classic') // case-insensitive
+    expect(resolveCountryShipping('CH').product).toBe('classic')
+    expect(resolveCountryShipping('US').product).toBe('express')
   })
 
-  it('falls back to INTERNATIONAL for unknown/empty countries', () => {
-    expect(resolveZone('ZZ')).toBe('INTERNATIONAL')
-    expect(resolveZone('')).toBe('INTERNATIONAL')
+  it('falls back to a safe express zone for unknown/empty countries', () => {
+    expect(resolveCountryShipping('ZZ').product).toBe('express')
+    expect(resolveCountryShipping('').product).toBe('express')
   })
 })
 
 describe('computeShippingFee', () => {
   it('picks the correct weight bracket for a France home delivery', () => {
-    expect(computeShippingFee({ country: 'FR', weightKg: 0.3, deliveryMethod: 'home' })).toBe(5.9)
-    expect(computeShippingFee({ country: 'FR', weightKg: 0.5, deliveryMethod: 'home' })).toBe(5.9)
-    expect(computeShippingFee({ country: 'FR', weightKg: 0.6, deliveryMethod: 'home' })).toBe(6.9)
+    expect(computeShippingFee({ country: 'FR', weightKg: 0.3, deliveryMethod: 'home' })).toBe(10.9)
+    expect(computeShippingFee({ country: 'FR', weightKg: 1, deliveryMethod: 'home' })).toBe(10.9)
+    expect(computeShippingFee({ country: 'FR', weightKg: 1.1, deliveryMethod: 'home' })).toBe(11.34)
   })
 
-  it('falls onto the open-ended bracket for very heavy parcels', () => {
-    expect(computeShippingFee({ country: 'FR', weightKg: 50, deliveryMethod: 'home' })).toBe(13.9)
+  it('caps at the 30kg bracket for very heavy parcels', () => {
+    expect(computeShippingFee({ country: 'FR', weightKg: 50, deliveryMethod: 'home' })).toBe(26.65)
   })
 
   it('charges relay delivery less than home delivery for the same zone/weight', () => {
@@ -32,11 +33,25 @@ describe('computeShippingFee', () => {
     expect(relay).toBeLessThan(home)
   })
 
+  it('falls back to home pricing when relay is requested beyond the 20kg relay cap', () => {
+    const relayHeavy = computeShippingFee({ country: 'FR', weightKg: 25, deliveryMethod: 'relay' })
+    const homeHeavy = computeShippingFee({ country: 'FR', weightKg: 25, deliveryMethod: 'home' })
+    expect(relayHeavy).toBe(homeHeavy)
+  })
+
   it('charges more for farther zones at the same weight/mode', () => {
-    const fr = computeShippingFee({ country: 'FR', weightKg: 1, deliveryMethod: 'home' })
-    const euProche = computeShippingFee({ country: 'DE', weightKg: 1, deliveryMethod: 'home' })
-    const europeLarge = computeShippingFee({ country: 'CH', weightKg: 1, deliveryMethod: 'home' })
-    expect(euProche).toBeGreaterThan(fr)
-    expect(europeLarge).toBeGreaterThan(euProche)
+    // À 1kg, le tarif Chrono Classic zone 1 (Allemagne) est quasi identique au tarif
+    // domestique (grille contractuelle réelle) — l'écart se creuse à partir de quelques kg.
+    const fr = computeShippingFee({ country: 'FR', weightKg: 5, deliveryMethod: 'home' })
+    const classicEu = computeShippingFee({ country: 'DE', weightKg: 5, deliveryMethod: 'home' })
+    const express = computeShippingFee({ country: 'US', weightKg: 5, deliveryMethod: 'home' })
+    expect(classicEu).toBeGreaterThan(fr)
+    expect(express).toBeGreaterThan(classicEu)
+  })
+
+  it('has no relay pricing for Chrono Express-only countries (falls back to home)', () => {
+    const relay = computeShippingFee({ country: 'US', weightKg: 1, deliveryMethod: 'relay' })
+    const home = computeShippingFee({ country: 'US', weightKg: 1, deliveryMethod: 'home' })
+    expect(relay).toBe(home)
   })
 })

@@ -93,6 +93,7 @@ export async function generateShipmentForOrder(orderId: string, overrides: Gener
       businessType: overrides.businessType,
       productKeyOverride: overrides.productKeyOverride,
       content1: isInternational ? pickContent1(order.products) : undefined,
+      insuredValue: order.insurance?.opted ? order.insurance.declaredValue : undefined,
     },
     {
       country,

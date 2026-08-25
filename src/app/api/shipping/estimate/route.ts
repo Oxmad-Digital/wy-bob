@@ -3,7 +3,7 @@ import { connectDB } from "@/app/lib/db";
 import Product from "@/app/models/Product";
 import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
 import { computeShippingFee } from "@/app/lib/shipping/pricing";
-import { resolveZone } from "@/app/lib/shipping/zones";
+import { resolveCountryShipping } from "@/app/lib/shipping/zones";
 
 // Estimation live du frais de livraison pour l'affichage au checkout. Le montant
 // définitif est toujours recalculé côté serveur au moment du paiement/de la commande
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     const method = deliveryMethod === "relay" ? "relay" : "home";
     const shippingFee = computeShippingFee({ country, weightKg, deliveryMethod: method });
 
-    return NextResponse.json({ shippingFee, weightKg, zone: resolveZone(country) });
+    return NextResponse.json({ shippingFee, weightKg, zone: resolveCountryShipping(country) });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

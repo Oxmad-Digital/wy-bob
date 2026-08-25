@@ -29,6 +29,7 @@ export interface CreateShipmentInput {
   businessType?: BusinessType;
   productKeyOverride?: string;
   content1?: string; // description douanière anglaise, international uniquement
+  insuredValue?: number; // valeur déclarée pour l'assurance colis optionnelle (EUR), si souscrite
 }
 
 export interface CreateShipmentResult {

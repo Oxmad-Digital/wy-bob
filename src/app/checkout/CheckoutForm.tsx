@@ -15,6 +15,8 @@ import CountrySelect from "./CountrySelect";
 import { computeOrderTotals } from "@/app/lib/pricing";
 import { formatDeliveryLabel } from "@/app/lib/shipping/delivery";
 import { isValidPostalCode } from "@/app/lib/shipping/postalCode";
+import { isRelayEligible } from "@/app/lib/shipping/zones";
+import { computeInsuranceFee, computeInsurableValue, FREE_COVERAGE_EUR } from "@/app/lib/shipping/insurance";
 import { COUNTRY_OPTIONS } from "@/app/lib/shipping/countries";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cloudinaryThumb } from "@/app/lib/cloudinary";
@@ -38,6 +40,7 @@ export default function CheckoutForm() {
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("FR");
   const [shipping, setShipping] = useState("colissimo");
+  const [insuranceOpted, setInsuranceOpted] = useState(false);
   const [relayPoint, setRelayPoint] = useState<RelayPoint | null>(null);
   const [recipientPickupName, setRecipientPickupName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,7 +89,13 @@ export default function CheckoutForm() {
     [cartItems]
   );
 
-  const deliveryMethod = shipping === "relais" ? "relay" : "home";
+  // Chronorelais n'existe qu'en France et dans les ~28 pays "classic" (UE + Europe proche) —
+  // cf. shipping/zones.ts. Dérivé (plutôt que resynchronisé via un effet) pour retomber sur la
+  // livraison à domicile dès le rendu si l'utilisateur avait choisi le point relais avant de
+  // changer de pays vers une destination Chrono Express (pas de point relais international).
+  const relayEligible = useMemo(() => isRelayEligible(country), [country]);
+  const isRelaySelected = relayEligible && shipping === "relais";
+  const deliveryMethod = isRelaySelected ? "relay" : "home";
   // null tant qu'aucune estimation n'est encore arrivée (état initial / cas d'erreur réseau) —
   // sert à la fois d'indicateur de chargement et de garde-fou avant soumission.
   const [shippingFee, setShippingFee] = useState<number | null>(null);
@@ -117,9 +126,16 @@ export default function CheckoutForm() {
     };
   }, [cartItems, country, deliveryMethod]);
 
-  const { shipping: livraison, total } = useMemo(
-    () => computeOrderTotals(finalTotal, shippingFee ?? 0),
-    [finalTotal, shippingFee]
+  // Assurance colis optionnelle (au-delà des 250€ de responsabilité Chronopost déjà inclus
+  // gratuitement sur chaque envoi) — purement informatif ici, revalidée côté serveur comme
+  // le frais de livraison.
+  const insurableValue = useMemo(() => computeInsurableValue(finalTotal), [finalTotal]);
+  const insurancePrice = useMemo(() => computeInsuranceFee(finalTotal), [finalTotal]);
+  const insuranceFee = insuranceOpted ? insurancePrice : 0;
+
+  const { shipping: livraison, insurance, total } = useMemo(
+    () => computeOrderTotals(finalTotal, shippingFee ?? 0, insuranceFee),
+    [finalTotal, shippingFee, insuranceFee]
   );
 
   // Synchronise le montant du Payment Element (cartes, Apple/Google Pay) avec l'estimation
@@ -142,7 +158,7 @@ export default function CheckoutForm() {
     setError(t.checkout.errors.invalidPostalCode);
     return;
   }
-  if (shipping === "relais" && !relayPoint) {
+  if (isRelaySelected && !relayPoint) {
     setError(t.checkout.errors.relayPointRequired);
     return;
   }
@@ -173,6 +189,7 @@ export default function CheckoutForm() {
         promoCode: appliedPromo?.code ?? null,
         country,
         deliveryMethod,
+        insuranceOpted,
         idempotencyKey,
       }),
     });
@@ -199,9 +216,10 @@ export default function CheckoutForm() {
         total: finalTotal,
         payment: "card",
         paymentIntentId,
-        delivery: shipping,
-        relayPoint: shipping === "relais" ? relayPoint : null,
-        recipientPickupName: shipping === "relais" ? (recipientPickupName || `${firstname} ${lastname}`) : "",
+        delivery: isRelaySelected ? "relais" : "colissimo",
+        relayPoint: isRelaySelected ? relayPoint : null,
+        recipientPickupName: isRelaySelected ? (recipientPickupName || `${firstname} ${lastname}`) : "",
+        insuranceOpted,
         promoCode: appliedPromo?.code ?? null,
         promoDiscount: appliedPromo?.discount ?? 0,
         idempotencyKey,
@@ -301,15 +319,17 @@ export default function CheckoutForm() {
           <div className="checkout-section">
             <h3 className="checkout-section-title">{t.checkout.shippingMethodTitle}</h3>
             <label className="checkout-radio">
-              <input type="radio" name="shipping" value="colissimo" checked={shipping === "colissimo"} onChange={() => setShipping("colissimo")} />
+              <input type="radio" name="shipping" value="colissimo" checked={!isRelaySelected} onChange={() => setShipping("colissimo")} />
               <span>{formatDeliveryLabel({ country, deliveryMethod: "home" }, locale)}</span>
             </label>
-            <label className="checkout-radio">
-              <input type="radio" name="shipping" value="relais" checked={shipping === "relais"} onChange={() => setShipping("relais")} />
-              <span>{formatDeliveryLabel({ country, deliveryMethod: "relay" }, locale)}</span>
-            </label>
+            {relayEligible && (
+              <label className="checkout-radio">
+                <input type="radio" name="shipping" value="relais" checked={isRelaySelected} onChange={() => setShipping("relais")} />
+                <span>{formatDeliveryLabel({ country, deliveryMethod: "relay" }, locale)}</span>
+              </label>
+            )}
 
-            {shipping === "relais" && (
+            {isRelaySelected && (
               <>
                 <RelayPointPicker
                   address={address}
@@ -328,6 +348,17 @@ export default function CheckoutForm() {
                 />
               </>
             )}
+          </div>
+
+          <div className="checkout-section">
+            <label className="checkout-radio">
+              <input type="checkbox" checked={insuranceOpted} onChange={(e) => setInsuranceOpted(e.target.checked)} />
+              <span>{t.checkout.insuranceLabel} (+{insurancePrice} €)</span>
+            </label>
+            <p className="checkout-hint">
+              {t.checkout.insuranceIncludedHint.replace("{included}", String(FREE_COVERAGE_EUR))}{" "}
+              {t.checkout.insuranceExtendHint.replace("{value}", String(insurableValue)).replace("{fee}", String(insurancePrice))}
+            </p>
           </div>
 
           <div className="checkout-section">
@@ -376,6 +407,12 @@ export default function CheckoutForm() {
               <span>{t.checkout.deliveryLabel}</span>
               <span>{shippingFee === null ? "…" : `${livraison} €`}</span>
             </div>
+            {insuranceOpted && (
+              <div className="checkout-summary-row">
+                <span>{t.checkout.insuranceLine}</span>
+                <span>{insurance} €</span>
+              </div>
+            )}
             <div className="checkout-summary-divider" />
             <div className="checkout-summary-row checkout-summary-total">
               <span>{t.checkout.total}</span>

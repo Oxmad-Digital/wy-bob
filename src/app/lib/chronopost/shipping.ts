@@ -97,8 +97,8 @@ function buildShippingXml(input: CreateShipmentInput, resolved: ReturnType<typeo
             <customsCurrency>${isInternational ? "EUR" : ""}</customsCurrency>
             <customsValue></customsValue>
             <evtCode>${EVT_CODE}</evtCode>
-            <insuredCurrency></insuredCurrency>
-            <insuredValue></insuredValue>
+            <insuredCurrency>${input.insuredValue ? "EUR" : ""}</insuredCurrency>
+            <insuredValue>${input.insuredValue ?? ""}</insuredValue>
             <latitude></latitude>
             <longitude></longitude>
             <masterSkybillNumber></masterSkybillNumber>

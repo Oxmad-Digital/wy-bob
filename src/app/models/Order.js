@@ -34,6 +34,11 @@ const OrderSchema = new mongoose.Schema(
     ],
     total: Number,
     shippingFee: { type: Number, default: 0 },
+    insurance: {
+      opted: { type: Boolean, default: false },
+      declaredValue: { type: Number, default: 0 }, // valeur assurée transmise à Chronopost (insuredValue)
+      fee: { type: Number, default: 0 }, // supplément facturé au client, déjà inclus dans `total`
+    },
     promoCode: { type: String, default: null },
     promoDiscount: { type: Number, default: 0 },
     payment: {

@@ -232,10 +232,18 @@ select.checkout-input {
   background: rgba(255, 255, 255, 0.5);
 }
 
-.checkout-radio input[type="radio"] {
+.checkout-radio input[type="radio"],
+.checkout-radio input[type="checkbox"] {
   margin-top: 2px;
   flex-shrink: 0;
   accent-color: #1B1843;
+}
+
+.checkout-hint {
+  margin: 8px 2px 0;
+  font-size: 12px;
+  color: #777;
+  line-height: 1.5;
 }
 
 /* BOUTON VÉRIFIER LA COMMANDE */
