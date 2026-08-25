@@ -7,17 +7,13 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   PieChart, Pie, Cell,
 } from "recharts";
+import { STATUS_LABELS as ORDER_STATUS_INFO } from "@/app/lib/orderStatus";
 
 const PIE_COLORS = ["#F9C464", "#1B1843", "#78716c", "#c4b5a5", "#e7e5e4"];
 
-const STATUS_LABELS = {
-  pending:    "En attente",
-  processing: "En traitement",
-  paid:       "Payée",
-  shipped:    "Expédiée",
-  delivered:  "Livrée",
-  cancelled:  "Annulée",
-};
+const STATUS_LABELS = Object.fromEntries(
+  Object.entries(ORDER_STATUS_INFO).map(([value, info]) => [value, info.label])
+);
 
 const font = "'DM Sans', sans-serif";
 

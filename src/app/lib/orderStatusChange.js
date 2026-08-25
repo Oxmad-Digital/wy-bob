@@ -5,15 +5,7 @@ import { sendEmail } from "@/app/lib/mailer";
 import { getOrderStatusUpdateEmailTemplate } from "@/app/lib/emailTemplates";
 import { generateShipmentForOrder, markShippingError } from "@/app/lib/chronopost/orderShipment";
 import { createInvoiceForOrder } from "@/app/lib/invoice/createInvoiceForOrder";
-
-export const STATUS_LABELS = {
-  pending: { label: "En attente", icon: "⏳", color: "#f59e0b" },
-  paid: { label: "Payée", icon: "💰", color: "#10b981" },
-  processing: { label: "En préparation", icon: "📦", color: "#8b5cf6" },
-  shipped: { label: "Expédiée", icon: "🚚", color: "#06b6d4" },
-  delivered: { label: "Livrée", icon: "✅", color: "#22c55e" },
-  cancelled: { label: "Annulée", icon: "❌", color: "#ef4444" },
-};
+import { STATUS_LABELS } from "@/app/lib/orderStatus";
 
 const STATUS_MESSAGES = {
   pending: "Votre commande est en attente de traitement.",

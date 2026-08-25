@@ -8,20 +8,12 @@ import { TOAST_DURATION } from "../../_constants";
 import { FR_PRODUCTS, INTL_PRODUCTS } from "@/app/lib/chronopost/constants";
 import { COUNTRY_OPTIONS } from "@/app/lib/shipping/countries";
 import { cloudinaryThumb } from "@/app/lib/cloudinary";
+import { STATUS_OPTIONS } from "@/app/lib/orderStatus";
 
 const EMPTY_CUSTOMER_FORM = {
   firstname: "", lastname: "", email: "", phone: "", company: "",
   address: "", postalCode: "", city: "", country: "FR",
 };
-
-const STATUS_OPTIONS = [
-  { value: "pending",    label: "En attente"     },
-  { value: "paid",       label: "Payée"          },
-  { value: "processing", label: "En préparation" },
-  { value: "shipped",    label: "Expédiée"       },
-  { value: "delivered",  label: "Livrée"         },
-  { value: "cancelled",  label: "Annulée"        },
-];
 
 const PAYMENT_LABELS = {
   cash:          "Espèces",

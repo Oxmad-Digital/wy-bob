@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import "./orders-admin.css";
 import { TOAST_DURATION } from "../_constants";
+import { STATUS_OPTIONS } from "@/app/lib/orderStatus";
 
 const PER_PAGE = 20;
 
@@ -19,15 +20,6 @@ function ExportCsvIcon() {
     </svg>
   );
 }
-
-const STATUS_OPTIONS = [
-  { value: "pending",    label: "En attente"     },
-  { value: "paid",       label: "Payée"          },
-  { value: "processing", label: "En préparation" },
-  { value: "shipped",    label: "Expédiée"       },
-  { value: "delivered",  label: "Livrée"         },
-  { value: "cancelled",  label: "Annulée"        },
-];
 
 const PAYMENT_LABELS = {
   cash:          "Espèces",
