@@ -5,11 +5,16 @@
 // Couverture Chrono Express Shopper Max+ (contrat 17895404) : 228 pays et territoires
 // (les 2 seuls pays non desservis par Chronopost — Corée du Nord, Turkménistan — sont
 // exclus) + la France. Généré à partir du "Zoning international pour Chrono Express et
-// Chrono Classic" fourni par Chronopost (fichiers dans wybob-documents/). Cette liste doit
-// rester synchronisée avec COUNTRY_SHIPPING dans shipping/zones.ts (mêmes pays).
+// Chrono Classic" fourni par Chronopost (fichiers dans wybob-documents/).
+//
+// Exclusion supplémentaire par mesure de précaution (sanctions internationales, zones de
+// conflit majeur, risque logistique élevé) : Afghanistan, Biélorussie, République
+// Centrafricaine, Haïti, Iran, Kiribati, Libye, Nauru, Russie, Soudan, Somalie, Syrie,
+// Tuvalu, Ukraine, Yémen.
+//
+// Cette liste doit rester synchronisée avec COUNTRY_SHIPPING dans shipping/zones.ts (mêmes pays).
 export const COUNTRY_OPTIONS = [
   { code: "FR", label: "France" },
-  { code: "AF", label: "Afghanistan" },
   { code: "ZA", label: "Afrique du Sud" },
   { code: "AL", label: "Albanie" },
   { code: "DZ", label: "Algérie" },
@@ -34,7 +39,6 @@ export const COUNTRY_OPTIONS = [
   { code: "BZ", label: "Belize" },
   { code: "BM", label: "Bermudes" },
   { code: "BT", label: "Bhoutan" },
-  { code: "BY", label: "Biélorussie" },
   { code: "BO", label: "Bolivie" },
   { code: "BA", label: "Bosnie" },
   { code: "BW", label: "Botswana" },
@@ -88,13 +92,11 @@ export const COUNTRY_OPTIONS = [
   { code: "GW", label: "Guinée-Bissau" },
   { code: "GY", label: "Guyana" },
   { code: "GF", label: "Guyane" },
-  { code: "HT", label: "Haïti" },
   { code: "HN", label: "Honduras" },
   { code: "HK", label: "Hong Kong" },
   { code: "HU", label: "Hongrie" },
   { code: "IN", label: "Inde" },
   { code: "ID", label: "Indonésie" },
-  { code: "IR", label: "Iran" },
   { code: "IQ", label: "Iraq" },
   { code: "IE", label: "Irlande" },
   { code: "IS", label: "Islande" },
@@ -107,7 +109,6 @@ export const COUNTRY_OPTIONS = [
   { code: "KZ", label: "Kazakhstan" },
   { code: "KE", label: "Kenya" },
   { code: "KG", label: "Kirghizistan" },
-  { code: "KI", label: "Kiribati" },
   { code: "KW", label: "Koweït" },
   { code: "LA", label: "Laos" },
   { code: "LS", label: "Lesotho" },
@@ -117,7 +118,6 @@ export const COUNTRY_OPTIONS = [
   { code: "LI", label: "Liechtenstein" },
   { code: "LT", label: "Lituanie" },
   { code: "LU", label: "Luxembourg" },
-  { code: "LY", label: "Lybie" },
   { code: "MO", label: "Macao" },
   { code: "MK", label: "Macédoine" },
   { code: "MG", label: "Madagascar" },
@@ -139,7 +139,6 @@ export const COUNTRY_OPTIONS = [
   { code: "MZ", label: "Mozambique" },
   { code: "MM", label: "Myanmar" },
   { code: "NA", label: "Namibie" },
-  { code: "NR", label: "Nauru" },
   { code: "NI", label: "Nicaragua" },
   { code: "NE", label: "Niger" },
   { code: "NG", label: "Nigéria" },
@@ -166,9 +165,7 @@ export const COUNTRY_OPTIONS = [
   { code: "QA", label: "Qatar" },
   { code: "RO", label: "Roumanie" },
   { code: "GB", label: "Royaume-Uni" },
-  { code: "RU", label: "Russie" },
   { code: "RW", label: "Rwanda" },
-  { code: "CF", label: "République Centrafricaine" },
   { code: "DO", label: "République Dominicaine" },
   { code: "CZ", label: "République Tchèque" },
   { code: "CD", label: "République démocratique du Congo" },
@@ -190,14 +187,11 @@ export const COUNTRY_OPTIONS = [
   { code: "SG", label: "Singapour" },
   { code: "SK", label: "Slovaquie" },
   { code: "SI", label: "Slovénie" },
-  { code: "SO", label: "Somalie" },
-  { code: "SD", label: "Soudan" },
   { code: "LK", label: "Sri Lanka" },
   { code: "CH", label: "Suisse" },
   { code: "SR", label: "Surinam" },
   { code: "SE", label: "Suède" },
   { code: "SZ", label: "Swaziland" },
-  { code: "SY", label: "Syrie" },
   { code: "SN", label: "Sénégal" },
   { code: "TJ", label: "Tadjikistan" },
   { code: "TZ", label: "Tanzanie" },
@@ -210,15 +204,12 @@ export const COUNTRY_OPTIONS = [
   { code: "TT", label: "Trinité et Tobago" },
   { code: "TN", label: "Tunisie" },
   { code: "TR", label: "Turquie" },
-  { code: "TV", label: "Tuvalu" },
-  { code: "UA", label: "Ukraine" },
   { code: "UY", label: "Uruguay" },
   { code: "VU", label: "Vanuatu" },
   { code: "VA", label: "Vatican" },
   { code: "VE", label: "Venezuela" },
   { code: "VN", label: "Vietnam" },
   { code: "WF", label: "Wallis et Futuna" },
-  { code: "YE", label: "Yémen" },
   { code: "ZM", label: "Zambie" },
   { code: "ZW", label: "Zimbabwe" },
   { code: "AE", label: "Émirats arabes unis" },
