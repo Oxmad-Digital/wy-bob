@@ -18,6 +18,7 @@ function serialize(product: any) {
     pricePromo: product.pricePromo ?? null,
     stock:      product.stock,
     visible:    product.visible,
+    weight:     product.weight ?? 100,
     variants:   (product.variants ?? []).map((v: any) => ({
       _id:         v._id?.toString(),
       colorName:   v.colorName,

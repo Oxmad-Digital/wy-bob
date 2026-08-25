@@ -227,7 +227,7 @@ export default function AdminProductsPage() {
   const [confirmModal,  setConfirmModal]  = useState(null);
   const [variantModal,  setVariantModal]  = useState(null);
 
-  const [fields, setFields] = useState({ name: "", price: "", pricePromo: "" });
+  const [fields, setFields] = useState({ name: "", price: "", pricePromo: "", weight: "" });
 
   const showToast = useCallback((msg, type = "success") => {
     setToast({ message: msg, type });
@@ -256,6 +256,7 @@ export default function AdminProductsPage() {
           name:       data.product.name,
           price:      String(data.product.price),
           pricePromo: data.product.pricePromo ? String(data.product.pricePromo) : "",
+          weight:     String(data.product.weight ?? 100),
         });
       }
     } catch (err) {
@@ -276,6 +277,7 @@ export default function AdminProductsPage() {
           name:       fields.name.trim(),
           price:      Number(fields.price),
           pricePromo: fields.pricePromo ? Number(fields.pricePromo) : null,
+          weight:     Number(fields.weight),
         }),
       });
       const data = await res.json();
@@ -475,6 +477,19 @@ export default function AdminProductsPage() {
                   onChange={e => setFields(f => ({ ...f, pricePromo: e.target.value }))}
                   className={styles.fieldInput}
                 />
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>POIDS (g)</label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={fields.weight}
+                  onChange={e => setFields(f => ({ ...f, weight: e.target.value }))}
+                  className={styles.fieldInput}
+                />
+                <p className={styles.fieldHint}>Poids du produit emballé, utilisé pour calculer les frais Chronopost</p>
               </div>
             </div>
 

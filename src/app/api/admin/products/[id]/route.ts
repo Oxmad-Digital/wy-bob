@@ -26,6 +26,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
   if (body.pricePromo  !== undefined) product.pricePromo = body.pricePromo ? Number(body.pricePromo) : null;
   if (body.stock       !== undefined) product.stock      = Number(body.stock);
   if (body.visible     !== undefined) product.visible    = Boolean(body.visible);
+  if (body.weight      !== undefined) product.weight     = Number(body.weight);
   if (body.variants    !== undefined) product.variants   = body.variants;
 
   await product.save();
@@ -39,6 +40,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
       pricePromo: product.pricePromo ?? null,
       stock:      product.stock,
       visible:    product.visible,
+      weight:     product.weight ?? 100,
       variants:   product.variants.map((v: any) => ({
         _id:         v._id?.toString(),
         colorName:   v.colorName,
