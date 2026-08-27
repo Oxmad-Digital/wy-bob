@@ -308,7 +308,7 @@ export default function Contact() {
           {/* DROITE — Image */}
           <div className="contactImage">
             <Image
-              src="https://res.cloudinary.com/dnm9txjhm/image/upload/q_auto/f_auto/v1780486949/wybov-portee-bob-noir-crochet-lookbook_ybglrr.jpg"
+              src="https://res.cloudinary.com/dnm9txjhm/image/upload/q_auto/f_auto/v1787400470/galerie/obpetqza1uywwcnsh2zm.jpg"
               alt="Contact WYBOB"
               fill
               priority
