@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -12,6 +13,7 @@ export default function Navbar() {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
   const { cartItems } = useCart()
   const { t, locale, toggleLocale } = useLanguage()
@@ -43,6 +45,10 @@ export default function Navbar() {
     document.body.style.overflow = menuOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <nav className="navbar">
@@ -131,8 +137,11 @@ export default function Navbar() {
         </svg>
       </button>
 
-      {/* Menu mobile plein écran */}
-      {menuOpen && (
+      {/* Menu mobile plein écran : rendu via portail dans <body> pour échapper au
+          conteneur "glass" (.container, backdrop-filter), qui sur iOS Safari
+          devient une containing block pour les descendants position:fixed et
+          y emprisonne le menu (marge visible tout autour). */}
+      {menuOpen && mounted && createPortal(
         <div className="mobileMenu">
 
           {/* Header : logo + bouton fermer */}
@@ -205,7 +214,8 @@ export default function Navbar() {
             </button>
           </div>
 
-        </div>
+        </div>,
+        document.body
       )}
 
     </nav>

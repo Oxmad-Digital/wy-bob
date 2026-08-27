@@ -43,6 +43,11 @@ export default function GalerieClient({ images }: Props) {
     return () => window.removeEventListener('keydown', handleKey)
   }, [lightboxIndex, closeLightbox, goPrevLightbox, goNextLightbox])
 
+  useEffect(() => {
+    document.body.style.overflow = lightboxIndex !== null ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [lightboxIndex])
+
   const goNext = () => setCurrentPage(p => (p + 1) % Math.max(pages.length, 1))
   const goPrev = () => setCurrentPage(p => (p - 1 + Math.max(pages.length, 1)) % Math.max(pages.length, 1))
 
