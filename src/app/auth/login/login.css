@@ -101,6 +101,7 @@
 
 .login-input-wrap input {
   flex: 1;
+  min-width: 0;
   border: none;
   outline: none;
   font-size: 13px;
@@ -279,6 +280,7 @@
 
 /* RESPONSIVE */
 @media (max-width: 640px) {
+  .loginZone { padding-left: 0; padding-right: 0; }
   .login-card { padding: 28px 20px; }
   .login-footer p,
   .login-footer a { font-size: 12px !important; }
