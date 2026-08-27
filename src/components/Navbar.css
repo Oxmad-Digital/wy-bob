@@ -245,7 +245,6 @@
     justify-content: center;
     transition: background 0.2s;
   }
-  .mobileCloseBtn:hover { background: rgba(27, 24, 67, 0.08); }
 
   .mobileNavLinks {
     display: flex;
@@ -269,7 +268,6 @@
     text-align: center;
     transition: opacity 0.2s;
   }
-  .mobileLink:hover { opacity: 0.45; }
 
   .mobileSeparator {
     width: calc(100% - 48px);
@@ -302,7 +300,6 @@
     cursor: pointer;
     transition: opacity 0.2s;
   }
-  .mobileActionLink:hover { opacity: 0.6; }
 
   .mobileLangBtn {
     display: flex;
@@ -320,6 +317,16 @@
     transition: all 0.2s;
     margin-top: 6px;
   }
+}
+
+/* :hover ci-dessous réservé aux pointeurs réels (souris/trackpad) : sur iOS
+   Safari, un :hover non gardé par (hover: hover) nécessite un premier tap
+   pour l'activer et un second pour déclencher le clic/la navigation — d'où
+   le "il faut cliquer 2 fois" rapporté sur les liens du menu mobile. */
+@media (max-width: 1024px) and (hover: hover) {
+  .mobileCloseBtn:hover { background: rgba(27, 24, 67, 0.08); }
+  .mobileLink:hover { opacity: 0.45; }
+  .mobileActionLink:hover { opacity: 0.6; }
   .mobileLangBtn:hover {
     background: rgba(27, 24, 67, 0.08);
     color: #1B1843;

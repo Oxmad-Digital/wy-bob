@@ -119,12 +119,14 @@ html:has(.privacyZone) {
   }
 }
 
-/* Sur mobile/tablette, les pages CGV / Mentions légales / Checkout scrollent
-   normalement : pas de scroll interne, donc pas de hauteur/overflow figés. */
+/* Sur mobile/tablette, les pages CGV / Mentions légales / Checkout / Login
+   scrollent normalement : pas de scroll interne, donc pas de hauteur/overflow
+   figés. */
 @media (max-width: 1024px) {
   .container:has(.cgvZone),
   .container:has(.mentionsZone),
-  .container:has(.checkoutZone) {
+  .container:has(.checkoutZone),
+  .container:has(.loginZone) {
     overflow: visible !important;
     height: auto !important;
     min-height: calc(100dvh - 40px) !important;
@@ -132,9 +134,11 @@ html:has(.privacyZone) {
   body:has(.cgvZone),
   body:has(.mentionsZone),
   body:has(.checkoutZone),
+  body:has(.loginZone),
   html:has(.cgvZone),
   html:has(.mentionsZone),
-  html:has(.checkoutZone) {
+  html:has(.checkoutZone),
+  html:has(.loginZone) {
     overflow: visible !important;
     height: auto !important;
   }
