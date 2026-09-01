@@ -28,7 +28,7 @@ export default function CGV() {
             <p className={styles.text}>
               Les présentes Conditions Générales de Vente (CGV) régissent l'ensemble des ventes
               conclues entre la société Wybob et ses clients via le site internet{' '}
-              <a href="https://www.wybob.fr" className={styles.link}>https://www.wybob.fr</a>.
+              <a href="https://wybob.shop/" className={styles.link}>https://wybob.shop/</a>.
               Tout achat implique l'acceptation pleine et entière des présentes CGV.
             </p>
           </section>
@@ -211,7 +211,7 @@ export default function CGV() {
             <p className={styles.text}>
               Pour toute question relative à une commande ou à nos produits, notre service client
               est disponible via le formulaire de contact disponible sur le site ou par email à{' '}
-              <a href="mailto:contact@wybob.fr" className={styles.link}>contact@wybob.fr</a>.
+              <a href="mailto:wybopenelopemarie@gmail.com" className={styles.link}>wybopenelopemarie@gmail.com</a>.
             </p>
           </section>
 

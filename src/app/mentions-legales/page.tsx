@@ -27,8 +27,8 @@ export default function MentionsLegales() {
             </h2>
             <p className={styles.text}>
               Le présent site, accessible à l'URL{' '}
-              <a href="https://www.wybob.fr" className={styles.link}>
-                https://www.wybob.fr
+              <a href="https://wybob.shop/" className={styles.link}>
+                https://wybob.shop/
               </a>
               , est édité par :
             </p>
@@ -40,7 +40,7 @@ export default function MentionsLegales() {
               <li><span className={styles.label}>Immatriculation :</span> Registre National des Entreprises (RNE)</li>
               <li><span className={styles.label}>TVA :</span> TVA non applicable, article 293 B du Code général des impôts</li>
               <li><span className={styles.label}>Directrice de la publication :</span> Penelope WYBO</li>
-              <li><span className={styles.label}>Contact :</span> <a href="mailto:contact@wybob.fr" className={styles.link}>contact@wybob.fr</a></li>
+              <li><span className={styles.label}>Contact :</span> <a href="mailto:wybopenelopemarie@gmail.com" className={styles.link}>wybopenelopemarie@gmail.com</a></li>
             </ul>
           </section>
 
@@ -83,7 +83,7 @@ export default function MentionsLegales() {
             <ul className={styles.list}>
               <li><span className={styles.label}>Responsable du traitement :</span> Penelope WYBO</li>
               <li><span className={styles.label}>Finalités :</span> Gestion des commandes, envois de newsletters (si applicable), amélioration de la navigation via cookies.</li>
-              <li><span className={styles.label}>Droits des utilisateurs :</span> Vous disposez d'un droit d'accès, de rectification, de suppression et d'opposition. Pour exercer ce droit, contactez-nous à : <a href="mailto:contact@wybob.fr" className={styles.link}>contact@wybob.fr</a>.</li>
+              <li><span className={styles.label}>Droits des utilisateurs :</span> Vous disposez d'un droit d'accès, de rectification, de suppression et d'opposition. Pour exercer ce droit, contactez-nous à : <a href="mailto:wybopenelopemarie@gmail.com" className={styles.link}>wybopenelopemarie@gmail.com</a>.</li>
             </ul>
           </section>
 
@@ -124,11 +124,11 @@ export default function MentionsLegales() {
               médiateur de la consommation suivant :
             </p>
             <ul className={styles.list}>
-              <li><span className={styles.label}>Organisme de médiation :</span> [Nom du médiateur, ex: FEVAD, CM2C, etc.]</li>
+              <li><span className={styles.label}>Organisme de médiation :</span> CM2C (Centre de la Médiation de la Consommation de Conciliateurs de Justice)</li>
               <li>
                 <span className={styles.label}>Adresse / Site web :</span>{' '}
-                <a href="#" className={styles.link} target="_blank" rel="noopener noreferrer">
-                  [Lien vers le site du médiateur]
+                <a href="https://www.cm2c.net" className={styles.link} target="_blank" rel="noopener noreferrer">
+                  https://www.cm2c.net
                 </a>
               </li>
             </ul>

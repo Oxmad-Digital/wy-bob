@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import ChevronIcon from '@/components/icons/ChevronIcon'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { cloudinaryThumb } from '@/app/lib/cloudinary'
 import type { GalleryImage } from './page'
 import '../page.css'
 import './galerie.css'
@@ -91,7 +92,7 @@ export default function GalerieClient({ images }: Props) {
           {currentImages.map((photo, i) => (
             <div key={i} className="galeriePhoto" style={{ position: 'relative' }} onClick={() => setLightboxIndex(i)}>
               <Image
-                src={photo.url}
+                src={cloudinaryThumb(photo.url, 800)}
                 alt={photo.alt || `Bob artisanal WYBOB en coton bio — vue ${currentPage * 6 + i + 1}`}
                 fill
                 priority={currentPage === 0 && i < 3}
@@ -134,7 +135,7 @@ export default function GalerieClient({ images }: Props) {
           </button>
           <div className="lightboxContent" onClick={(e) => e.stopPropagation()}>
             <Image
-              src={currentImages[lightboxIndex].url}
+              src={cloudinaryThumb(currentImages[lightboxIndex].url, 1200)}
               alt={currentImages[lightboxIndex].alt || `Bob artisanal WYBOB en coton bio — vue ${currentPage * 6 + lightboxIndex + 1}`}
               width={1200}
               height={800}

@@ -22,7 +22,7 @@ export const translations = {
       home: 'Notre bob',
       histoire: 'Notre Histoire',
       concept: 'Notre concept',
-      galerie: 'Gallerie',
+      galerie: 'Galerie',
       contact: 'Contacts',
       panier: 'Panier',
       login: 'Se connecter',
