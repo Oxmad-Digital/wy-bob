@@ -628,7 +628,6 @@ a.od-client-item-value.od-client-email:hover { text-decoration: underline; }
 .od-ship-cancel-btn:hover:not(:disabled) { background: #fef2f2; }
 .od-ship-cancel-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.od-ship-cancel-warning { font-size: 11px; color: #b45309; margin: -8px 0 16px; }
 .od-ship-cancelled-hint { font-size: 12px; color: #78716c; margin: -8px 0 16px; }
 
 .od-ship-toggle-btn {

@@ -285,7 +285,7 @@ export default function AdminOrderDetailPage() {
   };
 
   const cancelShipmentAction = async () => {
-    if (!confirm("Annuler cette étiquette Chronopost ? Cette action n'est pas testable avec le compte de test.")) return;
+    if (!confirm("Annuler cette étiquette Chronopost ?")) return;
     setCancelling(true);
     try {
       const res = await fetch(`/api/admin/orders/${id}/shipping/cancel`, { method: "POST" });
@@ -655,13 +655,9 @@ export default function AdminOrderDetailPage() {
                   )}
                 </div>
 
-                {order.shipping.cancelledAt ? (
+                {order.shipping.cancelledAt && (
                   <p className="od-ship-cancelled-hint">
                     Étiquette annulée le {new Date(order.shipping.cancelledAt).toLocaleString("fr-FR")}
-                  </p>
-                ) : (
-                  <p className="od-ship-cancel-warning">
-                    ⚠️ L&apos;annulation n&apos;est pas testable avec le compte de test Chronopost.
                   </p>
                 )}
 
