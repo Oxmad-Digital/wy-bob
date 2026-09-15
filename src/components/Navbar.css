@@ -127,6 +127,7 @@
   right: 0;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 12px;
   padding: 8px;
@@ -137,6 +138,15 @@
   z-index: 100;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   animation: fadeIn 0.15s ease;
+}
+
+/* Safari (WebKit) rend le backdrop-filter blur beaucoup plus intense que
+   Chrome/Firefox à valeur égale : on réduit le rayon uniquement pour lui. */
+@supports (-webkit-hyphens: none) {
+  .profileMenu {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
 }
 
 @keyframes fadeIn {

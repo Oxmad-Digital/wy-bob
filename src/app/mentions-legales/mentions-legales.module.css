@@ -56,6 +56,15 @@
     0 4px 30px rgba(0, 0, 0, 0.08);
 }
 
+/* Safari (WebKit) rend le backdrop-filter blur beaucoup plus intense que
+   Chrome/Firefox à valeur égale : on réduit le rayon uniquement pour lui. */
+@supports (-webkit-hyphens: none) {
+  .section {
+    backdrop-filter: blur(30px) brightness(1.08);
+    -webkit-backdrop-filter: blur(30px) brightness(1.08);
+  }
+}
+
 /* ── TITRES DE SECTION ── */
 .heading {
   font-family: 'Quicksand', sans-serif;

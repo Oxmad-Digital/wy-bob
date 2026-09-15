@@ -10,6 +10,15 @@
   -webkit-backdrop-filter: blur(100px) brightness(1.08);
 }
 
+/* Safari (WebKit) rend le backdrop-filter blur beaucoup plus intense que
+   Chrome/Firefox à valeur égale : on réduit le rayon uniquement pour lui. */
+@supports (-webkit-hyphens: none) {
+  .container:has(.histoireScroll) {
+    backdrop-filter: blur(50px) brightness(1.08);
+    -webkit-backdrop-filter: blur(50px) brightness(1.08);
+  }
+}
+
 .container:has(.histoireScroll) .navbar {
   margin-bottom: 40px;
 }

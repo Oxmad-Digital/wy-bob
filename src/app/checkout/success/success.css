@@ -29,6 +29,15 @@
     0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
+/* Safari (WebKit) rend le backdrop-filter blur beaucoup plus intense que
+   Chrome/Firefox à valeur égale : on réduit le rayon uniquement pour lui. */
+@supports (-webkit-hyphens: none) {
+  .checkout-result-card {
+    backdrop-filter: blur(30px) brightness(1.08);
+    -webkit-backdrop-filter: blur(30px) brightness(1.08);
+  }
+}
+
 .checkout-result-icon {
   width: 64px;
   height: 64px;

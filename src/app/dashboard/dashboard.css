@@ -26,6 +26,15 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
+/* Safari (WebKit) rend le backdrop-filter blur beaucoup plus intense que
+   Chrome/Firefox à valeur égale : on réduit le rayon uniquement pour lui. */
+@supports (-webkit-hyphens: none) {
+  .db-root {
+    backdrop-filter: blur(40px) brightness(1.1);
+    -webkit-backdrop-filter: blur(40px) brightness(1.1);
+  }
+}
+
 html:has(.db-root),
 body:has(.db-root) {
   height: 100vh;
@@ -658,6 +667,18 @@ body:has(.db-root) {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
+/* Safari (WebKit) rend le backdrop-filter blur beaucoup plus intense que
+   Chrome/Firefox à valeur égale : on réduit le rayon uniquement pour lui. */
+@supports (-webkit-hyphens: none) {
+  .sidebar,
+  .db-kpi-card,
+  .db-card,
+  .order-card {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
 .order-card-header {
   display: flex;
   justify-content: space-between;
@@ -1052,6 +1073,16 @@ body:has(.db-root) {
     background: rgba(249, 196, 100, 0.18);
     color: #1B1843;
   }
+
+  /* Safari (WebKit) rend le backdrop-filter blur beaucoup plus intense que
+     Chrome/Firefox à valeur égale : on réduit le rayon uniquement pour lui. */
+  @supports (-webkit-hyphens: none) {
+    .bottom-nav,
+    .bottom-nav-more-sheet {
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+  }
 }
 
 /* Mobile (≤810px) : mise en page pleine largeur */
@@ -1200,6 +1231,15 @@ body:has(.db-root) {
   flex-direction: column;
   gap: 12px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+
+/* Safari (WebKit) rend le backdrop-filter blur beaucoup plus intense que
+   Chrome/Firefox à valeur égale : on réduit le rayon uniquement pour lui. */
+@supports (-webkit-hyphens: none) {
+  .db-modal {
+    backdrop-filter: blur(20px) brightness(1.06);
+    -webkit-backdrop-filter: blur(20px) brightness(1.06);
+  }
 }
 
 .db-modal-close {

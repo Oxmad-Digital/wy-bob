@@ -176,6 +176,18 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.6),
     0 4px 30px rgba(0, 0, 0, 0.1);
 }
+
+/* Safari (WebKit) rend le backdrop-filter blur beaucoup plus intense que
+   Chrome/Firefox à valeur égale : on réduit le rayon uniquement pour lui. */
+@supports (-webkit-hyphens: none) {
+  .cart-left,
+  .cart-promo,
+  .cart-summary {
+    backdrop-filter: blur(30px) brightness(1.08);
+    -webkit-backdrop-filter: blur(30px) brightness(1.08);
+  }
+}
+
 .summary-row { display: flex; justify-content: space-between; font-size: 14px; color: #1B1843; margin-bottom: 12px; }
 .summary-discount { color: #16a34a; font-weight: 600; }
 .summary-divider { border: none; border-top: 1px solid rgba(0,0,0,0.1); margin: 8px 0 12px 0; }
