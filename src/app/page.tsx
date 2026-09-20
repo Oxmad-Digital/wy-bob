@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import { connectDB } from '@/app/lib/db'
 import Product from '@/app/models/Product'
+import { computeShippingFee } from '@/app/lib/shipping/pricing'
+import { computeTotalWeightKg } from '@/app/lib/shipping/weight'
+import { buildProductJsonLd, serializeJsonLd } from '@/app/lib/productJsonLd'
 import HomeClient from './HomeClient'
 
 export const revalidate = 60
@@ -13,12 +16,19 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://wybob.shop'
 
 export default async function Home() {
   let productData = null
+  let shippingFeeFR = 0
 
   try {
     await connectDB()
     const doc = await Product.findOne({}).lean() as any
 
     if (doc) {
+      shippingFeeFR = computeShippingFee({
+        country: 'FR',
+        weightKg: computeTotalWeightKg([{ product: doc, quantity: 1 }]),
+        deliveryMethod: 'home',
+      })
+
       productData = {
         _id:        doc._id.toString(),
         name:       doc.name,
@@ -43,35 +53,7 @@ export default async function Home() {
   }
 
   const productJsonLd = productData
-    ? {
-        '@context': 'https://schema.org',
-        '@type': 'Product',
-        name: productData.name,
-        image: productData.variants.map((v: any) => (v.image.startsWith('http') ? v.image : `${siteUrl}${v.image}`)),
-        description: 'Bob premium fait main en 100% coton bio, façonné par des artisans à Madagascar.',
-        brand: { '@type': 'Brand', name: 'WYBOB' },
-        offers: productData.variants.length
-          ? productData.variants.map((v: any) => ({
-              '@type': 'Offer',
-              url: siteUrl,
-              priceCurrency: 'EUR',
-              price: productData!.pricePromo ?? productData!.price,
-              availability: v.stock && v.stock > 0
-                ? 'https://schema.org/InStock'
-                : 'https://schema.org/OutOfStock',
-              itemCondition: 'https://schema.org/NewCondition',
-            }))
-          : {
-              '@type': 'Offer',
-              url: siteUrl,
-              priceCurrency: 'EUR',
-              price: productData.pricePromo ?? productData.price,
-              availability: productData.stock > 0
-                ? 'https://schema.org/InStock'
-                : 'https://schema.org/OutOfStock',
-              itemCondition: 'https://schema.org/NewCondition',
-            },
-      }
+    ? buildProductJsonLd(productData, siteUrl, shippingFeeFR)
     : null
 
   return (
@@ -79,7 +61,7 @@ export default async function Home() {
       {productJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(productJsonLd) }}
         />
       )}
       <HomeClient product={productData} />
