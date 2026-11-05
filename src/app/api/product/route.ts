@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/app/lib/db";
-import Product from "@/app/models/Product";
+import { findFirstProduct, createProduct, setProductVariants } from "@/app/lib/repos/products";
 
 export const revalidate = 60;
 
@@ -18,15 +17,12 @@ const DEFAULT_PRODUCT = {
 };
 
 export async function GET() {
-  await connectDB();
-
-  let product = await Product.findOne({}).sort({ _id: 1 }).lean() as any;
+  let product: any = await findFirstProduct();
 
   if (!product) {
-    product = (await Product.create(DEFAULT_PRODUCT)).toObject();
+    product = await createProduct(DEFAULT_PRODUCT);
   } else if (!product.variants?.length) {
-    await Product.updateOne({ _id: product._id }, { $set: { variants: DEFAULT_PRODUCT.variants } });
-    product = await Product.findById(product._id).lean() as any;
+    product = await setProductVariants(product._id, DEFAULT_PRODUCT.variants);
   }
 
   const p = product;

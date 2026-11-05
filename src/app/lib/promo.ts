@@ -2,7 +2,7 @@
 // jamais usedCount ni ne crée de récompense de parrainage (ça reste la responsabilité
 // de /api/order, qui ne s'exécute qu'une fois la commande réellement créée).
 
-import PromoCode from "@/app/models/PromoCode";
+import { findActivePromoByCode } from "@/app/lib/repos/promos";
 import { round2 } from "./pricing";
 
 export async function resolvePromoDiscount(
@@ -12,7 +12,7 @@ export async function resolvePromoDiscount(
 ): Promise<{ discount: number; validatedCode: string | null; promo: any }> {
   if (!promoCode) return { discount: 0, validatedCode: null, promo: null };
 
-  const promo = await PromoCode.findOne({ code: promoCode.toUpperCase().trim(), active: true });
+  const promo = await findActivePromoByCode(promoCode);
   if (!promo) return { discount: 0, validatedCode: null, promo: null };
 
   const isExpired = promo.expiresAt && new Date(promo.expiresAt) < new Date();

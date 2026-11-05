@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import Product from "@/app/models/Product";
+import { adjustProductStock } from "@/app/lib/repos/products";
 
 export async function PATCH(
   req: Request,
@@ -20,16 +19,12 @@ export async function PATCH(
 
     const { id } = await params;
 
-    await connectDB();
-    const product = await Product.findById(id);
-    if (!product) {
+    const stock = await adjustProductStock(id, delta);
+    if (stock === null) {
       return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
     }
 
-    product.stock = Math.max(0, product.stock + delta);
-    await product.save();
-
-    return NextResponse.json({ stock: product.stock });
+    return NextResponse.json({ stock });
   } catch (err) {
     console.error("[stock PATCH]", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

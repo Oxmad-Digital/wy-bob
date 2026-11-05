@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/app/lib/db";
-import Product from "@/app/models/Product";
+import { findProductWeight } from "@/app/lib/repos/products";
 import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
 import { computeShippingFee } from "@/app/lib/shipping/pricing";
 import { resolveCountryShipping } from "@/app/lib/shipping/zones";
@@ -17,15 +16,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Panier vide" }, { status: 400 });
     }
 
-    await connectDB();
-
     const productLines = [];
     for (const item of cartItems) {
       if (!item.productId) continue;
-      const product = await Product.findById(item.productId).select("weight");
-      if (!product) continue;
+      const weight = await findProductWeight(item.productId);
+      if (weight === null) continue;
       const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
-      productLines.push({ product: { weight: product.weight }, quantity: qty });
+      productLines.push({ product: { weight }, quantity: qty });
     }
 
     if (productLines.length === 0) {

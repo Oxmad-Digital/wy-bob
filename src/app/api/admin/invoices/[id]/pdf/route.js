@@ -2,9 +2,8 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import Invoice from "@/app/models/Invoice";
-import mongoose from "mongoose";
+import { isUuid } from "@/app/lib/neon";
+import { findInvoicePdf } from "@/app/lib/repos/invoices";
 
 export async function GET(req, { params }) {
   try {
@@ -14,16 +13,14 @@ export async function GET(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
-    const invoice = await Invoice.findById(id).select("pdfBase64 invoiceNumber");
-    if (!invoice) {
+    const invoice = await findInvoicePdf(id);
+    if (!invoice || !invoice.pdfBase64) {
       return NextResponse.json({ message: "Facture introuvable" }, { status: 404 });
     }
 

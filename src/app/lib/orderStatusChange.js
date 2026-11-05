@@ -1,6 +1,7 @@
 // app/lib/orderStatusChange.js
-import Order from "@/app/models/Order";
-import Product from "@/app/models/Product";
+import { withTransaction } from "@/app/lib/neon";
+import { findOrderById, findOrderStockLines, lockOrder, setOrderStatus } from "@/app/lib/repos/orders";
+import { applyLineStockDelta } from "@/app/lib/repos/products";
 import { sendEmail } from "@/app/lib/mailer";
 import { getOrderStatusUpdateEmailTemplate } from "@/app/lib/emailTemplates";
 import { generateShipmentForOrder, markShippingError } from "@/app/lib/chronopost/orderShipment";
@@ -23,60 +24,39 @@ const STATUS_MESSAGES = {
  * Stripe (confirmation automatique de paiement) pour ne pas dupliquer cette logique.
  */
 export async function applyOrderStatusChange(orderId, status) {
-  const previousOrder = await Order.findById(orderId).select("status products");
-  if (!previousOrder) return null;
-  const wasAlreadyCancelled = previousOrder.status === "cancelled";
+  // Statut + restitution du stock dans une seule transaction, commande verrouillée : deux
+  // annulations simultanées ne peuvent pas restituer le stock deux fois.
+  const previousStatus = await withTransaction(async (client) => {
+    const locked = await lockOrder(client, String(orderId));
+    if (!locked) return null;
+    const wasAlreadyCancelled = locked.status === "cancelled";
 
-  const order = await Order.findByIdAndUpdate(orderId, { status }, { new: true });
+    await setOrderStatus(client, locked.id, status);
+
+    // Le stock avait été réservé à la création de la commande — on le restitue à
+    // l'annulation, une seule fois (pas de double restitution si déjà annulée). Si la
+    // ligne référence une variante (couleur), on restitue son stock puis on recalcule
+    // le stock total du produit (voir la décrémentation symétrique dans /api/order).
+    if (status === "cancelled" && !wasAlreadyCancelled) {
+      const lines = await findOrderStockLines(client, locked.id);
+      for (const line of lines) {
+        await applyLineStockDelta(client, line, line.quantity);
+      }
+    }
+    return locked.status;
+  });
+  if (previousStatus === null) return null;
+
+  const order = await findOrderById(String(orderId), { populate: false });
   if (!order) return null;
-
-  // Le stock avait été réservé à la création de la commande — on le restitue à
-  // l'annulation, une seule fois (pas de double restitution si déjà annulée). Si la
-  // ligne référence une variante (couleur), on restitue son stock puis on recalcule
-  // le stock total du produit (voir la décrémentation symétrique dans /api/order).
-  if (status === "cancelled" && !wasAlreadyCancelled) {
-    await Promise.all(
-      previousOrder.products.map((line) =>
-        line.variantId
-          ? Product.updateOne(
-              { _id: line.product, "variants._id": line.variantId },
-              [
-                {
-                  $set: {
-                    variants: {
-                      $map: {
-                        input: "$variants",
-                        as: "v",
-                        in: {
-                          $cond: [
-                            { $eq: ["$$v._id", line.variantId] },
-                            {
-                              $mergeObjects: [
-                                "$$v",
-                                { stock: { $add: [{ $ifNull: ["$$v.stock", 0] }, line.quantity] } },
-                              ],
-                            },
-                            "$$v",
-                          ],
-                        },
-                      },
-                    },
-                  },
-                },
-                { $set: { stock: { $sum: "$variants.stock" } } },
-              ]
-            )
-          : Product.updateOne({ _id: line.product }, { $inc: { stock: line.quantity } })
-      )
-    );
-  }
+  const previousOrder = { status: previousStatus };
 
   if (["paid", "processing"].includes(status) && !order.shipping?.skybillNumber) {
     try {
-      await generateShipmentForOrder(order._id.toString());
+      await generateShipmentForOrder(order._id);
     } catch (shippingErr) {
       console.error("CHRONOPOST SHIPPING ERROR:", shippingErr);
-      await markShippingError(order._id.toString(), shippingErr.message || "Erreur inconnue Chronopost");
+      await markShippingError(order._id, shippingErr.message || "Erreur inconnue Chronopost");
     }
   }
 
@@ -94,7 +74,7 @@ export async function applyOrderStatusChange(orderId, status) {
   const statusInfo = STATUS_LABELS[status];
   const orderNumber = order.orderNumber
     ? String(order.orderNumber).padStart(4, "0")
-    : order._id.toString().slice(-8).toUpperCase();
+    : order._id.slice(-8).toUpperCase();
 
   const clientEmailHtml = getOrderStatusUpdateEmailTemplate({
     firstname: order.customer?.firstname || "Client",
@@ -119,5 +99,5 @@ export async function applyOrderStatusChange(orderId, status) {
     }
   }
 
-  return Order.findById(order._id);
+  return findOrderById(order._id, { populate: false });
 }

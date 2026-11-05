@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import Product from "@/app/models/Product";
+import { findProductById } from "@/app/lib/repos/products";
 import { computeOrderTotals } from "@/app/lib/pricing";
 import { resolvePromoDiscount } from "@/app/lib/promo";
 import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
@@ -16,7 +15,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    await connectDB();
     const ip = getClientIp(req);
     const rateLimit = await checkRateLimit({ key: `create-payment-intent:${ip}`, windowMs: 60 * 1000, maxAttempts: 15 });
     if (!rateLimit.allowed) {
@@ -39,7 +37,7 @@ export async function POST(req: Request) {
       if (!item.productId) {
         return NextResponse.json({ error: "Panier obsolète, veuillez le vider et réajouter vos articles" }, { status: 400 });
       }
-      const product = await Product.findById(item.productId).select("price weight");
+      const product = await findProductById(item.productId);
       if (!product) {
         return NextResponse.json({ error: `Produit introuvable: ${item.productId}` }, { status: 404 });
       }

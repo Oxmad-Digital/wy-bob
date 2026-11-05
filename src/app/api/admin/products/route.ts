@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import Product from "@/app/models/Product";
+import { findFirstProduct, createProduct, setProductVariants } from "@/app/lib/repos/products";
 
 const DEFAULT_VARIANTS = [
   { colorName: "Bleu",  colorCode: "#1B2D5E", textColor: "#ffffff", image: "/images/wybob_bleu.webp"  },
@@ -38,17 +37,15 @@ export async function GET() {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  await connectDB();
-  let product = await Product.findOne({}).sort({ _id: 1 }).lean() as any;
+  let product: any = await findFirstProduct();
 
   if (!product) {
-    product = (await Product.create({
+    product = await createProduct({
       name: "WYBOB Essentials", price: 85, stock: 0, visible: true,
       variants: DEFAULT_VARIANTS,
-    })).toObject();
+    });
   } else if (!product.variants?.length) {
-    await Product.updateOne({ _id: product._id }, { $set: { variants: DEFAULT_VARIANTS } });
-    product = await Product.findById(product._id).lean() as any;
+    product = await setProductVariants(product._id, DEFAULT_VARIANTS);
   }
 
   return NextResponse.json({ success: true, product: serialize(product) });

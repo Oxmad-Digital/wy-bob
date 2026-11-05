@@ -1,5 +1,5 @@
-import Order from "@/app/models/Order";
-import "@/app/models/Product";
+import { withTransaction } from "@/app/lib/neon";
+import { findOrderById, setOrderDocument, updateOrderShipping } from "@/app/lib/repos/orders";
 import { createShipment } from "./shipping";
 import { ChronopostError } from "./client";
 import type { BusinessType, DeliveryMethod, ShipmentParty } from "./types";
@@ -39,7 +39,7 @@ function pickContent1(products: PopulatedProductLine[]): string {
  * statut paid/processing) et par le bouton de régénération manuelle dans l'admin.
  */
 export async function generateShipmentForOrder(orderId: string, overrides: GenerateOverrides = {}) {
-  const order = await Order.findById(orderId).populate("products.product");
+  const order = await findOrderById(orderId, { documents: false });
   if (!order) throw new ChronopostError("Commande introuvable");
 
   const country = (order.customer?.country || "FR").toUpperCase();
@@ -102,20 +102,28 @@ export async function generateShipmentForOrder(orderId: string, overrides: Gener
     }
   );
 
-  order.shipping.carrier = "chronopost";
-  order.shipping.productCode = result.productCode;
-  order.shipping.productKey = result.productKey;
-  order.shipping.service = result.service;
-  order.shipping.skybillNumber = result.skybillNumber;
-  order.shipping.labelBase64 = result.labelBase64;
-  order.shipping.labelGeneratedAt = new Date();
-  order.shipping.weightKg = weightKg;
-  order.shipping.shippingError = "";
-  await order.save();
+  // Étiquette et champs shipping enregistrés ensemble (même transaction).
+  await withTransaction(async (client) => {
+    await updateOrderShipping(
+      order._id,
+      {
+        carrier: "chronopost",
+        productCode: result.productCode,
+        productKey: result.productKey,
+        service: result.service,
+        skybillNumber: result.skybillNumber,
+        labelGeneratedAt: new Date(),
+        weightKg,
+        shippingError: "",
+      },
+      client
+    );
+    await setOrderDocument(order._id, "label", result.labelBase64, client);
+  });
 
   return result;
 }
 
 export async function markShippingError(orderId: string, message: string) {
-  await Order.findByIdAndUpdate(orderId, { "shipping.shippingError": message });
+  await updateOrderShipping(orderId, { shippingError: message });
 }

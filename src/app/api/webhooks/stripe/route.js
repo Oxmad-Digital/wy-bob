@@ -3,8 +3,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
+import { findOrderStatusByPaymentIntent, markExtraPaymentPaid } from "@/app/lib/repos/orders";
 import { applyOrderStatusChange } from "@/app/lib/orderStatusChange";
 
 export async function POST(request) {
@@ -30,8 +29,7 @@ export async function POST(request) {
   if (event.type === "payment_intent.succeeded") {
     const paymentIntent = event.data.object;
 
-    await connectDB();
-    const order = await Order.findOne({ paymentIntentId: paymentIntent.id });
+    const order = await findOrderStatusByPaymentIntent(paymentIntent.id);
 
     if (!order) {
       // La commande n'existe pas encore (le POST /api/order côté client n'a pas
@@ -41,7 +39,7 @@ export async function POST(request) {
     }
 
     if (order.status === "pending") {
-      await applyOrderStatusChange(order._id.toString(), "paid");
+      await applyOrderStatusChange(order._id, "paid");
     }
   }
 
@@ -49,15 +47,12 @@ export async function POST(request) {
     const checkoutSession = event.data.object;
 
     if (checkoutSession.metadata?.type === "extra_payment") {
-      await connectDB();
-      const order = await Order.findById(checkoutSession.metadata.orderId);
-      const extraPayment = order?.extraPayments?.id(checkoutSession.metadata.extraPaymentId);
-
-      if (extraPayment && extraPayment.status !== "paid") {
-        extraPayment.status = "paid";
-        extraPayment.paidAt = new Date();
-        await order.save();
-      }
+      // orderId / extraPaymentId : uuid, ou ancien ObjectId pour une session Stripe créée
+      // avant la bascule vers PostgreSQL (résolu via mongo_id).
+      await markExtraPaymentPaid(
+        String(checkoutSession.metadata.orderId ?? ""),
+        String(checkoutSession.metadata.extraPaymentId ?? "")
+      );
     }
   }
 

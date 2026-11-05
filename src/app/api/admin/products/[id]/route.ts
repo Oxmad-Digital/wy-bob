@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import Product from "@/app/models/Product";
+import { updateProduct } from "@/app/lib/repos/products";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -15,21 +14,19 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const { id } = await params;
   const body = await req.json();
 
-  await connectDB();
-  const product = await Product.findById(id);
+  const patch: Record<string, unknown> = {};
+  if (body.name        !== undefined) patch.name       = body.name;
+  if (body.price       !== undefined) patch.price      = Number(body.price);
+  if (body.pricePromo  !== undefined) patch.pricePromo = body.pricePromo ? Number(body.pricePromo) : null;
+  if (body.stock       !== undefined) patch.stock      = Number(body.stock);
+  if (body.visible     !== undefined) patch.visible    = Boolean(body.visible);
+  if (body.weight      !== undefined) patch.weight     = Number(body.weight);
+  if (body.variants    !== undefined) patch.variants   = body.variants;
+
+  const product = await updateProduct(id, patch);
   if (!product) {
     return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
   }
-
-  if (body.name        !== undefined) product.name       = body.name;
-  if (body.price       !== undefined) product.price      = Number(body.price);
-  if (body.pricePromo  !== undefined) product.pricePromo = body.pricePromo ? Number(body.pricePromo) : null;
-  if (body.stock       !== undefined) product.stock      = Number(body.stock);
-  if (body.visible     !== undefined) product.visible    = Boolean(body.visible);
-  if (body.weight      !== undefined) product.weight     = Number(body.weight);
-  if (body.variants    !== undefined) product.variants   = body.variants;
-
-  await product.save();
 
   return NextResponse.json({
     success: true,

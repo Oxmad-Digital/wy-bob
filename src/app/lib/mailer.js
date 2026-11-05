@@ -50,7 +50,34 @@ async function sendViaPlunk({ to, subject, html, replyTo, attachments }) {
   return data
 }
 
-export async function sendEmail({ to, subject, html, replyTo, attachments }) {
+// Garde-fou pour les environnements de test (tous les envois passent par sendEmail,
+// y compris le repli Plunk). Sans ces variables, le comportement est inchangé.
+//   EMAIL_DISABLED=1          -> aucun envoi, une ligne de log à la place
+//   EMAIL_REDIRECT_TO=a@b.fr  -> tous les emails partent vers cette adresse, le destinataire
+//                                d'origine est indiqué en tête du sujet
+const isTruthyEnv = (v) => /^(1|true|yes|on)$/i.test(String(v ?? '').trim())
+
+function applyEmailGuard({ to, subject }) {
+  const original = Array.isArray(to) ? to.join(', ') : String(to ?? '')
+  if (isTruthyEnv(process.env.EMAIL_DISABLED)) {
+    return { disabled: true, original }
+  }
+  const redirectTo = process.env.EMAIL_REDIRECT_TO?.trim()
+  if (redirectTo) {
+    return { to: redirectTo, subject: `[→ ${original}] ${subject}`, original }
+  }
+  return { to, subject, original }
+}
+
+export async function sendEmail({ to: requestedTo, subject: requestedSubject, html, replyTo, attachments }) {
+  const guard = applyEmailGuard({ to: requestedTo, subject: requestedSubject })
+  if (guard.disabled) {
+    console.log(`✉️  Email NON envoyé (EMAIL_DISABLED) — à: ${guard.original} — sujet: ${requestedSubject}`)
+    return { id: 'email-disabled' }
+  }
+  const { to, subject } = guard
+  if (to !== requestedTo) console.log(`✉️  Email redirigé (EMAIL_REDIRECT_TO) — destinataire d'origine: ${guard.original}`)
+
   try {
     const { data, error } = await getResendClient().emails.send({
       from: `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM}>`,

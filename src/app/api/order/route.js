@@ -1,17 +1,21 @@
 // app/api/order/route.js
 
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
-import Counter from "@/app/models/Counter";
-import Product from "@/app/models/Product";
-import PromoCode from "@/app/models/PromoCode";
-import ReferralConfig from "@/app/models/ReferralConfig";
-import User from "@/app/models/User";
+import { withTransaction, isUuid, isMongoId } from "@/app/lib/neon";
+import {
+  findOrderById,
+  findOrderByIdempotencyKey,
+  insertOrder,
+  listOrders,
+  nextOrderNumber,
+} from "@/app/lib/repos/orders";
+import { applyLineStockDelta, findProductsByIds } from "@/app/lib/repos/products";
+import { consumePromo, createPromo, promoCodeExists } from "@/app/lib/repos/promos";
+import { getReferralConfig } from "@/app/lib/repos/settings";
+import { findUserContactById } from "@/app/lib/repos/users";
+import { recordCustomerOrder } from "@/app/lib/repos/customers";
 import { sendEmail } from "@/app/lib/mailer";
-import Customer from "@/app/models/Customer";
 import { computeOrderTotals } from "@/app/lib/pricing";
 import { resolvePromoDiscount } from "@/app/lib/promo";
 import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
@@ -29,12 +33,32 @@ function generateRewardCode() {
   return `PARRAIN-${suffix}`;
 }
 
+// Réponse renvoyée quand une commande existe déjà pour l'idempotencyKey reçue.
+function alreadyCreatedResponse(existingOrder) {
+  return NextResponse.json(
+    {
+      success: true,
+      message: "Commande déjà créée",
+      order: {
+        _id: existingOrder._id,
+        orderNumber: String(existingOrder.orderNumber).padStart(4, "0"),
+        total: existingOrder.total,
+        status: existingOrder.status,
+        createdAt: existingOrder.createdAt,
+      },
+    },
+    { status: 200 }
+  );
+}
+
+// Violations de contraintes PostgreSQL équivalentes à une ValidationError Mongoose
+// (valeur hors enum -> CHECK, champ obligatoire -> NOT NULL, valeur mal typée) : même 400.
+const PG_VALIDATION_CODES = new Set(["23502", "23514", "22P02"]);
+
 export async function POST(req) {
   console.log("🚀 API /api/order APPELÉE");
 
   try {
-    await connectDB();
-
     const ip = getClientIp(req);
     const rateLimit = await checkRateLimit({ key: `order-create:${ip}`, windowMs: 5 * 60 * 1000, maxAttempts: 15 });
     if (!rateLimit.allowed) {
@@ -58,23 +82,8 @@ export async function POST(req) {
     // la même idempotencyKey : si une commande existe déjà pour cette clé, on la renvoie
     // telle quelle au lieu d'en recréer une (et de re-décrémenter le stock, renvoyer les emails, etc).
     if (idempotencyKey) {
-      const existingOrder = await Order.findOne({ idempotencyKey });
-      if (existingOrder) {
-        return NextResponse.json(
-          {
-            success: true,
-            message: "Commande déjà créée",
-            order: {
-              _id: existingOrder._id,
-              orderNumber: String(existingOrder.orderNumber).padStart(4, "0"),
-              total: existingOrder.total,
-              status: existingOrder.status,
-              createdAt: existingOrder.createdAt,
-            },
-          },
-          { status: 200 }
-        );
-      }
+      const existingOrder = await findOrderByIdempotencyKey(idempotencyKey, { documents: false });
+      if (existingOrder) return alreadyCreatedResponse(existingOrder);
     }
 
     const { firstname, lastname, city, address, phone, company, postalCode, country } = customer;
@@ -105,14 +114,16 @@ export async function POST(req) {
       return NextResponse.json({ message: "Panier vide" }, { status: 400 });
     }
 
-    // Calculate total strictly server-side — fetch all cart products in one query
+    // Calculate total strictly server-side — fetch all cart products in one query.
+    // Les ids peuvent être des uuid ou d'anciens ObjectId encore présents dans les paniers
+    // persistés (localStorage) : findProductsByIds résout les deux.
+    const isValidProductId = (id) => isUuid(id) || isMongoId(id);
     const validItemIds = [...new Set(
       cartItems
-        .filter((item) => mongoose.Types.ObjectId.isValid(item.productId))
+        .filter((item) => isValidProductId(item.productId))
         .map((item) => item.productId)
     )];
-    const productDocs = await Product.find({ _id: { $in: validItemIds } }).select("price name weight variants");
-    const productById = new Map(productDocs.map((p) => [p._id.toString(), p]));
+    const productById = await findProductsByIds(validItemIds);
 
     const products = [];
     const productPriceById = new Map();
@@ -120,7 +131,7 @@ export async function POST(req) {
     let total = 0;
 
     for (const item of cartItems) {
-      if (!mongoose.Types.ObjectId.isValid(item.productId)) continue;
+      if (!isValidProductId(item.productId)) continue;
 
       const product = productById.get(item.productId);
       if (!product) continue;
@@ -135,7 +146,7 @@ export async function POST(req) {
         ?? (product.variants?.length ? product.variants[0] : null);
 
       products.push({
-        product: new mongoose.Types.ObjectId(item.productId),
+        productId: product._id,
         quantity: qty,
         color: matchedVariant?.colorName ?? null,
         variantId: matchedVariant?._id ?? null,
@@ -148,12 +159,6 @@ export async function POST(req) {
       return NextResponse.json({ message: "Aucun produit valide dans le panier" }, { status: 400 });
     }
 
-    const counter = await Counter.findOneAndUpdate(
-      { _id: "orderNumber" },
-      { $inc: { seq: 1 } },
-      { new: true, upsert: true }
-    );
-
     // Apply promo discount — re-validate server-side for safety (même logique que
     // /api/create-payment-intent, via resolvePromoDiscount, pour que le montant facturé
     // via Stripe et le total enregistré sur la commande soient toujours identiques)
@@ -165,45 +170,6 @@ export async function POST(req) {
       userId
     );
 
-    if (promo && validatedPromoCode) {
-      if (promo.isReferral) {
-        await PromoCode.findByIdAndUpdate(promo._id, {
-          $inc: { usedCount: 1 },
-          $push: { usedByUserIds: userId },
-        });
-
-        if (promo.parrainPercent > 0) {
-          const referralConfig = await ReferralConfig.findOne();
-          const validityDays = referralConfig?.rewardValidityDays ?? 30;
-          const expiresAt = new Date();
-          expiresAt.setDate(expiresAt.getDate() + validityDays);
-
-          let rewardCode;
-          let attempts = 0;
-          do {
-            rewardCode = generateRewardCode();
-            attempts++;
-          } while (attempts < 10 && (await PromoCode.exists({ code: rewardCode })));
-
-          await PromoCode.create({
-            code: rewardCode,
-            type: "percent",
-            value: promo.parrainPercent,
-            maxUses: 1,
-            active: true,
-            expiresAt,
-          });
-
-          const parrain = await User.findById(promo.referrerId).select("email name");
-          if (parrain) {
-            referralRewardData = { email: parrain.email, name: parrain.name, rewardCode, parrainPercent: promo.parrainPercent, validityDays };
-          }
-        }
-      } else {
-        await PromoCode.findByIdAndUpdate(promo._id, { $inc: { usedCount: 1 } });
-      }
-    }
-
     const weightKg = computeTotalWeightKg(weighableLines);
     const deliveryMethod = delivery === "relais" ? "relay" : "home";
     const shippingFee = computeShippingFee({ country, weightKg, deliveryMethod });
@@ -213,126 +179,137 @@ export async function POST(req) {
     const insuranceFee = insuranceOpted ? computeInsuranceFee(discountedSubtotal) : 0;
     const { total: finalTotal } = computeOrderTotals(discountedSubtotal, shippingFee, insuranceFee);
 
-    const order = await Order.create({
-      orderNumber: counter.seq,
-      userId: session?.user?.id ?? null,
-      customer: {
-        firstname,
-        lastname,
-        email: email.toLowerCase(),
-        phone: phone || "",
-        company: company || "",
-        city,
-        address,
-        postalCode: postalCode || "",
-        country: country || "",
-      },
-      recipientPickupName: recipientPickupName || "",
-      products,
-      total: finalTotal,
-      shippingFee,
-      insurance: {
-        opted: insuranceFee > 0,
-        declaredValue: insuranceFee > 0 ? computeInsurableValue(discountedSubtotal) : 0,
-        fee: insuranceFee,
-      },
-      promoCode: validatedPromoCode,
-      promoDiscount: appliedDiscount,
-      payment: payment || "cash",
-      paymentIntentId: paymentIntentId || null,
-      idempotencyKey: idempotencyKey || null,
-      delivery: delivery || "colissimo",
-      status: "pending",
-      ...(delivery === "relais" && relayPoint?.id
-        ? {
-            shipping: {
-              relayPoint: {
-                id: relayPoint.id,
-                name: relayPoint.name || "",
-                address1: relayPoint.address1 || "",
-                address2: relayPoint.address2 || "",
-                zipCode: relayPoint.zipCode || "",
-                city: relayPoint.city || "",
-                country: relayPoint.country || country || "FR",
-                latitude: typeof relayPoint.latitude === "number" ? relayPoint.latitude : undefined,
-                longitude: typeof relayPoint.longitude === "number" ? relayPoint.longitude : undefined,
-              },
-            },
+    const normalizedEmail = email.toLowerCase();
+
+    // Une seule transaction : numéro de commande, consommation du code promo (et récompense
+    // de parrainage), commande + lignes, réservation du stock et fiche client. Si une étape
+    // échoue, rien n'est enregistré (seul le numéro de séquence est consommé). Les emails
+    // partent après le COMMIT.
+    let order;
+    try {
+      order = await withTransaction(async (client) => {
+        const orderNumberValue = await nextOrderNumber(client);
+
+        if (promo && validatedPromoCode) {
+          if (promo.isReferral) {
+            await consumePromo(client, promo._id, { recordUserId: true, userId });
+
+            if (promo.parrainPercent > 0) {
+              const referralConfig = await getReferralConfig(client);
+              const validityDays = referralConfig?.rewardValidityDays ?? 30;
+              const expiresAt = new Date();
+              expiresAt.setDate(expiresAt.getDate() + validityDays);
+
+              let rewardCode;
+              let attempts = 0;
+              do {
+                rewardCode = generateRewardCode();
+                attempts++;
+              } while (attempts < 10 && (await promoCodeExists(client, rewardCode)));
+
+              await createPromo(client, {
+                code: rewardCode,
+                type: "percent",
+                value: promo.parrainPercent,
+                maxUses: 1,
+                active: true,
+                expiresAt,
+              });
+
+              const parrain = await findUserContactById(promo.referrerId, client);
+              if (parrain) {
+                referralRewardData = { email: parrain.email, name: parrain.name, rewardCode, parrainPercent: promo.parrainPercent, validityDays };
+              }
+            }
+          } else {
+            await consumePromo(client, promo._id, { recordUserId: false });
           }
-        : {}),
-    });
+        }
+
+        const orderId = await insertOrder(client, {
+          orderNumber: orderNumberValue,
+          // Une session émise avant la bascule porte encore un ObjectId : pas de rattachement.
+          userId: isUuid(userId) ? userId : null,
+          customer: {
+            firstname,
+            lastname,
+            email: normalizedEmail,
+            phone: phone || "",
+            company: company || "",
+            city,
+            address,
+            postalCode: postalCode || "",
+            country: country || "",
+          },
+          recipientPickupName: recipientPickupName || "",
+          products,
+          total: finalTotal,
+          shippingFee,
+          insurance: {
+            opted: insuranceFee > 0,
+            declaredValue: insuranceFee > 0 ? computeInsurableValue(discountedSubtotal) : 0,
+            fee: insuranceFee,
+          },
+          promoCode: validatedPromoCode,
+          promoDiscount: appliedDiscount,
+          payment: payment || "cash",
+          paymentIntentId: paymentIntentId || null,
+          idempotencyKey: idempotencyKey || null,
+          delivery: delivery || "colissimo",
+          status: "pending",
+          relayPoint:
+            delivery === "relais" && relayPoint?.id
+              ? {
+                  id: relayPoint.id,
+                  name: relayPoint.name || "",
+                  address1: relayPoint.address1 || "",
+                  address2: relayPoint.address2 || "",
+                  zipCode: relayPoint.zipCode || "",
+                  city: relayPoint.city || "",
+                  country: relayPoint.country || country || "FR",
+                  latitude: typeof relayPoint.latitude === "number" ? relayPoint.latitude : undefined,
+                  longitude: typeof relayPoint.longitude === "number" ? relayPoint.longitude : undefined,
+                }
+              : null,
+        });
+
+        // Le stock est réservé dès la création de la commande (avant même le paiement) ; il
+        // est restauré si la commande est annulée — voir applyOrderStatusChange. Quand la
+        // ligne a une variante (couleur), c'est le stock de cette variante qui est décrémenté,
+        // puis le stock total du produit est recalculé comme somme des variantes. Plancher à 0 :
+        // aucune commande n'est bloquée pour stock insuffisant (comportement d'origine).
+        for (const line of products) {
+          await applyLineStockDelta(
+            client,
+            { productId: line.productId, variantId: line.variantId, variantMongoId: null },
+            -line.quantity,
+            { floorZero: true }
+          );
+        }
+
+        await recordCustomerOrder(client, {
+          firstname,
+          lastname,
+          email: normalizedEmail,
+          phone,
+          city,
+          address,
+          total: finalTotal,
+        });
+
+        return findOrderById(orderId, { db: client, populate: false, documents: false });
+      });
+    } catch (txError) {
+      // Deux requêtes simultanées avec la même idempotencyKey : la seconde heurte l'index
+      // unique — on renvoie la commande créée par la première, comme le contrôle plus haut.
+      if (txError?.code === "23505" && txError?.constraint === "orders_idempotency_key_key" && idempotencyKey) {
+        const existingOrder = await findOrderByIdempotencyKey(idempotencyKey, { documents: false });
+        if (existingOrder) return alreadyCreatedResponse(existingOrder);
+      }
+      throw txError;
+    }
 
     console.log("✅ Commande créée:", order._id, "N°", order.orderNumber);
-
-    // Le stock est réservé dès la création de la commande (avant même le paiement) ; il
-    // est restauré si la commande est annulée — voir applyOrderStatusChange. Quand la
-    // ligne a une variante (couleur), c'est le stock de cette variante qui est décrémenté,
-    // puis le stock total du produit est recalculé comme somme des variantes.
-    await Promise.all(
-      products.map((line) =>
-        line.variantId
-          ? Product.updateOne(
-              { _id: line.product, "variants._id": line.variantId },
-              [
-                {
-                  $set: {
-                    variants: {
-                      $map: {
-                        input: "$variants",
-                        as: "v",
-                        in: {
-                          $cond: [
-                            { $eq: ["$$v._id", line.variantId] },
-                            {
-                              $mergeObjects: [
-                                "$$v",
-                                { stock: { $max: [0, { $subtract: [{ $ifNull: ["$$v.stock", 0] }, line.quantity] }] } },
-                              ],
-                            },
-                            "$$v",
-                          ],
-                        },
-                      },
-                    },
-                  },
-                },
-                { $set: { stock: { $sum: "$variants.stock" } } },
-              ],
-              { updatePipeline: true }
-            )
-          : Product.updateOne(
-              { _id: line.product },
-              [{ $set: { stock: { $max: [0, { $subtract: ["$stock", line.quantity] }] } } }],
-              { updatePipeline: true }
-            )
-      )
-    );
-
-    const normalizedEmail = email.toLowerCase();
-    let existingCustomer = await Customer.findOne({ email: normalizedEmail });
-
-    if (existingCustomer) {
-      existingCustomer.totalOrders += 1;
-      existingCustomer.totalSpent += finalTotal;
-      existingCustomer.lastOrderAt = new Date();
-      if (!existingCustomer.phone && phone) existingCustomer.phone = phone;
-      if (!existingCustomer.city && city) existingCustomer.city = city;
-      if (!existingCustomer.address && address) existingCustomer.address = address;
-      await existingCustomer.save();
-    } else {
-      await Customer.create({
-        firstname,
-        lastname,
-        email: normalizedEmail,
-        phone: phone || "",
-        city: city || "",
-        address: address || "",
-        totalOrders: 1,
-        totalSpent: finalTotal,
-        lastOrderAt: new Date(),
-        status: "active",
-      });
-    }
 
     const orderNumber = String(order.orderNumber).padStart(4, "0");
     const orderDate = new Date().toLocaleDateString("fr-FR", {
@@ -581,12 +558,12 @@ export async function POST(req) {
   } catch (error) {
     console.error("❌ ORDER API ERROR:", error);
 
-    if (error.name === "ValidationError") {
+    if (PG_VALIDATION_CODES.has(error?.code)) {
       return NextResponse.json(
         {
           success: false,
           message: "Erreur de validation",
-          errors: Object.values(error.errors).map((e) => e.message),
+          errors: [error.message],
         },
         { status: 400 }
       );
@@ -606,19 +583,11 @@ export async function GET(req) {
       return NextResponse.json({ success: false, message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
     const limit = Math.min(200, parseInt(searchParams.get("limit")) || 50);
 
-    const query = status ? { status } : {};
-
-    const orders = await Order.find(query)
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .populate("products.product")
-      .lean();
+    const orders = await listOrders({ status, limit });
 
     return NextResponse.json({ success: true, count: orders.length, orders });
 

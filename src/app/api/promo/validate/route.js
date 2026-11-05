@@ -2,14 +2,11 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import PromoCode from "@/app/models/PromoCode";
+import { findPromoByCode } from "@/app/lib/repos/promos";
 import { checkRateLimit, getClientIp } from "@/app/lib/rateLimit";
 
 export async function POST(request) {
   try {
-    await connectDB();
-
     const ip = getClientIp(request);
     const rateLimit = await checkRateLimit({ key: `promo-validate:${ip}`, windowMs: 60 * 1000, maxAttempts: 20 });
     if (!rateLimit.allowed) {
@@ -25,7 +22,7 @@ export async function POST(request) {
       return NextResponse.json({ message: "Code manquant" }, { status: 400 });
     }
 
-    const promo = await PromoCode.findOne({ code: code.toUpperCase().trim() });
+    const promo = await findPromoByCode(code);
 
     if (!promo) {
       return NextResponse.json({ message: "Code promo invalide" }, { status: 404 });

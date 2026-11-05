@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { connectDB } from '@/app/lib/db'
-import Product from '@/app/models/Product'
+import { findFirstProduct } from '@/app/lib/repos/products'
 import HomeClient from './HomeClient'
 
 export const revalidate = 60
@@ -15,8 +14,7 @@ export default async function Home() {
   let productData = null
 
   try {
-    await connectDB()
-    const doc = await Product.findOne({}).lean() as any
+    const doc: any = await findFirstProduct()
 
     if (doc) {
       productData = {

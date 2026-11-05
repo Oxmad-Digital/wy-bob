@@ -2,9 +2,8 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import Invoice from "@/app/models/Invoice";
-import mongoose from "mongoose";
+import { isUuid } from "@/app/lib/neon";
+import { deleteInvoice } from "@/app/lib/repos/invoices";
 
 // DELETE - Supprimer une facture (nettoyage de données de test ou d'erreur de facturation ;
 // une facture émise pour une vraie vente ne doit normalement jamais être supprimée).
@@ -16,17 +15,15 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
-    const invoice = await Invoice.findByIdAndDelete(id);
+    const deleted = await deleteInvoice(id);
 
-    if (!invoice) {
+    if (!deleted) {
       return NextResponse.json({ message: "Facture introuvable" }, { status: 404 });
     }
 
