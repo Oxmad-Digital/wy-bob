@@ -10,8 +10,11 @@ import { refreshOrderTracking } from "@/app/lib/chronopost/refreshOrderTracking"
 // cours (remplace le clic manuel "Actualiser le suivi" pour les commandes qu'un admin
 // n'a pas ouvertes). Appelé une fois par jour par le cron Vercel (voir vercel.json).
 export async function GET(req) {
+  // Sans CRON_SECRET défini, l'ancienne comparaison acceptait l'en-tête "Bearer undefined" :
+  // on refuse donc explicitement si le secret n'est pas configuré.
+  const secret = process.env.CRON_SECRET;
   const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!secret || authHeader !== `Bearer ${secret}`) {
     return NextResponse.json({ message: "Non autorisé" }, { status: 401 });
   }
 

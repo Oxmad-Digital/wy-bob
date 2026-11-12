@@ -5,6 +5,7 @@ import { CartProvider } from '@/components/panier-context'
 import SessionWrapper from '@/components/SessionWrapper'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
+import VisitTracker from '@/app/lib/stats/VisitTracker'
 import './globals.css'
 
 const CookieConsentBanner = dynamic(() => import('@/components/CookieConsentBanner'))
@@ -90,6 +91,7 @@ export default function RootLayout({
         />
         <GoogleAnalytics />
         <SessionWrapper>
+          <VisitTracker />
           <LanguageProvider>
             <CartProvider>
               {children}

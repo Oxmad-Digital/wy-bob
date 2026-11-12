@@ -1,0 +1,436 @@
+/* =============================================
+   Admin — Statistiques de visite
+   Palette : #F9C464 | #1B1843 | #f5f5f4 (comme le dashboard)
+   ============================================= */
+
+.container {
+  background: #f5f5f4;
+  padding: 28px 32px;
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100%;
+  color: #1B1843;
+}
+
+.topbar { margin-bottom: 24px; }
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1B1843;
+  letter-spacing: -0.5px;
+  margin: 0 0 2px 0;
+  line-height: 1.2;
+}
+
+.subtitle,
+.muted {
+  font-size: 13px;
+  color: #9b9b9b;
+  margin: 0;
+}
+
+.overline {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9b9b9b;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* ── Sélecteur de période ── */
+.rangeSelector {
+  display: inline-flex;
+  gap: 2px;
+  background: #f7f7f5;
+  border: 1px solid #ebebea;
+  border-radius: 8px;
+  padding: 3px;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.rangeSelector::-webkit-scrollbar { display: none; }
+
+.rangeBtn {
+  padding: 5px 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #9b9b9b;
+  font: 400 12px 'DM Sans', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.rangeBtn:hover { color: #1B1843; }
+.rangeBtn:focus-visible { outline: 2px solid #F9C464; outline-offset: 1px; }
+
+.rangeBtnActive {
+  background: #fff;
+  color: #1B1843;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Cartes ── */
+.card,
+.kpiCard {
+  background: #fff;
+  border: 1px solid #ebebea;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  min-width: 0;
+}
+
+.card { padding: 18px 22px; }
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.cardTitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #1B1843;
+  margin: 0;
+}
+
+.columnLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9b9b9b;
+}
+
+/* ── KPI ── */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.kpiCard { padding: 16px 20px; }
+
+.kpiIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.kpiValue {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpiLabel {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.kpiSub {
+  font-size: 11px;
+  color: #9b9b9b;
+}
+
+/* ── Légende du graphique ── */
+.legend { display: flex; gap: 16px; flex-wrap: wrap; }
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #9b9b9b;
+}
+
+.legendSwatch {
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+}
+
+/* ── Panneaux ── */
+.panelsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* ── Listes à barres ── */
+.barList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.barRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  overflow: hidden;
+}
+
+.barFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #fdf3dc;
+  border-radius: 6px;
+  z-index: 0;
+  transition: width 0.3s ease;
+}
+
+.barLabel,
+.barValue {
+  position: relative;
+  z-index: 1;
+}
+
+.barLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.barLabelMuted { color: #78716c; font-style: italic; }
+
+.barIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: #78716c;
+}
+
+.barText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barValue {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.barPct {
+  font-size: 11px;
+  font-weight: 500;
+  color: #9b9b9b;
+  min-width: 38px;
+  text-align: right;
+}
+
+.flag { font-size: 15px; line-height: 1; }
+
+.countryList {
+  max-width: 720px;
+}
+
+.linkBtn {
+  margin-top: 10px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #c08a1e;
+  font: 600 12px 'DM Sans', sans-serif;
+  cursor: pointer;
+}
+.linkBtn:hover { text-decoration: underline; }
+
+/* ── Carte du monde ── */
+.mapSection {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #f2f2f0;
+}
+
+.mapWrap { position: relative; }
+
+.mapSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.mapCountry {
+  stroke: #fff;
+  stroke-width: 0.6;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.mapCountry:hover,
+.mapCountryActive {
+  stroke: #1B1843;
+  stroke-width: 1;
+}
+
+.mapTooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 12px));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  background: #fff;
+  border: 1px solid #ebebea;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.05);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+}
+.mapTooltip span { color: #9b9b9b; }
+
+.mapLegend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #9b9b9b;
+}
+
+.mapLegendBar {
+  width: 90px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #fdf0d3, #d6961e);
+}
+
+.mapPlaceholder {
+  padding: 60px 0;
+  text-align: center;
+  font-size: 12px;
+  color: #9b9b9b;
+}
+
+/* ── États ── */
+.empty {
+  padding: 32px 0;
+  text-align: center;
+  font-size: 12px;
+  color: #9b9b9b;
+}
+
+.emptyBanner {
+  padding: 11px 16px;
+  background: #f7f7f5;
+  border: 1px solid #ebebea;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #78716c;
+}
+
+.errorBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: #fff5f5;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.retryBtn {
+  padding: 5px 12px;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  background: #fff;
+  color: #b91c1c;
+  font: 600 12px 'DM Sans', sans-serif;
+  cursor: pointer;
+}
+
+.refreshing {
+  opacity: 0.55;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #fff 0%, #f7f7f5 50%, #fff 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+  .barFill  { transition: none; }
+}
+
+/* ── Responsive (mêmes points de rupture que le dashboard) ── */
+@media (max-width: 1024px) {
+  .container   { padding: 16px 18px; }
+  .title       { font-size: 20px; }
+  .kpiGrid     { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .panelsGrid  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Tablette : Appareils occupe toute la largeur sous les deux premiers panneaux. */
+  .panelsGrid > :nth-child(3) { grid-column: 1 / -1; }
+}
+
+@media (max-width: 768px) {
+  .toolbar { flex-direction: column; }
+}
+
+@media (max-width: 640px) {
+  .container  { padding: 14px; }
+  .card       { padding: 14px 14px; }
+  .kpiCard    { padding: 13px 14px; }
+  .kpiValue   { font-size: 19px; }
+  .panelsGrid { grid-template-columns: 1fr; }
+  .barPct     { display: none; }
+}

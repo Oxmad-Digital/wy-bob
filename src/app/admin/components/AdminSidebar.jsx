@@ -18,6 +18,18 @@ const internalLinks = [
     ),
   },
   {
+    href: '/admin/statistiques',
+    label: 'Statistiques',
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="4" y1="20" x2="20" y2="20"/>
+        <rect x="5" y="11" width="3" height="6" rx="0.5"/>
+        <rect x="10.5" y="6" width="3" height="11" rx="0.5"/>
+        <rect x="16" y="9" width="3" height="8" rx="0.5"/>
+      </svg>
+    ),
+  },
+  {
     href: '/admin/products',
     label: 'Produits & Stock',
     icon: (
@@ -186,17 +198,18 @@ const externalTools = [
 
 const bottomNavLinks = [
   internalLinks[0], // Dashboard
-  internalLinks[2], // Commandes
-  internalLinks[1], // Produits & Stock
-  internalLinks[3], // Clients
+  internalLinks[3], // Commandes
+  internalLinks[2], // Produits & Stock
+  internalLinks[4], // Clients
 ];
 
 const moreNavLinks = [
-  internalLinks[4], // Factures
-  internalLinks[6], // Codes promo
-  internalLinks[5], // Galerie photo
-  internalLinks[7], // Parrainage
-  internalLinks[8], // Réglages
+  internalLinks[1], // Statistiques
+  internalLinks[5], // Factures
+  internalLinks[7], // Codes promo
+  internalLinks[6], // Galerie photo
+  internalLinks[8], // Parrainage
+  internalLinks[9], // Réglages
 ];
 
 export default function AdminSidebar() {

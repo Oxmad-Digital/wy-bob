@@ -1,6 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/app/lib/require-admin";
 import { connectDB } from "@/app/lib/db";
 import Order    from "@/app/models/Order";
 import Customer from "@/app/models/Customer";
@@ -11,6 +12,10 @@ const statsCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000;
 
 export async function GET(request) {
+  // Avant toute requête en base (et avant le cache) : la route renvoyait les stats à tout le monde.
+  const guard = await requireAdmin();
+  if (guard instanceof Response) return guard;
+
   try {
     await connectDB();
 
