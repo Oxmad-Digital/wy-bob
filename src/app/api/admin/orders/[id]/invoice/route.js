@@ -2,11 +2,10 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
-import Invoice from "@/app/models/Invoice";
+import { isUuid } from "@/app/lib/neon";
+import { findOrderById } from "@/app/lib/repos/orders";
+import { findInvoiceByOrderId } from "@/app/lib/repos/invoices";
 import { createInvoiceForOrder } from "@/app/lib/invoice/createInvoiceForOrder";
-import mongoose from "mongoose";
 
 export async function GET(req, { params }) {
   try {
@@ -16,15 +15,13 @@ export async function GET(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
-    const invoice = await Invoice.findOne({ order: id }).select("-pdfBase64");
+    const invoice = await findInvoiceByOrderId(id, undefined, { withPdf: false });
 
     return NextResponse.json({ success: true, invoice: invoice || null });
   } catch (error) {
@@ -44,15 +41,13 @@ export async function POST(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
-    const order = await Order.findById(id).select("status");
+    const order = await findOrderById(id, { populate: false, documents: false });
     if (!order) {
       return NextResponse.json({ message: "Commande introuvable" }, { status: 404 });
     }

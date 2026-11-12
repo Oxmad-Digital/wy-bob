@@ -8,6 +8,7 @@ import { computeTotalWeightKg } from "@/app/lib/shipping/weight";
 import { computeShippingFee } from "@/app/lib/shipping/pricing";
 import { computeInsuranceFee } from "@/app/lib/shipping/insurance";
 import { checkRateLimit, getClientIp } from "@/app/lib/rateLimit";
+import { getStripePaymentMethods } from "@/app/lib/stripePaymentMethods";
 
 export async function POST(req: Request) {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
       {
         amount: totalCents,
         currency: "eur",
-        payment_method_types: ["card", "amazon_pay"],
+        payment_method_types: getStripePaymentMethods(),
       },
       stripeIdempotencyKey ? { idempotencyKey: stripeIdempotencyKey } : undefined
     );

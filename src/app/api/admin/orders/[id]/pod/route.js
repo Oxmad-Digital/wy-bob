@@ -2,10 +2,9 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
 import { auth } from "@/auth";
-import mongoose from "mongoose";
+import { isUuid } from "@/app/lib/neon";
+import { findOrderById, setOrderDocument } from "@/app/lib/repos/orders";
 import { searchPOD } from "@/app/lib/chronopost/tracking";
 import { ChronopostError } from "@/app/lib/chronopost/client";
 import { applyOrderStatusChange } from "@/app/lib/orderStatusChange";
@@ -19,15 +18,13 @@ export async function GET(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
-    const order = await Order.findById(id);
+    const order = await findOrderById(id, { populate: false });
     if (!order) {
       return NextResponse.json({ message: "Commande introuvable" }, { status: 404 });
     }
@@ -36,7 +33,7 @@ export async function GET(req, { params }) {
       // La preuve de livraison existe déjà — s'assure que le statut a bien suivi,
       // au cas où elle aurait été mise en cache avant l'ajout de ce basculement auto.
       if (!["delivered", "cancelled"].includes(order.status)) {
-        await applyOrderStatusChange(order._id.toString(), "delivered").catch((err) =>
+        await applyOrderStatusChange(order._id, "delivered").catch((err) =>
           console.error("AUTO STATUS DELIVERED ERROR (non bloquant):", err)
         );
       }
@@ -56,13 +53,12 @@ export async function GET(req, { params }) {
       if (!pod.available || !pod.base64) {
         return NextResponse.json({ message: "Preuve de livraison pas encore disponible" }, { status: 404 });
       }
-      order.shipping.podBase64 = pod.base64;
-      await order.save();
+      await setOrderDocument(order._id, "pod", pod.base64);
 
       // Une preuve de livraison disponible est un signal Chronopost non ambigu —
       // on fait suivre le statut automatiquement (email client inclus).
       if (!["delivered", "cancelled"].includes(order.status)) {
-        await applyOrderStatusChange(order._id.toString(), "delivered").catch((err) =>
+        await applyOrderStatusChange(order._id, "delivered").catch((err) =>
           console.error("AUTO STATUS DELIVERED ERROR (non bloquant):", err)
         );
       }

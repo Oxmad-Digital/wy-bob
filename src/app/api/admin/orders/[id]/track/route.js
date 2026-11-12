@@ -2,10 +2,9 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
 import { auth } from "@/auth";
-import mongoose from "mongoose";
+import { isUuid } from "@/app/lib/neon";
+import { findOrderById } from "@/app/lib/repos/orders";
 import { ChronopostError } from "@/app/lib/chronopost/client";
 import { refreshOrderTracking } from "@/app/lib/chronopost/refreshOrderTracking";
 
@@ -18,15 +17,13 @@ export async function POST(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
-    const order = await Order.findById(id);
+    const order = await findOrderById(id, { populate: false, documents: false });
     if (!order) {
       return NextResponse.json({ message: "Commande introuvable" }, { status: 404 });
     }
@@ -34,7 +31,7 @@ export async function POST(req, { params }) {
       return NextResponse.json({ message: "Aucune étiquette générée pour cette commande" }, { status: 400 });
     }
 
-    let resultOrder = order;
+    let resultOrder;
 
     try {
       resultOrder = await refreshOrderTracking(order);

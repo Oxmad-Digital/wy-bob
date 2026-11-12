@@ -2,10 +2,9 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
 import { auth } from "@/auth";
-import mongoose from "mongoose";
+import { isUuid } from "@/app/lib/neon";
+import { findOrderDocument } from "@/app/lib/repos/orders";
 
 // ✅ GET - Télécharger l'étiquette PDF Chronopost d'une commande
 export async function GET(req, { params }) {
@@ -16,26 +15,24 @@ export async function GET(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
-    const order = await Order.findById(id).select("shipping orderNumber");
+    const doc = await findOrderDocument(id, "label");
 
-    if (!order) {
+    if (!doc) {
       return NextResponse.json({ message: "Commande introuvable" }, { status: 404 });
     }
 
-    if (!order.shipping?.labelBase64) {
+    if (!doc.content) {
       return NextResponse.json({ message: "Aucune étiquette générée pour cette commande" }, { status: 404 });
     }
 
-    const pdfBuffer = Buffer.from(order.shipping.labelBase64, "base64");
-    const orderNumber = order.orderNumber ? String(order.orderNumber).padStart(4, "0") : id.slice(-8);
+    const pdfBuffer = Buffer.from(doc.content, "base64");
+    const orderNumber = doc.orderNumber ? String(doc.orderNumber).padStart(4, "0") : id.slice(-8);
 
     return new NextResponse(pdfBuffer, {
       status: 200,

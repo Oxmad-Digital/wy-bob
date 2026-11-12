@@ -73,12 +73,22 @@ async function hydrate(db, rows, { withPdf }) {
   return rows.map((r) => toInvoiceDoc(r, lines, withPdf ? pdfs.get(r.id) ?? null : undefined));
 }
 
-/** Facture d'une commande (Invoice.findOne({ order })), PDF inclus. */
-export async function findInvoiceByOrderId(orderId, db = poolDb) {
+/**
+ * Facture d'une commande (Invoice.findOne({ order })), PDF inclus par défaut.
+ * withPdf: false équivaut à .select("-pdfBase64").
+ */
+export async function findInvoiceByOrderId(orderId, db = poolDb, { withPdf = true } = {}) {
   if (!isUuid(orderId)) return null;
   const { rows } = await db.query("SELECT * FROM invoices WHERE order_id = $1", [orderId]);
-  const [doc] = await hydrate(db, rows, { withPdf: true });
+  const [doc] = await hydrate(db, rows, { withPdf });
   return doc ?? null;
+}
+
+/** Numéro de la facture d'une commande, ou null s'il n'y en a pas. */
+export async function findInvoiceNumberByOrderId(orderId, db = poolDb) {
+  if (!isUuid(orderId)) return null;
+  const { rows } = await db.query("SELECT invoice_number FROM invoices WHERE order_id = $1", [orderId]);
+  return rows[0]?.invoice_number ?? null;
 }
 
 /** PDF et numéro d'une facture (route admin /pdf). */

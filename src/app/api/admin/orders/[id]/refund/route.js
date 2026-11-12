@@ -3,10 +3,9 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import mongoose from "mongoose";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
 import { auth } from "@/auth";
+import { isUuid } from "@/app/lib/neon";
+import { findOrderById, insertRefund } from "@/app/lib/repos/orders";
 import { sendEmail } from "@/app/lib/mailer";
 import { getRefundEmailTemplate } from "@/app/lib/emailTemplates";
 
@@ -23,10 +22,8 @@ export async function POST(req, { params }) {
       return NextResponse.json({ message: "Paiement non disponible" }, { status: 503 });
     }
 
-    await connectDB();
-
     const { id } = await params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
@@ -36,7 +33,7 @@ export async function POST(req, { params }) {
       return NextResponse.json({ message: "Montant invalide" }, { status: 400 });
     }
 
-    const order = await Order.findById(id);
+    const order = await findOrderById(id, { populate: false, documents: false });
     if (!order) {
       return NextResponse.json({ message: "Commande introuvable" }, { status: 404 });
     }
@@ -69,17 +66,16 @@ export async function POST(req, { params }) {
       amount: Math.round(numericAmount * 100),
     });
 
-    order.refunds.push({
+    await insertRefund(order._id, {
       amount: numericAmount,
       reason: reason?.trim() || "",
       stripeRefundId: stripeRefund.id,
       status: stripeRefund.status === "failed" ? "failed" : "succeeded",
     });
-    await order.save();
 
     const orderNumber = order.orderNumber
       ? String(order.orderNumber).padStart(4, "0")
-      : order._id.toString().slice(-8).toUpperCase();
+      : order._id.slice(-8).toUpperCase();
 
     if (order.customer?.email) {
       const emailHtml = getRefundEmailTemplate({
@@ -101,7 +97,7 @@ export async function POST(req, { params }) {
       }
     }
 
-    return NextResponse.json(order);
+    return NextResponse.json(await findOrderById(id, { populate: false }));
   } catch (error) {
     console.error("POST REFUND ERROR:", error);
     const message = error?.type === "StripeInvalidRequestError"

@@ -2,10 +2,9 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
 import { auth } from "@/auth";
-import mongoose from "mongoose";
+import { isUuid } from "@/app/lib/neon";
+import { findOrderById, updateOrderShipping } from "@/app/lib/repos/orders";
 import { cancelShipment } from "@/app/lib/chronopost/cancel";
 import { ChronopostError } from "@/app/lib/chronopost/client";
 
@@ -20,15 +19,13 @@ export async function POST(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
-    const order = await Order.findById(id);
+    const order = await findOrderById(id, { populate: false, documents: false });
     if (!order) {
       return NextResponse.json({ message: "Commande introuvable" }, { status: 404 });
     }
@@ -44,15 +41,14 @@ export async function POST(req, { params }) {
       if (!result.cancelled) {
         return NextResponse.json({ message: result.message }, { status: 502 });
       }
-      order.shipping.cancelledAt = new Date();
-      await order.save();
+      await updateOrderShipping(id, { cancelledAt: new Date() });
     } catch (cancelErr) {
       console.error("CHRONOPOST CANCEL ERROR:", cancelErr);
       const message = cancelErr instanceof ChronopostError ? cancelErr.message : "Annulation Chronopost indisponible";
       return NextResponse.json({ message }, { status: 502 });
     }
 
-    return NextResponse.json(order);
+    return NextResponse.json(await findOrderById(id, { populate: false }));
   } catch (error) {
     console.error("POST CANCEL SHIPPING ERROR:", error);
     return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });

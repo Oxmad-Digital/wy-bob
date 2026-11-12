@@ -2,10 +2,9 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
 import { auth } from "@/auth";
-import mongoose from "mongoose";
+import { isUuid } from "@/app/lib/neon";
+import { findOrderById, updateOrderCustomer } from "@/app/lib/repos/orders";
 import { isValidPostalCode } from "@/app/lib/shipping/postalCode";
 import { COUNTRY_OPTIONS } from "@/app/lib/shipping/countries";
 
@@ -23,11 +22,9 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
@@ -57,31 +54,18 @@ export async function PATCH(req, { params }) {
       );
     }
 
-    const order = await Order.findByIdAndUpdate(
-      id,
-      {
-        "customer.firstname": firstname,
-        "customer.lastname": lastname,
-        "customer.email": email,
-        "customer.phone": phone,
-        "customer.company": company,
-        "customer.address": address,
-        "customer.postalCode": postalCode,
-        "customer.city": city,
-        "customer.country": country,
-        // Une correction d'adresse invalide le message d'erreur d'une éventuelle tentative
-        // d'expédition précédente (ex: pays erroné) — sans quoi l'admin voit toujours
-        // l'ancienne erreur après correction, alors que rien n'a encore été retenté.
-        "shipping.shippingError": "",
-      },
-      { new: true }
-    ).populate("products.product");
+    // Une correction d'adresse efface aussi le message d'erreur d'une éventuelle tentative
+    // d'expédition précédente (ex: pays erroné) — sans quoi l'admin voit toujours
+    // l'ancienne erreur après correction, alors que rien n'a encore été retenté.
+    const updated = await updateOrderCustomer(id, {
+      firstname, lastname, email, phone, company, address, postalCode, city, country,
+    });
 
-    if (!order) {
+    if (!updated) {
       return NextResponse.json({ message: "Commande introuvable" }, { status: 404 });
     }
 
-    return NextResponse.json(order);
+    return NextResponse.json(await findOrderById(id));
   } catch (error) {
     console.error("PATCH ORDER CUSTOMER ERROR:", error);
     return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });

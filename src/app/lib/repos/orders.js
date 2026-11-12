@@ -5,7 +5,7 @@
 // `shipping`, `extraPayments[]`, `refunds[]`…) pour que les routes et le front restent
 // inchangés. Les champs Mongo sans valeur par défaut et non renseignés étaient absents du
 // JSON : ils sont omis de la même façon (voir compact()).
-import { query, isUuid, isMongoId } from "@/app/lib/neon";
+import { query, withTransaction, isUuid, isMongoId } from "@/app/lib/neon";
 import { findProductsByIds } from "@/app/lib/repos/products";
 
 const poolDb = { query: async (text, params) => ({ rows: await query(text, params) }) };
@@ -305,8 +305,9 @@ export async function updateOrderShipping(id, patch, db = poolDb) {
     sets.push(`${column} = $${params.length}`);
   }
   if (sets.length === 0) return true;
-  const { rowCount } = await db.query(`UPDATE orders SET ${sets.join(", ")} WHERE id = $1`, params);
-  return rowCount > 0;
+  // RETURNING plutôt que rowCount : le wrapper poolDb ne transmet que `rows`.
+  const { rows } = await db.query(`UPDATE orders SET ${sets.join(", ")} WHERE id = $1 RETURNING id`, params);
+  return rows.length > 0;
 }
 
 /** Enregistre (ou supprime si content est vide) l'étiquette ('label') ou la preuve ('pod'). */
@@ -346,4 +347,151 @@ export async function markExtraPaymentPaid(orderRef, extraPaymentRef) {
   // order.save() mettait aussi à jour updatedAt de la commande
   await poolDb.query("UPDATE orders SET updated_at = now() WHERE id = $1", [rows[0].order_id]);
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Admin commandes et expédition (lot 2b)
+// ---------------------------------------------------------------------------
+
+const escapeLike = (s) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
+
+// Liste blanche des tris : Mongo acceptait n'importe quel champ, le SQL ne doit jamais
+// recevoir un nom de colonne venant de la requête. Champ inconnu -> created_at.
+const ADMIN_SORT_COLUMNS = {
+  createdAt: "created_at",
+  updatedAt: "updated_at",
+  total: "total",
+  orderNumber: "order_number",
+  status: "status",
+};
+
+/**
+ * Liste admin paginée (GET /api/admin/orders) : recherche sur prénom, nom, email, ville et
+ * téléphone (sous-chaîne insensible à la casse, comme le $regex /i) ou numéro de commande
+ * exact ; filtre statut ; tri ; pagination. Renvoie aussi le nombre de commandes par statut.
+ * Les documents base64 (étiquette, preuve de livraison) ne sont pas chargés : la liste ne
+ * s'en sert pas, et l'export CSV les aurait tous rapatriés.
+ */
+export async function listAdminOrders({ search, status, sortField, sortDir, page, limit }) {
+  const where = [];
+  const params = [];
+  if (status) {
+    params.push(status);
+    where.push(`status = $${params.length}`);
+  }
+  if (search) {
+    params.push(`%${escapeLike(search)}%`);
+    const p = `$${params.length}`;
+    const or = ["customer_firstname", "customer_lastname", "customer_email", "customer_city", "customer_phone"]
+      .map((col) => `${col} ILIKE ${p}`);
+    const numSearch = parseInt(search, 10);
+    if (!Number.isNaN(numSearch)) {
+      params.push(numSearch);
+      or.push(`order_number = $${params.length}`);
+    }
+    where.push(`(${or.join(" OR ")})`);
+  }
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const column = ADMIN_SORT_COLUMNS[sortField] ?? "created_at";
+  const asc = sortDir === "asc";
+  // Mongo place les valeurs absentes en premier en tri croissant, en dernier en décroissant.
+  const orderSql = `${column} ${asc ? "ASC NULLS FIRST" : "DESC NULLS LAST"}, id ${asc ? "ASC" : "DESC"}`;
+
+  const [{ rows }, { rows: [{ total }] }, { rows: countsByStatus }] = await Promise.all([
+    poolDb.query(
+      `SELECT * FROM orders ${whereSql} ORDER BY ${orderSql}
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, limit, (page - 1) * limit]
+    ),
+    poolDb.query(`SELECT count(*)::int AS total FROM orders ${whereSql}`, params),
+    poolDb.query("SELECT status, count(*)::int AS count FROM orders GROUP BY status"),
+  ]);
+
+  return {
+    orders: await hydrate(poolDb, rows, { populate: true, documents: false }),
+    total,
+    countsByStatus,
+    totalAll: countsByStatus.reduce((sum, r) => sum + r.count, 0),
+  };
+}
+
+/**
+ * Corrige les coordonnées client et efface l'erreur d'expédition précédente
+ * (PATCH /api/admin/orders/[id]/customer). Renvoie true si la commande existe.
+ */
+export async function updateOrderCustomer(id, c) {
+  if (!isUuid(id)) return false;
+  const { rows } = await poolDb.query(
+    `UPDATE orders SET
+       customer_firstname = $2, customer_lastname = $3, customer_email = $4, customer_phone = $5,
+       customer_company = $6, customer_address = $7, customer_postal_code = $8, customer_city = $9,
+       customer_country = $10, shipping_error = ''
+     WHERE id = $1
+     RETURNING id`,
+    [id, c.firstname, c.lastname, c.email, c.phone, c.company, c.address, c.postalCode, c.city, c.country]
+  );
+  return rows.length > 0;
+}
+
+/**
+ * Ajoute un paiement complémentaire (order.extraPayments.push + save). `id` est généré par
+ * l'appelant avant la création de la session Stripe, car il figure dans sa metadata.
+ */
+export async function insertExtraPayment(orderId, e) {
+  await withTransaction(async (client) => {
+    await client.query(
+      `INSERT INTO order_extra_payments (id, order_id, reason, amount, status, stripe_session_id, checkout_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [e.id, orderId, e.reason, e.amount, e.status, e.stripeSessionId, e.checkoutUrl]
+    );
+    await client.query("UPDATE orders SET updated_at = now() WHERE id = $1", [orderId]);
+  });
+}
+
+/** Ajoute un remboursement (order.refunds.push + save). */
+export async function insertRefund(orderId, r) {
+  await withTransaction(async (client) => {
+    await client.query(
+      `INSERT INTO order_refunds (order_id, amount, reason, stripe_refund_id, status)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [orderId, r.amount, r.reason, r.stripeRefundId, r.status]
+    );
+    await client.query("UPDATE orders SET updated_at = now() WHERE id = $1", [orderId]);
+  });
+}
+
+/**
+ * Étiquette ('label') ou preuve de livraison ('pod') d'une commande, sans charger le reste.
+ * null si la commande n'existe pas ; content = null si le document n'a pas été généré.
+ */
+export async function findOrderDocument(id, kind) {
+  if (!isUuid(id)) return null;
+  const { rows } = await poolDb.query(
+    `SELECT o.order_number, d.content_base64
+       FROM orders o LEFT JOIN order_documents d ON d.order_id = o.id AND d.kind = $2
+      WHERE o.id = $1`,
+    [id, kind]
+  );
+  if (rows.length === 0) return null;
+  return { orderNumber: rows[0].order_number, content: rows[0].content_base64 ?? null };
+}
+
+/**
+ * Commandes dont le suivi doit être rafraîchi par le cron : étiquette générée et statut
+ * non terminal. Forme réduite, suffisante pour refreshOrderTracking().
+ */
+export async function listOrdersToTrack() {
+  const { rows } = await poolDb.query(
+    `SELECT id, status, shipping_skybill_number FROM orders
+      WHERE status IN ('paid', 'processing', 'shipped')
+        AND shipping_skybill_number IS NOT NULL AND shipping_skybill_number <> ''
+      ORDER BY created_at, id`
+  );
+  return rows.map((r) => ({ _id: r.id, status: r.status, shipping: { skybillNumber: r.shipping_skybill_number } }));
+}
+
+/** Supprime la commande (lignes, paiements, remboursements, documents en cascade). */
+export async function deleteOrder(client, id) {
+  await client.query("DELETE FROM orders WHERE id = $1", [id]);
 }

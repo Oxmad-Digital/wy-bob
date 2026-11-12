@@ -2,11 +2,11 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 import Stripe from "stripe";
-import mongoose from "mongoose";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
 import { auth } from "@/auth";
+import { isUuid } from "@/app/lib/neon";
+import { findOrderById, insertExtraPayment } from "@/app/lib/repos/orders";
 import { sendEmail } from "@/app/lib/mailer";
 import { getExtraPaymentEmailTemplate } from "@/app/lib/emailTemplates";
 
@@ -23,10 +23,8 @@ export async function POST(req, { params }) {
       return NextResponse.json({ message: "Paiement non disponible" }, { status: 503 });
     }
 
-    await connectDB();
-
     const { id } = await params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
@@ -36,7 +34,7 @@ export async function POST(req, { params }) {
       return NextResponse.json({ message: "Montant invalide" }, { status: 400 });
     }
 
-    const order = await Order.findById(id);
+    const order = await findOrderById(id, { populate: false, documents: false });
     if (!order) {
       return NextResponse.json({ message: "Commande introuvable" }, { status: 404 });
     }
@@ -46,13 +44,15 @@ export async function POST(req, { params }) {
 
     const orderNumber = order.orderNumber
       ? String(order.orderNumber).padStart(4, "0")
-      : order._id.toString().slice(-8).toUpperCase();
+      : order._id.slice(-8).toUpperCase();
 
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2026-04-22.dahlia",
     });
 
-    const extraPaymentId = new mongoose.Types.ObjectId();
+    // Id généré avant la session Stripe : il part dans la metadata, que le webhook
+    // checkout.session.completed utilise pour retrouver la ligne (markExtraPaymentPaid).
+    const extraPaymentId = randomUUID();
     const label = reason?.trim() || `Complément commande #${orderNumber}`;
 
     const checkoutSession = await stripe.checkout.sessions.create({
@@ -73,20 +73,19 @@ export async function POST(req, { params }) {
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/paiement-complementaire/annule`,
       metadata: {
         type: "extra_payment",
-        orderId: order._id.toString(),
-        extraPaymentId: extraPaymentId.toString(),
+        orderId: order._id,
+        extraPaymentId,
       },
     });
 
-    order.extraPayments.push({
-      _id: extraPaymentId,
+    await insertExtraPayment(order._id, {
+      id: extraPaymentId,
       reason: label,
       amount: numericAmount,
       status: "pending",
       stripeSessionId: checkoutSession.id,
       checkoutUrl: checkoutSession.url,
     });
-    await order.save();
 
     const emailHtml = getExtraPaymentEmailTemplate({
       firstname: order.customer.firstname || "Client",
@@ -108,7 +107,7 @@ export async function POST(req, { params }) {
       console.error("EMAIL EXTRA PAYMENT ERROR (non bloquant):", emailErr);
     }
 
-    return NextResponse.json(order);
+    return NextResponse.json(await findOrderById(id, { populate: false }));
   } catch (error) {
     console.error("POST EXTRA PAYMENT ERROR:", error);
     return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });

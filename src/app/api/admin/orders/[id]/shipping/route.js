@@ -2,10 +2,9 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
 import { auth } from "@/auth";
-import mongoose from "mongoose";
+import { isUuid } from "@/app/lib/neon";
+import { findOrderById } from "@/app/lib/repos/orders";
 import { generateShipmentForOrder, markShippingError } from "@/app/lib/chronopost/orderShipment";
 
 // ✅ POST - (Re)générer manuellement l'étiquette Chronopost d'une commande, avec
@@ -19,11 +18,9 @@ export async function POST(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
@@ -49,8 +46,7 @@ export async function POST(req, { params }) {
       );
     }
 
-    const order = await Order.findById(id);
-    return NextResponse.json(order);
+    return NextResponse.json(await findOrderById(id, { populate: false }));
   } catch (error) {
     console.error("POST SHIPPING ERROR:", error);
     return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });

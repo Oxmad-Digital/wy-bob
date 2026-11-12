@@ -2,16 +2,14 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
-import Product from "@/app/models/Product";
 import { auth } from "@/auth";
-import mongoose from "mongoose";
+import { isUuid, withTransaction } from "@/app/lib/neon";
+import { deleteOrder, findOrderById, findOrderStockLines, lockOrder } from "@/app/lib/repos/orders";
+import { applyLineStockDelta } from "@/app/lib/repos/products";
+import { findInvoiceNumberByOrderId } from "@/app/lib/repos/invoices";
 import { applyOrderStatusChange } from "@/app/lib/orderStatusChange";
 
 // ✅ GET - Récupérer les détails d'une commande
-
-// ✅ AJOUTER CETTE FONCTION GET
 export async function GET(req, { params }) {
   try {
     const session = await auth();
@@ -20,15 +18,13 @@ export async function GET(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
-    const order = await Order.findById(id).populate("products.product").lean();
+    const order = await findOrderById(id);
 
     if (!order) {
       return NextResponse.json({ message: "Commande introuvable" }, { status: 404 });
@@ -41,7 +37,7 @@ export async function GET(req, { params }) {
   }
 }
 
-// ✅ PATCH - Mettre à jour le statut (votre code existant)
+// ✅ PATCH - Mettre à jour le statut
 export async function PATCH(req, { params }) {
   try {
     const session = await auth();
@@ -50,11 +46,9 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
@@ -97,40 +91,52 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ message: "ID invalide" }, { status: 400 });
     }
 
-    const order = await Order.findById(id);
+    // Vérifications, restitution du stock et suppression dans une seule transaction,
+    // commande verrouillée : une annulation concurrente ne peut pas restituer le stock
+    // une seconde fois.
+    const result = await withTransaction(async (client) => {
+      const order = await lockOrder(client, id);
+      if (!order) return { error: "Commande introuvable", status: 404 };
 
-    if (!order) {
-      return NextResponse.json({ message: "Commande introuvable" }, { status: 404 });
+      // ⚠️ Empêcher la suppression de commandes payées ou expédiées
+      const protectedStatus = ["paid", "shipped", "delivered"];
+      if (protectedStatus.includes(order.status)) {
+        return { error: `Impossible de supprimer une commande ${order.status}`, status: 400 };
+      }
+
+      // Une facture ne doit pas perdre sa commande (FK RESTRICT). Avec Mongo, la commande
+      // était supprimée et la facture restait orpheline ; ici on refuse explicitement.
+      const invoiceNumber = await findInvoiceNumberByOrderId(id, client);
+      if (invoiceNumber) {
+        return {
+          error: `Impossible de supprimer une commande facturée (facture ${invoiceNumber})`,
+          status: 409,
+        };
+      }
+
+      // Le stock avait été réservé à la création — s'il n'a pas déjà été restitué par une
+      // annulation, on le restitue avant de supprimer la commande. Même logique que
+      // l'annulation (variante + recalcul du total produit).
+      if (order.status !== "cancelled") {
+        const lines = await findOrderStockLines(client, id);
+        for (const line of lines) {
+          await applyLineStockDelta(client, line, line.quantity);
+        }
+      }
+
+      await deleteOrder(client, id);
+      return { ok: true };
+    });
+
+    if (result.error) {
+      return NextResponse.json({ message: result.error }, { status: result.status });
     }
-
-    // ⚠️ Empêcher la suppression de commandes payées ou expédiées
-    const protectedStatus = ["paid", "shipped", "delivered"];
-    if (protectedStatus.includes(order.status)) {
-      return NextResponse.json(
-        { message: `Impossible de supprimer une commande ${order.status}` },
-        { status: 400 }
-      );
-    }
-
-    // Le stock avait été réservé à la création — s'il n'a pas déjà été restitué par une
-    // annulation, on le restitue avant de supprimer la commande.
-    if (order.status !== "cancelled") {
-      await Promise.all(
-        order.products.map((line) =>
-          Product.updateOne({ _id: line.product }, { $inc: { stock: line.quantity } })
-        )
-      );
-    }
-
-    await Order.findByIdAndDelete(id);
 
     return NextResponse.json({ message: "Commande supprimée avec succès" });
   } catch (error) {

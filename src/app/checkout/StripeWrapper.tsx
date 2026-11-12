@@ -3,6 +3,7 @@
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import CheckoutForm from "./CheckoutForm";
+import { getStripePaymentMethods } from "@/app/lib/stripePaymentMethods";
 import { useLanguage } from "@/contexts/LanguageContext";
 import "./checkout.css";
 
@@ -25,7 +26,7 @@ export default function StripeWrapper({ total }: { total: number }) {
         mode: "payment",
         amount: Math.round(total * 100),
         currency: "eur",
-        paymentMethodTypes: ["card", "amazon_pay"],
+        paymentMethodTypes: getStripePaymentMethods(),
       }}
     >
       <CheckoutForm />

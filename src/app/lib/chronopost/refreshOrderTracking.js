@@ -1,6 +1,7 @@
 // app/lib/chronopost/refreshOrderTracking.js
 import { trackParcel, searchPOD } from "@/app/lib/chronopost/tracking";
 import { applyOrderStatusChange } from "@/app/lib/orderStatusChange";
+import { findOrderById, setOrderDocument, updateOrderShipping } from "@/app/lib/repos/orders";
 
 // Libellés de suivi Chronopost (fr_FR) qui suggèrent une livraison — sert uniquement de
 // déclencheur pour vérifier via searchPOD (signal Chronopost non ambigu) avant de
@@ -9,18 +10,24 @@ const DELIVERED_HINT = /livr/i;
 const DELIVERED_EXCLUDE = /non[\s-]?livr|refus|absent|litige|attente/i;
 
 /**
- * refreshOrderTracking — interroge Chronopost pour une commande donnée (déjà chargée,
- * avec skybillNumber) et met à jour son suivi + statut si besoin. Partagé entre la route
- * admin (clic manuel) et le cron quotidien pour ne pas dupliquer cette logique.
+ * refreshOrderTracking — interroge Chronopost pour une commande donnée et met à jour son
+ * suivi + statut si besoin. Partagé entre la route admin (clic manuel) et le cron
+ * quotidien pour ne pas dupliquer cette logique.
+ *
+ * `order` n'a besoin que de `_id`, `status` et `shipping.skybillNumber`. Renvoie la
+ * commande relue en base après mise à jour (produits non peuplés, comme Order.findById).
  */
 export async function refreshOrderTracking(order) {
-  let resultOrder = order;
+  const orderId = String(order._id);
+  const skybillNumber = order.shipping.skybillNumber;
 
-  const tracking = await trackParcel(order.shipping.skybillNumber);
-  order.shipping.trackingStatus = tracking.statusLabel || tracking.statusCode || "";
-  order.shipping.trackingEvents = tracking.events;
-  order.shipping.lastTrackedAt = new Date();
-  await order.save();
+  const tracking = await trackParcel(skybillNumber);
+  await updateOrderShipping(orderId, {
+    trackingStatus: tracking.statusLabel || tracking.statusCode || "",
+    // Colonne NOT NULL : Mongo retombait sur le défaut [] quand events était absent.
+    trackingEvents: tracking.events ?? [],
+    lastTrackedAt: new Date(),
+  });
 
   let currentStatus = order.status;
 
@@ -28,8 +35,8 @@ export async function refreshOrderTracking(order) {
   // transporteur : la commande a donc quitté la préparation, même si l'admin n'a
   // pas cliqué sur "Expédiée" manuellement.
   if (tracking.events?.length > 0 && ["paid", "processing"].includes(currentStatus)) {
-    resultOrder = (await applyOrderStatusChange(order._id.toString(), "shipped")) || order;
-    currentStatus = resultOrder.status;
+    const shipped = await applyOrderStatusChange(orderId, "shipped");
+    if (shipped) currentStatus = shipped.status;
   }
 
   const label = tracking.statusLabel || "";
@@ -37,11 +44,10 @@ export async function refreshOrderTracking(order) {
 
   if (looksDelivered && !["delivered", "cancelled"].includes(currentStatus)) {
     try {
-      const pod = await searchPOD(order.shipping.skybillNumber);
+      const pod = await searchPOD(skybillNumber);
       if (pod.available && pod.base64) {
-        order.shipping.podBase64 = pod.base64;
-        await order.save();
-        resultOrder = (await applyOrderStatusChange(order._id.toString(), "delivered")) || order;
+        await setOrderDocument(orderId, "pod", pod.base64);
+        await applyOrderStatusChange(orderId, "delivered");
       }
     } catch (podErr) {
       // Vérification best-effort : un échec ici ne doit pas faire échouer le
@@ -50,5 +56,7 @@ export async function refreshOrderTracking(order) {
     }
   }
 
-  return resultOrder;
+  // Relecture finale : reflète le suivi, le statut et la preuve de livraison tels qu'ils
+  // sont réellement en base, quel que soit le chemin suivi ci-dessus.
+  return (await findOrderById(orderId, { populate: false })) ?? order;
 }
