@@ -2,17 +2,8 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import ReferralConfig from "@/app/models/ReferralConfig";
-import PromoCode from "@/app/models/PromoCode";
-
-async function getConfig() {
-  let config = await ReferralConfig.findOne();
-  if (!config) {
-    config = await ReferralConfig.create({ totalPercent: 10, rewardValidityDays: 30, active: false });
-  }
-  return config;
-}
+import { getOrCreateReferralConfig, updateReferralConfig } from "@/app/lib/repos/settings";
+import { getReferralStats } from "@/app/lib/repos/promos";
 
 export async function GET(req) {
   try {
@@ -21,19 +12,13 @@ export async function GET(req) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-    const config = await getConfig();
-
-    const totalReferralCodes = await PromoCode.countDocuments({ isReferral: true, referrerId: { $ne: null } });
-    const conversions = await PromoCode.aggregate([
-      { $match: { isReferral: true } },
-      { $group: { _id: null, total: { $sum: "$usedCount" } } },
-    ]);
-    const totalConversions = conversions[0]?.total ?? 0;
+    const config = await getOrCreateReferralConfig();
+    const { totalReferralCodes, totalConversions } = await getReferralStats();
 
     return NextResponse.json({ success: true, config, stats: { totalReferralCodes, totalConversions } });
   } catch (error) {
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    console.error("ADMIN REFERRAL CONFIG GET ERROR:", error);
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }
 
@@ -44,7 +29,6 @@ export async function PATCH(req) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
     const body = await req.json();
     const { totalPercent, rewardValidityDays, active } = body;
 
@@ -58,9 +42,10 @@ export async function PATCH(req) {
     if (rewardValidityDays !== undefined) update.rewardValidityDays = rewardValidityDays;
     if (active !== undefined) update.active = active;
 
-    const config = await ReferralConfig.findOneAndUpdate({}, { $set: update }, { new: true, upsert: true });
+    const config = await updateReferralConfig(update);
     return NextResponse.json({ success: true, config });
   } catch (error) {
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    console.error("ADMIN REFERRAL CONFIG PATCH ERROR:", error);
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }

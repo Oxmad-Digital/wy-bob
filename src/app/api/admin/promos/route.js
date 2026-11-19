@@ -2,8 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import PromoCode from "@/app/models/PromoCode";
+import { listPromos, createAdminPromo, PromoCodeConflictError } from "@/app/lib/repos/promos";
 
 export async function GET(request) {
   try {
@@ -12,14 +11,12 @@ export async function GET(request) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
-    const promos = await PromoCode.find({ isReferral: { $ne: true } }).sort({ createdAt: -1 });
+    const promos = await listPromos();
 
     return NextResponse.json({ success: true, promos });
   } catch (error) {
     console.error("ADMIN PROMOS GET ERROR:", error);
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }
 
@@ -29,8 +26,6 @@ export async function POST(request) {
     if (!session || session.user.role !== "admin") {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
-
-    await connectDB();
 
     const body = await request.json();
     const { code, type, value, minOrderAmount, maxUses, expiresAt } = body;
@@ -48,7 +43,7 @@ export async function POST(request) {
       return NextResponse.json({ message: "La valeur doit être positive" }, { status: 400 });
     }
 
-    const promo = await PromoCode.create({
+    const promo = await createAdminPromo({
       code: code.toUpperCase().trim(),
       type,
       value,
@@ -59,10 +54,10 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, promo }, { status: 201 });
   } catch (error) {
-    if (error.code === 11000) {
+    if (error instanceof PromoCodeConflictError) {
       return NextResponse.json({ message: "Ce code promo existe déjà" }, { status: 409 });
     }
     console.error("ADMIN PROMOS POST ERROR:", error);
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }

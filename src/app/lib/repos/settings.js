@@ -137,3 +137,39 @@ export async function getReferralConfig(db = poolDb) {
   const { rows } = await db.query("SELECT * FROM referral_configs LIMIT 1");
   return toReferralConfig(rows[0]);
 }
+
+/**
+ * Équivalent de getConfig() de api/admin/referral/config : ReferralConfig.findOne() ??
+ * ReferralConfig.create({ totalPercent: 10, rewardValidityDays: 30, active: false }).
+ */
+export async function getOrCreateReferralConfig() {
+  const existing = await getReferralConfig();
+  if (existing) return existing;
+  await query(
+    `INSERT INTO referral_configs (total_percent, reward_validity_days, active)
+     VALUES (10, 30, false) ON CONFLICT DO NOTHING`
+  );
+  return getReferralConfig();
+}
+
+/**
+ * Équivalent de ReferralConfig.findOneAndUpdate({}, { $set: update }, { new: true, upsert: true }) :
+ * crée la ligne avec les défauts du schéma (10 %, 30 jours, active = true, comme Mongoose) si
+ * elle n'existe pas, puis applique les seules clés présentes (déjà validées par la route).
+ */
+export async function updateReferralConfig(update) {
+  await query("INSERT INTO referral_configs DEFAULT VALUES ON CONFLICT DO NOTHING");
+
+  const columns = { totalPercent: "total_percent", rewardValidityDays: "reward_validity_days", active: "active" };
+  const sets = [];
+  const params = [];
+  for (const [key, column] of Object.entries(columns)) {
+    if (!(key in update)) continue;
+    params.push(update[key]);
+    sets.push(`${column} = $${params.length}`);
+  }
+  if (sets.length === 0) return getReferralConfig();
+
+  const row = await queryOne(`UPDATE referral_configs SET ${sets.join(", ")} RETURNING *`, params);
+  return toReferralConfig(row);
+}

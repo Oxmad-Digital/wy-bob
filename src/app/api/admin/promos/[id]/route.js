@@ -2,8 +2,12 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import PromoCode from "@/app/models/PromoCode";
+import {
+  findPromoTypeById,
+  updatePromo,
+  deletePromo,
+  PromoCodeConflictError,
+} from "@/app/lib/repos/promos";
 
 export async function PATCH(request, { params }) {
   try {
@@ -11,8 +15,6 @@ export async function PATCH(request, { params }) {
     if (!session || session.user.role !== "admin") {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
-
-    await connectDB();
 
     const { id } = await params;
     const body = await request.json();
@@ -28,7 +30,7 @@ export async function PATCH(request, { params }) {
       update.type = type;
     }
     if (value !== undefined) {
-      const effectiveType = type !== undefined ? type : (await PromoCode.findById(id))?.type;
+      const effectiveType = type !== undefined ? type : await findPromoTypeById(id);
       if (effectiveType === "percent" && (value <= 0 || value > 100)) {
         return NextResponse.json({ message: "La réduction en % doit être entre 1 et 100" }, { status: 400 });
       }
@@ -41,11 +43,7 @@ export async function PATCH(request, { params }) {
     if (maxUses !== undefined) update.maxUses = maxUses || null;
     if (expiresAt !== undefined) update.expiresAt = expiresAt || null;
 
-    const promo = await PromoCode.findByIdAndUpdate(
-      id,
-      update,
-      { new: true, runValidators: true }
-    );
+    const promo = await updatePromo(id, update);
 
     if (!promo) {
       return NextResponse.json({ message: "Code promo introuvable" }, { status: 404 });
@@ -53,11 +51,11 @@ export async function PATCH(request, { params }) {
 
     return NextResponse.json({ success: true, promo });
   } catch (error) {
-    if (error.code === 11000) {
+    if (error instanceof PromoCodeConflictError) {
       return NextResponse.json({ message: "Ce code promo existe déjà" }, { status: 409 });
     }
     console.error("ADMIN PROMOS PATCH ERROR:", error);
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }
 
@@ -68,18 +66,16 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
-    const promo = await PromoCode.findByIdAndDelete(id);
+    const deleted = await deletePromo(id);
 
-    if (!promo) {
+    if (!deleted) {
       return NextResponse.json({ message: "Code promo introuvable" }, { status: 404 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("ADMIN PROMOS DELETE ERROR:", error);
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }

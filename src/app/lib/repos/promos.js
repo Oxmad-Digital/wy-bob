@@ -1,7 +1,7 @@
 // Accès aux codes promo (promo_codes + promo_code_uses). Lot 2a : lecture pour le calcul de
-// prix et la validation, consommation à la création de commande. Complété au lot 4 (admin).
+// prix et la validation, consommation à la création de commande. Lot 3c : admin (promos, parrainage).
 // Forme identique aux documents Mongoose : `_id`, `referrerId`, `usedByUserIds[]`…
-import { query, isUuid } from "@/app/lib/neon";
+import { query, queryOne, isUuid } from "@/app/lib/neon";
 
 const poolDb = { query: async (text, params) => ({ rows: await query(text, params) }) };
 
@@ -84,4 +84,153 @@ export async function createPromo(client, { code, type, value, maxUses = null, a
     [String(code).toUpperCase().trim(), type, value, maxUses, active, expiresAt]
   );
   return rows[0].id;
+}
+
+// -----------------------------------------------------------------------------
+// Admin (lot 3c) : api/admin/promos et api/admin/referral/*
+// -----------------------------------------------------------------------------
+
+/** Doublon sur promo_codes.code (équivalent de l'erreur Mongo 11000) : la route répond 409. */
+export class PromoCodeConflictError extends Error {}
+
+/** Mongoose refusait un code vide après uppercase/trim (`required`) ; le CHECK SQL accepterait ''. */
+function assertCode(code) {
+  if (!code) throw new Error("PromoCode validation failed: code: Path `code` is required.");
+}
+
+async function withUniqueCode(fn) {
+  try {
+    return await fn();
+  } catch (err) {
+    if (err?.code === "23505") throw new PromoCodeConflictError("Ce code promo existe déjà");
+    throw err;
+  }
+}
+
+async function findPromoById(id) {
+  if (!isUuid(id)) return null;
+  return toPromo(await queryOne(`${PROMO_SELECT} WHERE p.id = $1`, [id]));
+}
+
+/** Équivalent de PromoCode.find({ isReferral: { $ne: true } }).sort({ createdAt: -1 }). */
+export async function listPromos() {
+  const rows = await query(`${PROMO_SELECT} WHERE NOT p.is_referral ORDER BY p.created_at DESC, p.id DESC`);
+  return rows.map(toPromo);
+}
+
+/** Équivalent de PromoCode.findById(id)?.type (undefined si introuvable ou id mal formé). */
+export async function findPromoTypeById(id) {
+  if (!isUuid(id)) return undefined;
+  const row = await queryOne("SELECT type FROM promo_codes WHERE id = $1", [id]);
+  return row?.type;
+}
+
+/** Équivalent de PromoCode.create({...}) depuis l'admin. Valeurs déjà normalisées par la route. */
+export async function createAdminPromo({ code, type, value, minOrderAmount, maxUses, expiresAt }) {
+  assertCode(code);
+  const row = await withUniqueCode(() =>
+    queryOne(
+      `INSERT INTO promo_codes (code, type, value, min_order_amount, max_uses, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [code, type, value, minOrderAmount, maxUses, expiresAt]
+    )
+  );
+  return findPromoById(row.id);
+}
+
+const PROMO_UPDATE_COLUMNS = {
+  active: "active",
+  code: "code",
+  type: "type",
+  value: "value",
+  minOrderAmount: "min_order_amount",
+  maxUses: "max_uses",
+  expiresAt: "expires_at",
+};
+
+/**
+ * Équivalent de PromoCode.findByIdAndUpdate(id, update, { new: true }) : met à jour les seules
+ * clés présentes dans `update` (déjà validées par la route). Renvoie null si introuvable.
+ */
+export async function updatePromo(id, update) {
+  if (!isUuid(id)) return null;
+  if ("code" in update) assertCode(update.code);
+
+  const sets = [];
+  const params = [];
+  for (const [key, column] of Object.entries(PROMO_UPDATE_COLUMNS)) {
+    if (!(key in update)) continue;
+    params.push(update[key]);
+    sets.push(`${column} = $${params.length}`);
+  }
+  if (sets.length === 0) return findPromoById(id);
+
+  params.push(id);
+  const row = await withUniqueCode(() =>
+    queryOne(`UPDATE promo_codes SET ${sets.join(", ")} WHERE id = $${params.length} RETURNING id`, params)
+  );
+  return row ? findPromoById(row.id) : null;
+}
+
+/** Équivalent de PromoCode.findByIdAndDelete(id) (tout code, parrainage compris). true si supprimé. */
+export async function deletePromo(id) {
+  if (!isUuid(id)) return false;
+  const row = await queryOne("DELETE FROM promo_codes WHERE id = $1 RETURNING id", [id]);
+  return row !== null;
+}
+
+/** Équivalent de PromoCode.findOneAndDelete({ _id: id, isReferral: true }). true si supprimé. */
+export async function deleteReferralCode(id) {
+  if (!isUuid(id)) return false;
+  const row = await queryOne("DELETE FROM promo_codes WHERE id = $1 AND is_referral RETURNING id", [id]);
+  return row !== null;
+}
+
+/**
+ * Équivalent de PromoCode.find({ isReferral: true }).populate("referrerId", "name email")
+ * .sort({ createdAt: -1 }), puis remplacement du nom par celui de la fiche Customer de même
+ * email (prénom + nom, s'il n'est pas vide). referrerId = null si le parrain n'existe plus.
+ */
+export async function listReferralCodesWithReferrer() {
+  const rows = await query(
+    `SELECT p.*,
+            COALESCE(
+              (SELECT array_agg(COALESCE(x.user_id::text, x.user_mongo_id) ORDER BY x.position)
+                 FROM promo_code_uses x WHERE x.promo_code_id = p.id),
+              '{}'
+            ) AS used_by_user_ids,
+            u.id    AS referrer_user_id,
+            u.name  AS referrer_name,
+            u.email AS referrer_email,
+            c.firstname AS customer_firstname,
+            c.lastname  AS customer_lastname
+       FROM promo_codes p
+       LEFT JOIN users u     ON u.id = p.referrer_id
+       LEFT JOIN customers c ON c.email = u.email
+      WHERE p.is_referral
+      ORDER BY p.created_at DESC, p.id DESC`
+  );
+  return rows.map((row) => {
+    let referrer = null;
+    if (row.referrer_user_id) {
+      const fullName = `${row.customer_firstname || ""} ${row.customer_lastname || ""}`.trim();
+      referrer = {
+        _id: row.referrer_user_id,
+        name: fullName || row.referrer_name,
+        email: row.referrer_email,
+      };
+    }
+    return { ...toPromo(row), referrerId: referrer };
+  });
+}
+
+/** Compteurs de /admin/referral : codes avec parrain, et somme des usedCount des codes de parrainage. */
+export async function getReferralStats() {
+  const row = await queryOne(
+    `SELECT COUNT(*) FILTER (WHERE referrer_id IS NOT NULL) AS total_referral_codes,
+            COALESCE(SUM(used_count), 0)                   AS total_conversions
+       FROM promo_codes
+      WHERE is_referral`
+  );
+  return { totalReferralCodes: row.total_referral_codes, totalConversions: row.total_conversions };
 }
