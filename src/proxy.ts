@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { connectDB } from '@/app/lib/db'
-import SiteSettings from '@/app/models/SiteSettings'
+import { getMaintenanceMode } from '@/app/lib/repos/settings'
 
 // Next.js déconseille de dépendre du Data Cache (unstable_cache) dans le
 // Proxy : il s'exécute hors du pipeline de rendu et ce cache n'y est pas
 // garanti disponible. On utilise donc un simple cache mémoire par instance,
-// avec un TTL court pour limiter les allers-retours MongoDB.
+// avec un TTL court pour limiter les allers-retours vers la base (Neon).
+// Le Proxy de Next 16 s'exécute toujours en Node.js : le client Neon y fonctionne.
 const CACHE_TTL_MS = 5000
 let cachedMaintenanceMode = false
 let cacheExpiresAt = 0
@@ -18,9 +18,7 @@ async function isMaintenanceModeActive() {
   }
 
   try {
-    await connectDB()
-    const settings = await SiteSettings.findOne().lean()
-    cachedMaintenanceMode = settings?.maintenanceMode ?? false
+    cachedMaintenanceMode = await getMaintenanceMode()
   } catch {
     // En cas d'erreur DB, on ne bloque pas le site (fail open).
     cachedMaintenanceMode = false

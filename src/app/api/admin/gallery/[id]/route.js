@@ -1,7 +1,8 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import GalleryPhoto from "@/app/models/GalleryPhoto";
+import { deleteGalleryPhoto, updateGalleryPhotoAlt } from "@/app/lib/repos/gallery";
 
 export async function DELETE(request, { params }) {
   const session = await auth();
@@ -9,11 +10,15 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const { id } = await params;
-  await connectDB();
-  const deleted = await GalleryPhoto.findByIdAndDelete(id);
-  if (!deleted) return NextResponse.json({ error: "Photo introuvable" }, { status: 404 });
-  return NextResponse.json({ success: true });
+  try {
+    const { id } = await params;
+    const deleted = await deleteGalleryPhoto(id);
+    if (!deleted) return NextResponse.json({ error: "Photo introuvable" }, { status: 404 });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("DELETE ADMIN GALLERY PHOTO ERROR:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+  }
 }
 
 export async function PATCH(request, { params }) {
@@ -22,11 +27,15 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const { id } = await params;
-  const { alt } = await request.json();
+  try {
+    const { id } = await params;
+    const { alt } = await request.json();
 
-  await connectDB();
-  const updated = await GalleryPhoto.findByIdAndUpdate(id, { alt: alt || null }, { new: true }).lean();
-  if (!updated) return NextResponse.json({ error: "Photo introuvable" }, { status: 404 });
-  return NextResponse.json({ success: true, photo: { _id: updated._id.toString(), alt: updated.alt ?? null } });
+    const updated = await updateGalleryPhotoAlt(id, alt);
+    if (!updated) return NextResponse.json({ error: "Photo introuvable" }, { status: 404 });
+    return NextResponse.json({ success: true, photo: { _id: updated._id, alt: updated.alt ?? null } });
+  } catch (error) {
+    console.error("PATCH ADMIN GALLERY PHOTO ERROR:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+  }
 }

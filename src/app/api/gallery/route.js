@@ -1,13 +1,13 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
-import { connectDB } from "@/app/lib/db";
-import GalleryPhoto from "@/app/models/GalleryPhoto";
+import { listGalleryPhotos } from "@/app/lib/repos/gallery";
 
 export const revalidate = 60;
 
 export async function GET() {
-  await connectDB();
-  const photos = await GalleryPhoto.find({}).sort({ order: 1, createdAt: 1 }).lean();
+  const photos = await listGalleryPhotos();
   return NextResponse.json({
-    photos: photos.map(p => ({ _id: p._id.toString(), url: p.url })),
+    photos: photos.map((p) => ({ _id: p._id, url: p.url })),
   });
 }

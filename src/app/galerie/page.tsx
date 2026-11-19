@@ -1,5 +1,4 @@
-import { connectDB } from '@/app/lib/db'
-import GalleryPhoto from '@/app/models/GalleryPhoto'
+import { listGalleryPhotos } from '@/app/lib/repos/gallery'
 import GalerieClient from './GalerieClient'
 
 export const revalidate = 3600
@@ -42,10 +41,9 @@ export default async function Galerie() {
   let images: GalleryImage[] = FALLBACK_IMAGES
 
   try {
-    await connectDB()
-    const photos = await GalleryPhoto.find({}).sort({ order: 1, createdAt: 1 }).lean() as any[]
+    const photos = await listGalleryPhotos()
     if (photos.length) {
-      images = photos.map((p: any) => ({ url: p.url, alt: p.alt || altFromFilename(p.url) }))
+      images = photos.map((p: { url: string; alt: string | null }) => ({ url: p.url, alt: p.alt || altFromFilename(p.url) }))
     }
   } catch {
     // GalerieClient utilisera les FALLBACK_IMAGES

@@ -2,16 +2,11 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import SiteSettings from "@/app/models/SiteSettings";
-
-async function getSettings() {
-  let settings = await SiteSettings.findOne();
-  if (!settings) {
-    settings = await SiteSettings.create({ maintenanceMode: false });
-  }
-  return settings;
-}
+import {
+  getOrCreateSiteSettings,
+  updateSiteSettings,
+  SiteSettingsValidationError,
+} from "@/app/lib/repos/settings";
 
 export async function GET() {
   try {
@@ -20,12 +15,12 @@ export async function GET() {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-    const settings = await getSettings();
+    const settings = await getOrCreateSiteSettings();
 
     return NextResponse.json({ success: true, settings });
   } catch (error) {
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    console.error("GET SETTINGS ERROR:", error);
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }
 
@@ -36,21 +31,16 @@ export async function PATCH(req) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
     const body = await req.json();
     const { maintenanceMode, billing } = body;
 
-    const update = {};
-    if (maintenanceMode !== undefined) update.maintenanceMode = maintenanceMode;
-    if (billing !== undefined) {
-      for (const [key, value] of Object.entries(billing)) {
-        update[`billing.${key}`] = value;
-      }
-    }
-
-    const settings = await SiteSettings.findOneAndUpdate({}, { $set: update }, { new: true, upsert: true });
+    const settings = await updateSiteSettings({ maintenanceMode, billing });
     return NextResponse.json({ success: true, settings });
   } catch (error) {
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    if (error instanceof SiteSettingsValidationError) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
+    console.error("PATCH SETTINGS ERROR:", error);
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }
