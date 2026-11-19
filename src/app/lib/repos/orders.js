@@ -228,6 +228,20 @@ export async function listAccountOrders({ userId, email }, { populate = true } =
   return hydrate(poolDb, rows, { populate, documents: false });
 }
 
+/**
+ * Commandes d'une fiche client (admin) : équivalent de Order.find({ "customer.email": email })
+ * .sort({ createdAt: -1 }).populate("products.product"). Email comparé tel quel. Les documents
+ * (étiquette / preuve de livraison en base64) ne sont pas chargés.
+ */
+export async function listOrdersByCustomerEmail(email) {
+  if (typeof email !== "string" || !email) return [];
+  const { rows } = await poolDb.query(
+    "SELECT * FROM orders WHERE customer_email = $1 ORDER BY created_at DESC, id DESC",
+    [email]
+  );
+  return hydrate(poolDb, rows, { populate: true, documents: false });
+}
+
 /** Propriétaire d'une commande (contrôle d'accès client) : { userId, email } ou null. */
 export async function findOrderOwnership(id) {
   if (!isUuid(id)) return null;

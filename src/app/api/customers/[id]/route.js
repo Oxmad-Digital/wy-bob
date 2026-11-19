@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { findCustomerById, updateCustomer, upsertCustomerForEmail } from "@/app/lib/repos/customers";
+import { findUserSummaryById } from "@/app/lib/repos/users";
+import { listOrdersByCustomerEmail } from "@/app/lib/repos/orders";
+// DELETE (suppression / anonymisation RGPD) : encore sur MongoDB, migré au lot 3f.
 import { connectDB } from "@/app/lib/db";
 import Customer from "@/app/models/Customer";
 import Order from "@/app/models/Order";
@@ -14,16 +18,15 @@ export async function GET(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const resolvedParams = await params;
     const id = resolvedParams.id;
 
-    let customer = await Customer.findById(id);
+    // Id mal formé : findCustomerById et findUserSummaryById renvoient null -> 404.
+    const customer = await findCustomerById(id);
 
     // Fallback : l'id peut être un User._id (utilisateurs sans fiche Customer)
     if (!customer) {
-      const user = await User.findById(id);
+      const user = await findUserSummaryById(id);
       if (!user) {
         return NextResponse.json(
           { success: false, message: "Client non trouvé dans la base" },
@@ -32,9 +35,7 @@ export async function GET(req, { params }) {
       }
 
       const nameParts = (user.name || "").trim().split(" ");
-      const orders = await Order.find({ "customer.email": user.email })
-        .sort({ createdAt: -1 })
-        .populate("products.product");
+      const orders = await listOrdersByCustomerEmail(user.email);
 
       const pseudoCustomer = {
         _id: user._id,
@@ -55,9 +56,7 @@ export async function GET(req, { params }) {
     }
 
     // Récupérer les commandes du client par son email
-    const orders = await Order.find({ "customer.email": customer.email })
-      .sort({ createdAt: -1 })
-      .populate("products.product");
+    const orders = await listOrdersByCustomerEmail(customer.email);
 
     return NextResponse.json({
       success: true,
@@ -68,7 +67,7 @@ export async function GET(req, { params }) {
   } catch (error) {
     console.error("GET CUSTOMER ERROR:", error);
     return NextResponse.json(
-      { success: false, message: error.message },
+      { success: false, message: "Erreur serveur" },
       { status: 500 }
     );
   }
@@ -82,20 +81,16 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
     const body = await req.json();
 
-    let customer = await Customer.findByIdAndUpdate(
-      id,
-      { $set: body },
-      { new: true, runValidators: true }
-    );
+    // Champs du schéma Customer uniquement (comme le mode strict de Mongoose) ; id mal
+    // formé ou fiche absente -> null.
+    let customer = await updateCustomer(id, body);
 
     // Fallback : l'id est un User._id → créer la fiche Customer
     if (!customer) {
-      const user = await User.findById(id);
+      const user = await findUserSummaryById(id);
       if (!user) {
         return NextResponse.json(
           { success: false, message: "Client non trouvé" },
@@ -103,23 +98,16 @@ export async function PUT(req, { params }) {
         );
       }
 
+      // `notes` n'existe pas dans le schéma Customer : Mongoose l'ignorait, il n'est pas repris.
       const nameParts = (user.name || "").trim().split(" ");
-      customer = await Customer.findOneAndUpdate(
-        { email: user.email },
-        {
-          $set: {
-            firstname: body.firstname || nameParts[0] || "",
-            lastname:  body.lastname  || nameParts.slice(1).join(" ") || "",
-            email:     user.email,
-            phone:     body.phone    ?? user.phone ?? "",
-            city:      body.city     ?? user.address?.city ?? "",
-            address:   body.address  ?? user.address?.street ?? "",
-            notes:     body.notes    ?? "",
-            status:    body.status   ?? "active",
-          },
-        },
-        { upsert: true, new: true, runValidators: true }
-      );
+      customer = await upsertCustomerForEmail(user.email, {
+        firstname: body.firstname || nameParts[0] || "",
+        lastname:  body.lastname  || nameParts.slice(1).join(" ") || "",
+        phone:     body.phone    ?? user.phone ?? "",
+        city:      body.city     ?? user.address?.city ?? "",
+        address:   body.address  ?? user.address?.street ?? "",
+        status:    body.status   ?? "active",
+      });
     }
 
     return NextResponse.json({
@@ -131,7 +119,7 @@ export async function PUT(req, { params }) {
   } catch (error) {
     console.error("PUT CUSTOMER ERROR:", error);
     return NextResponse.json(
-      { success: false, message: error.message },
+      { success: false, message: "Erreur serveur" },
       { status: 500 }
     );
   }

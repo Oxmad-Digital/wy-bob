@@ -69,6 +69,27 @@ export async function recordSuccessfulLogin(id, now) {
   );
 }
 
+/**
+ * Compte utilisé comme fiche client de repli (admin, lot 3e) : nom, email, téléphone, ville,
+ * rue, date de création. null si absent ou id mal formé.
+ */
+export async function findUserSummaryById(id) {
+  if (!isUuid(id)) return null;
+  const row = await queryOne(
+    "SELECT id, name, email, phone, address_city, address_street, created_at FROM users WHERE id = $1",
+    [id]
+  );
+  if (!row) return null;
+  return {
+    _id: row.id,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    address: { city: row.address_city, street: row.address_street },
+    createdAt: row.created_at,
+  };
+}
+
 /** uuid du compte dont l'ancien _id Mongo est `mongoId` (sessions émises avant la bascule). */
 export async function findUserIdByMongoId(mongoId) {
   if (!isMongoId(mongoId)) return null;
