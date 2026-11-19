@@ -1,17 +1,16 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { connectDB } from "@/app/lib/db";
-import User from "@/app/models/User";
+import { findUserByEmail, listUserAddresses } from "@/app/lib/repos/users";
 import AddressesClient from "../components/AddressesClient";
 
 export default async function AddressesPage() {
   const session = await auth();
   if (!session) redirect("/auth/login");
 
-  await connectDB();
-  const user = await User.findOne({ email: session.user.email }).lean() as any;
+  const user = await findUserByEmail(session.user.email);
+  const userAddresses: any[] = user ? await listUserAddresses(user.id) : [];
 
-  const addresses = (user?.addresses ?? []).map((a: any) => ({
+  const addresses = userAddresses.map((a: any) => ({
     label:    a.label    ?? "",
     fullName: a.fullName ?? "",
     street:   a.street   ?? "",

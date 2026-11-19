@@ -91,6 +91,14 @@ export async function findInvoiceNumberByOrderId(orderId, db = poolDb) {
   return rows[0]?.invoice_number ?? null;
 }
 
+/** Ids (uuid) des commandes, parmi `orderIds`, qui ont une facture. */
+export async function listInvoicedOrderIds(orderIds) {
+  const ids = (orderIds ?? []).filter(isUuid);
+  if (ids.length === 0) return new Set();
+  const rows = await query("SELECT order_id FROM invoices WHERE order_id = ANY($1::uuid[])", [ids]);
+  return new Set(rows.map((r) => r.order_id));
+}
+
 /** PDF et numéro d'une facture (route admin /pdf). */
 export async function findInvoicePdf(id) {
   if (!isUuid(id)) return null;

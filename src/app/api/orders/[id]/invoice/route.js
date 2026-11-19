@@ -2,10 +2,8 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
-import Invoice from "@/app/models/Invoice";
-import mongoose from "mongoose";
+import { findOrderOwnership } from "@/app/lib/repos/orders";
+import { findInvoiceByOrderId } from "@/app/lib/repos/invoices";
 
 // Pendant client de /api/admin/invoices/[id]/pdf : même PDF stocké en base, mais
 // l'accès est vérifié par propriété de la commande plutôt que par rôle admin.
@@ -16,27 +14,22 @@ export async function GET(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
     const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ message: "ID invalide" }, { status: 400 });
-    }
-
-    const order = await Order.findById(id).select("userId customer.email");
+    // Id mal formé ou commande inexistante : 404 (findOrderOwnership renvoie null).
+    const order = await findOrderOwnership(id);
     if (!order) {
       return NextResponse.json({ message: "Commande introuvable" }, { status: 404 });
     }
 
     const ownsOrder =
-      order.userId === session.user.id ||
-      order.customer?.email?.toLowerCase() === session.user.email.toLowerCase();
+      (order.userId !== null && order.userId === session.user.id) ||
+      order.email?.toLowerCase() === session.user.email.toLowerCase();
     if (!ownsOrder) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 403 });
     }
 
-    const invoice = await Invoice.findOne({ order: id }).select("pdfBase64 invoiceNumber");
+    const invoice = await findInvoiceByOrderId(id);
     if (!invoice) {
       return NextResponse.json({ message: "Facture introuvable" }, { status: 404 });
     }

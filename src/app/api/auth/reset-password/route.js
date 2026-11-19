@@ -1,5 +1,4 @@
-import { connectDB } from "@/app/lib/db";
-import User from "@/app/models/User";
+import { resetPasswordByToken } from "@/app/lib/repos/users";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { checkRateLimit, getClientIp } from "@/app/lib/rateLimit";
@@ -16,8 +15,6 @@ function validatePassword(password) {
 
 export async function POST(req) {
   try {
-    await connectDB();
-
     const ip = getClientIp(req);
     const rateLimit = await checkRateLimit({ key: `reset-password:${ip}`, windowMs: 60 * 1000, maxAttempts: 10 });
     if (!rateLimit.allowed) {
@@ -38,24 +35,17 @@ export async function POST(req) {
       return NextResponse.json({ message: pwdCheck.errors.join(", ") }, { status: 400 });
     }
 
-    const user = await User.findOne({
-      resetToken: token,
-      resetTokenExpiry: { $gt: new Date() },
-    });
+    // Nouveau hash, jeton effacé, échecs remis à 0 et verrouillage levé en une seule écriture,
+    // seulement si le jeton existe et n'a pas expiré (un lien ne sert qu'une fois).
+    const passwordHash = await bcrypt.hash(password, 12);
+    const updated = await resetPasswordByToken(token, passwordHash, new Date());
 
-    if (!user) {
+    if (!updated) {
       return NextResponse.json(
         { message: "Lien invalide ou expiré. Veuillez faire une nouvelle demande." },
         { status: 400 }
       );
     }
-
-    user.password = await bcrypt.hash(password, 12);
-    user.resetToken = null;
-    user.resetTokenExpiry = null;
-    user.failedLoginAttempts = 0;
-    user.accountLockedUntil = null;
-    await user.save();
 
     return NextResponse.json({ message: "Mot de passe réinitialisé avec succès." }, { status: 200 });
   } catch (error) {

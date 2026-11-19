@@ -1,8 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
-import User from "@/app/models/User";
+import { listAccountOrders } from "@/app/lib/repos/orders";
+import { findFirstAddressByEmail } from "@/app/lib/repos/users";
 import DashboardOverviewClient from "./components/DashboardOverviewClient";
 import "./dashboard.css";
 
@@ -10,19 +9,12 @@ export default async function DashboardOverview() {
   const session = await auth();
   if (!session) redirect("/auth/login");
 
-  await connectDB();
+  const allOrders: any[] = await listAccountOrders(
+    { userId: session.user.id, email: session.user.email.toLowerCase() },
+    { populate: false }
+  );
 
-  const allOrders = await Order.find({
-    $or: [
-      { userId: session.user.id },
-      { "customer.email": session.user.email.toLowerCase() },
-    ],
-  })
-    .sort({ createdAt: -1 })
-    .lean();
-
-  const user = await User.findOne({ email: session.user.email }).lean() as any;
-  const address = user?.addresses?.[0] || null;
+  const address = await findFirstAddressByEmail(session.user.email);
 
   const totalOrders = allOrders.length;
   const totalSpent = allOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);

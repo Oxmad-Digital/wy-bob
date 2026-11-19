@@ -203,6 +203,39 @@ export async function listOrders({ status, limit }) {
 }
 
 /**
+ * Commandes d'un compte client (tableau de bord), plus récentes d'abord : équivalent de
+ * Order.find({ $or: [{ userId }, { "customer.email": email }] }).sort({ createdAt: -1 }).
+ * L'email est comparé tel quel (l'appelant le passe en minuscules, comme avant). Un userId
+ * qui n'est pas un uuid est ignoré : la recherche se fait alors par email seul.
+ * Les documents (étiquette / preuve de livraison) ne sont pas chargés.
+ */
+export async function listAccountOrders({ userId, email }, { populate = true } = {}) {
+  const params = [];
+  const conditions = [];
+  if (isUuid(userId)) {
+    params.push(userId);
+    conditions.push(`user_id = $${params.length}`);
+  }
+  if (typeof email === "string" && email) {
+    params.push(email);
+    conditions.push(`customer_email = $${params.length}`);
+  }
+  if (conditions.length === 0) return [];
+  const { rows } = await poolDb.query(
+    `SELECT * FROM orders WHERE ${conditions.join(" OR ")} ORDER BY created_at DESC, id DESC`,
+    params
+  );
+  return hydrate(poolDb, rows, { populate, documents: false });
+}
+
+/** Propriétaire d'une commande (contrôle d'accès client) : { userId, email } ou null. */
+export async function findOrderOwnership(id) {
+  if (!isUuid(id)) return null;
+  const { rows } = await poolDb.query("SELECT user_id, customer_email FROM orders WHERE id = $1", [id]);
+  return rows[0] ? { userId: rows[0].user_id, email: rows[0].customer_email } : null;
+}
+
+/**
  * Crée une commande et ses lignes dans la transaction `client`. `products` : lignes
  * { productId (uuid), quantity, color, variantId (uuid | null) }. Renvoie l'id créé.
  */

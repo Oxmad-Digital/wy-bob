@@ -90,6 +90,6 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error("PROMO VALIDATE ERROR:", error);
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }

@@ -1,30 +1,19 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { connectDB } from "@/app/lib/db";
-import Order from "@/app/models/Order";
-import Invoice from "@/app/models/Invoice";
+import { listAccountOrders } from "@/app/lib/repos/orders";
+import { listInvoicedOrderIds } from "@/app/lib/repos/invoices";
 import OrdersListClient from "./OrdersListClient";
 
 export default async function OrdersPage() {
   const session = await auth();
   if (!session) redirect("/auth/login");
 
-  await connectDB();
-
-  const raw = await Order.find({
-    $or: [
-      { userId: session.user.id },
-      { "customer.email": session.user.email.toLowerCase() },
-    ],
-  })
-    .sort({ createdAt: -1 })
-    .populate("products.product", "name image")
-    .lean() as any[];
-
-  const invoicedOrderIds = new Set(
-    (await Invoice.find({ order: { $in: raw.map((o) => o._id) } }).select("order").lean() as any[])
-      .map((inv) => inv.order.toString())
+  const raw: any[] = await listAccountOrders(
+    { userId: session.user.id, email: session.user.email.toLowerCase() },
+    { populate: true }
   );
+
+  const invoicedOrderIds: Set<string> = await listInvoicedOrderIds(raw.map((o) => o._id));
 
   const orders = raw.map((o) => ({
     _id: o._id.toString(),

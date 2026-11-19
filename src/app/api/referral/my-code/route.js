@@ -2,9 +2,14 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { connectDB } from "@/app/lib/db";
-import PromoCode from "@/app/models/PromoCode";
-import ReferralConfig from "@/app/models/ReferralConfig";
+import { isUuid } from "@/app/lib/neon";
+import {
+  findPromoByCode,
+  findReferralCodeByReferrer,
+  createReferralCode,
+  updateReferralSplit,
+} from "@/app/lib/repos/promos";
+import { getReferralConfig } from "@/app/lib/repos/settings";
 
 function generateReferralCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -18,18 +23,18 @@ function generateReferralCode() {
 export async function GET() {
   try {
     const session = await auth();
-    if (!session) {
+    // Un id de session qui n'est pas un uuid (ancien jeton non converti) ne peut pas
+    // désigner un parrain : même réponse que sans session.
+    if (!session || !isUuid(session.user.id)) {
       return NextResponse.json({ message: "Connexion requise" }, { status: 401 });
     }
 
-    await connectDB();
-
-    const config = await ReferralConfig.findOne();
+    const config = await getReferralConfig();
     if (!config?.active) {
       return NextResponse.json({ message: "Le programme de parrainage n'est pas actif" }, { status: 403 });
     }
 
-    let referralCode = await PromoCode.findOne({ isReferral: true, referrerId: session.user.id });
+    let referralCode = await findReferralCodeByReferrer(session.user.id);
 
     if (!referralCode) {
       let code;
@@ -37,18 +42,12 @@ export async function GET() {
       do {
         code = generateReferralCode();
         attempts++;
-      } while (attempts < 10 && (await PromoCode.exists({ code })));
+      } while (attempts < 10 && (await findPromoByCode(code)));
 
-      referralCode = await PromoCode.create({
+      referralCode = await createReferralCode({
         code,
-        type: "percent",
-        value: config.totalPercent,
-        isReferral: true,
         referrerId: session.user.id,
-        filleulPercent: 0,
-        parrainPercent: config.totalPercent,
-        active: true,
-        maxUses: null,
+        totalPercent: config.totalPercent,
       });
     }
 
@@ -63,20 +62,19 @@ export async function GET() {
       },
     });
   } catch (error) {
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    console.error("GET REFERRAL MY-CODE ERROR:", error);
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }
 
 export async function PATCH(req) {
   try {
     const session = await auth();
-    if (!session) {
+    if (!session || !isUuid(session.user.id)) {
       return NextResponse.json({ message: "Connexion requise" }, { status: 401 });
     }
 
-    await connectDB();
-
-    const config = await ReferralConfig.findOne();
+    const config = await getReferralConfig();
     if (!config?.active) {
       return NextResponse.json({ message: "Le programme de parrainage n'est pas actif" }, { status: 403 });
     }
@@ -92,17 +90,7 @@ export async function PATCH(req) {
 
     const parrainPercent = config.totalPercent - filleulPercent;
 
-    const referralCode = await PromoCode.findOneAndUpdate(
-      { isReferral: true, referrerId: session.user.id },
-      {
-        $set: {
-          filleulPercent,
-          parrainPercent,
-          value: filleulPercent,
-        },
-      },
-      { new: true }
-    );
+    const referralCode = await updateReferralSplit(session.user.id, { filleulPercent, parrainPercent });
 
     if (!referralCode) {
       return NextResponse.json({ message: "Code de parrainage introuvable" }, { status: 404 });
@@ -119,6 +107,7 @@ export async function PATCH(req) {
       },
     });
   } catch (error) {
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    console.error("PATCH REFERRAL MY-CODE ERROR:", error);
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }

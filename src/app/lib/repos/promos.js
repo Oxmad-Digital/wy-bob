@@ -234,3 +234,55 @@ export async function getReferralStats() {
   );
   return { totalReferralCodes: row.total_referral_codes, totalConversions: row.total_conversions };
 }
+
+// -----------------------------------------------------------------------------
+// Code de parrainage du client connecté (lot 3d) : api/referral/my-code
+// -----------------------------------------------------------------------------
+
+/** Équivalent de PromoCode.findOne({ isReferral: true, referrerId }) (le plus ancien). */
+export async function findReferralCodeByReferrer(referrerId) {
+  if (!isUuid(referrerId)) return null;
+  return toPromo(
+    await queryOne(
+      `${PROMO_SELECT} WHERE p.is_referral AND p.referrer_id = $1 ORDER BY p.created_at, p.id LIMIT 1`,
+      [referrerId]
+    )
+  );
+}
+
+/**
+ * Équivalent de PromoCode.create({ code, type: "percent", value: totalPercent, isReferral: true,
+ * referrerId, filleulPercent: 0, parrainPercent: totalPercent, active: true, maxUses: null }).
+ * Doublon de code -> PromoCodeConflictError (l'appelant a déjà vérifié la disponibilité).
+ */
+export async function createReferralCode({ code, referrerId, totalPercent }) {
+  assertCode(code);
+  const row = await withUniqueCode(() =>
+    queryOne(
+      `INSERT INTO promo_codes
+         (code, type, value, is_referral, referrer_id, filleul_percent, parrain_percent, active, max_uses)
+       VALUES ($1, 'percent', $2, true, $3, 0, $2, true, NULL)
+       RETURNING id`,
+      [code, totalPercent, referrerId]
+    )
+  );
+  return findPromoById(row.id);
+}
+
+/**
+ * Équivalent de PromoCode.findOneAndUpdate({ isReferral: true, referrerId },
+ * { $set: { filleulPercent, parrainPercent, value: filleulPercent } }, { new: true }).
+ * Renvoie le code mis à jour (le plus ancien s'il y en avait plusieurs) ou null.
+ */
+export async function updateReferralSplit(referrerId, { filleulPercent, parrainPercent }) {
+  if (!isUuid(referrerId)) return null;
+  const rows = await query(
+    `UPDATE promo_codes SET filleul_percent = $2, parrain_percent = $3, value = $2
+      WHERE is_referral AND referrer_id = $1
+      RETURNING id, created_at`,
+    [referrerId, filleulPercent, parrainPercent]
+  );
+  if (rows.length === 0) return null;
+  rows.sort((a, b) => a.created_at - b.created_at || String(a.id).localeCompare(String(b.id)));
+  return findPromoById(rows[0].id);
+}

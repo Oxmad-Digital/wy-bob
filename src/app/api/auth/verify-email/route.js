@@ -1,22 +1,17 @@
-import { connectDB } from "@/app/lib/db";
-import User from "@/app/models/User";
+import { verifyEmailByToken } from "@/app/lib/repos/users";
 import { sendEmail } from "@/app/lib/mailer";
 import { getVerificationEmailTemplate } from "@/app/lib/emailTemplates";
 import { NextResponse } from "next/server";
 
 export async function GET(req) {
   try {
-    await connectDB();
-
     const token = new URL(req.url).searchParams.get("token");
     if (!token) {
       return NextResponse.json({ message: "Token manquant" }, { status: 400 });
     }
 
-    const user = await User.findOne({
-      verificationToken: token,
-      verificationTokenExpiry: { $gt: new Date() },
-    });
+    // Valide l'email et efface le jeton en une seule écriture : { name, email } ou null.
+    const user = await verifyEmailByToken(token, new Date());
 
     if (!user) {
       return NextResponse.json(
@@ -24,11 +19,6 @@ export async function GET(req) {
         { status: 400 }
       );
     }
-
-    user.emailVerified = true;
-    user.verificationToken = null;
-    user.verificationTokenExpiry = null;
-    await user.save();
 
     const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
     const html = getVerificationEmailTemplate(user.name, dashboardUrl);

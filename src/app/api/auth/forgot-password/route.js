@@ -1,5 +1,4 @@
-import { connectDB } from "@/app/lib/db";
-import User from "@/app/models/User";
+import { findUserByEmail, setResetToken } from "@/app/lib/repos/users";
 import { sendEmail } from "@/app/lib/mailer";
 import { getPasswordResetEmailTemplate } from "@/app/lib/emailTemplates";
 import { NextResponse } from "next/server";
@@ -8,8 +7,6 @@ import { checkRateLimit, getClientIp } from "@/app/lib/rateLimit";
 
 export async function POST(req) {
   try {
-    await connectDB();
-
     const ip = getClientIp(req);
     const rateLimit = await checkRateLimit({ key: `forgot-password:${ip}`, windowMs: 60 * 1000, maxAttempts: 5 });
     if (!rateLimit.allowed) {
@@ -25,7 +22,7 @@ export async function POST(req) {
       return NextResponse.json({ message: "Adresse email invalide" }, { status: 400 });
     }
 
-    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    const user = await findUserByEmail(email.trim().toLowerCase());
 
     // Toujours répondre 200 pour ne pas révéler si l'email existe
     if (!user) {
@@ -38,9 +35,7 @@ export async function POST(req) {
     const token = crypto.randomBytes(32).toString("hex");
     const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 heure
 
-    user.resetToken = token;
-    user.resetTokenExpiry = expiry;
-    await user.save();
+    await setResetToken(user.id, token, expiry);
 
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${token}`;
     const html = getPasswordResetEmailTemplate(user.name, resetUrl);

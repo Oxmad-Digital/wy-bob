@@ -1,5 +1,4 @@
-import { connectDB } from "@/app/lib/db";
-import User from "@/app/models/User";
+import { userEmailExists, createUser, UserEmailTakenError } from "@/app/lib/repos/users";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/app/lib/mailer";
@@ -31,8 +30,6 @@ function validatePassword(password) {
 
 export async function POST(req) {
   try {
-    await connectDB();
-
     const ip = getClientIp(req);
 
     const rateLimit = await checkRateLimit({ key: `register:${ip}`, windowMs: 60 * 1000, maxAttempts: 5 });
@@ -79,8 +76,7 @@ export async function POST(req) {
     }
 
     /* ✅ Vérification si email existe déjà */
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    if (await userEmailExists(email)) {
       return NextResponse.json(
         { message: "Cet email est déjà utilisé" },
         { status: 400 }
@@ -94,12 +90,10 @@ export async function POST(req) {
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    await User.create({
+    await createUser({
       name,
       email,
-      password: hashedPassword,
-      role: "customer",
-      emailVerified: false,
+      passwordHash: hashedPassword,
       verificationToken,
       verificationTokenExpiry,
     });
@@ -122,13 +116,8 @@ export async function POST(req) {
   } catch (error) {
     console.error("Erreur inscription:", error);
 
-    if (error.code === 11000) {
+    if (error instanceof UserEmailTakenError) {
       return NextResponse.json({ message: "Email déjà utilisé" }, { status: 400 });
-    }
-
-    if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map(e => e.message);
-      return NextResponse.json({ message: messages.join(". ") }, { status: 400 });
     }
 
     return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
