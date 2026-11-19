@@ -20,6 +20,29 @@
  *   - Le mode réel refuse de démarrer s'il reste une violation de contrainte.
  *   - Les valeurs de MONGODB_URI / DATABASE_URL ne sont jamais affichées (messages d'erreur nettoyés).
  * Voir db/MAPPING.md pour le détail du mapping.
+ *
+ * ---------------------------------------------------------------------------------------------
+ * Mode --only=users : synchronisation des comptes (users + users.addresses[]) créés ou modifiés
+ * dans Mongo depuis la première migration, sans écraser Neon.
+ *
+ *   node scripts/migrate-mongo-to-neon.mjs --only=users                          # DRY-RUN (défaut)
+ *   node scripts/migrate-mongo-to-neon.mjs --only=users --apply                  # crée les comptes nouveaux
+ *   node scripts/migrate-mongo-to-neon.mjs --only=users --apply --update-newer   # + met à jour les comptes plus récents dans Mongo
+ *
+ *   - Sans --apply : AUCUNE écriture. Mongo et Neon sont seulement lus (Neon dans une transaction
+ *     READ ONLY annulée à la fin) pour comparer et produire le rapport.
+ *   - Compte Mongo absent de Neon (mongo_id) et email libre      -> créé (avec ses adresses).
+ *   - Compte Mongo absent de Neon mais email déjà pris dans Neon -> ignoré, signalé (conflit).
+ *   - Compte présent dans les deux :
+ *       * Neon aussi récent ou plus récent (updated_at)          -> jamais modifié ;
+ *       * Mongo plus récent                                      -> signalé ; mis à jour seulement
+ *         avec --update-newer (champs du compte, sauf le rôle, jamais changé automatiquement ;
+ *         adresses : ajout de celles absentes de Neon, aucune suppression). Le UPDATE re-vérifie
+ *         updated_at < Mongo.updatedAt : un compte devenu plus récent dans Neon n'est pas touché.
+ *   - Avec --apply : une seule transaction ; users et user_addresses sont verrouillés en écriture
+ *     (SHARE ROW EXCLUSIVE) pendant la synchronisation, les lectures restent possibles.
+ *   - Rapport : identifiants et compteurs ; jamais de mot de passe, de hash ni de jeton ; les
+ *     emails n'apparaissent que dans la section des conflits (masqués ailleurs).
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -44,6 +67,11 @@ const DRY_RUN = flag("dry-run");
 const TLS_INSECURE = flag("tls-insecure");
 const ALLOW_UNKNOWN = flag("allow-unknown-fields");
 const ENV_FILE = opt("env") ?? ".env.local";
+// Mode --only=users (voir l'en-tête) : dry-run par défaut, écritures seulement avec --apply.
+const ONLY = opt("only");
+const ONLY_USERS = ONLY === "users";
+const APPLY = flag("apply");
+const UPDATE_NEWER = flag("update-newer");
 
 function loadEnvFile(path) {
   if (!existsSync(path)) return;
@@ -78,8 +106,13 @@ function fail(message, code = 1) {
   process.exit(code);
 }
 
+if (ONLY !== undefined && !ONLY_USERS) fail(`--only=${ONLY} non pris en charge (seule valeur possible : --only=users).`);
+if (!ONLY_USERS && (APPLY || UPDATE_NEWER)) fail("--apply et --update-newer ne s'utilisent qu'avec --only=users.");
+if (ONLY_USERS && DRY_RUN && APPLY) fail("--dry-run et --apply sont incompatibles (--only=users est déjà un dry-run sans --apply).");
+
 if (!MONGODB_URI) fail(`MONGODB_URI absent (fichier ${ENV_FILE} ou environnement).`);
-if (!DRY_RUN && !DATABASE_URL) fail(`DATABASE_URL absent (fichier ${ENV_FILE} ou environnement).`);
+// --only=users lit Neon même en dry-run (comparaison) : DATABASE_URL est toujours nécessaire.
+if ((ONLY_USERS || !DRY_RUN) && !DATABASE_URL) fail(`DATABASE_URL absent (fichier ${ENV_FILE} ou environnement).`);
 
 function dbNameFromUri(uri) {
   const m = uri.match(/^mongodb(?:\+srv)?:\/\/[^/]+\/([^?]*)/);
@@ -1013,8 +1046,8 @@ async function insertRows(client, table, list) {
   return inserted;
 }
 
-async function preloadExisting(client) {
-  for (const t of TABLE_ORDER) {
+async function preloadExisting(client, tables = TABLE_ORDER) {
+  for (const t of tables) {
     const { rows: found } = await client.query(`SELECT mongo_id, id::text AS id FROM ${qi(t)} WHERE mongo_id IS NOT NULL`);
     for (const r of found) idMaps[t].set(r.mongo_id, r.id);
     existingCounts[t] = found.length;
@@ -1095,7 +1128,309 @@ async function printComparison(client, mongoCounts) {
 // -----------------------------------------------------------------------------
 // Main
 // -----------------------------------------------------------------------------
+// =============================================================================
+// Mode --only=users : synchronisation des comptes Mongo -> Neon sans écrasement
+// =============================================================================
+
+// Le rapport ne doit montrer d'email que dans la section des conflits.
+const EMAIL_RE = /[^\s@"'<>()]+@[^\s@"'<>()]+\.[^\s@"'<>()]+/g;
+const maskEmails = (s) => String(s).replace(EMAIL_RE, "<email masqué>");
+
+// Colonnes recopiées par --update-newer. `role` n'en fait pas partie : un changement de rôle
+// (customer <-> admin) n'est jamais appliqué automatiquement, il est seulement signalé.
+// `password` contient un hash bcrypt : comparé et recopié, jamais affiché.
+const USER_SYNC_COLUMNS = [
+  "name", "email", "password", "email_verified",
+  "verification_token", "verification_token_expiry", "reset_token", "reset_token_expiry",
+  "last_login_ip", "last_login_at", "failed_login_attempts", "account_locked_until",
+  "password_history", "phone",
+  "address_street", "address_city", "address_postal_code", "address_country",
+  "newsletter", "language", "avatar", "avatar_public_id",
+];
+// Noms affichés dans le rapport (aucune valeur) pour les colonnes sensibles.
+const SENSITIVE_LABEL = {
+  password: "mot de passe (hash)", password_history: "historique des mots de passe",
+  verification_token: "jeton de vérification", reset_token: "jeton de réinitialisation",
+};
+
+function sameValue(a, b) {
+  if (a instanceof Date || b instanceof Date) {
+    const ta = a ? new Date(a).getTime() : null;
+    const tb = b ? new Date(b).getTime() : null;
+    return ta === tb;
+  }
+  if (Array.isArray(a) || Array.isArray(b)) return JSON.stringify(a ?? []) === JSON.stringify(b ?? []);
+  return (a ?? null) === (b ?? null);
+}
+const time = (d) => new Date(d).getTime();
+const iso = (d) => (d ? new Date(d).toISOString() : "—");
+
+async function loadNeonUsers(client) {
+  const { rows: users } = await client.query(
+    `SELECT id::text AS id, mongo_id, role, updated_at, ${USER_SYNC_COLUMNS.map(qi).join(", ")} FROM users`
+  );
+  const { rows: addresses } = await client.query(
+    "SELECT id::text AS id, mongo_id, user_id::text AS user_id FROM user_addresses"
+  );
+  return { users, addresses };
+}
+
+/** Classe chaque compte Mongo transformé (rows.users) par rapport à Neon. */
+function classifyUsers(neon) {
+  const byMongoId = new Map(neon.users.filter((u) => u.mongo_id).map((u) => [u.mongo_id, u]));
+  const byEmail = new Map(neon.users.map((u) => [u.email, u]));
+  const neonAddressMongoIds = new Set(neon.addresses.map((a) => a.mongo_id).filter(Boolean));
+  const invalidIds = new Set(R("users").violations.map((v) => v.split(" › ")[0]));
+  const addressesOf = (userId) => rows.user_addresses.filter((a) => a.user_id === userId);
+
+  const plan = { insert: [], newer: [], upToDate: [], conflicts: [], invalid: [], roleDiffs: [], neonOnly: [], neonCreated: 0 };
+  const mongoIds = new Set(rows.users.map((u) => u.mongo_id));
+
+  for (const u of rows.users) {
+    if (invalidIds.has(u.mongo_id)) { plan.invalid.push(u); continue; }
+    const existing = byMongoId.get(u.mongo_id);
+
+    if (!existing) {
+      const taken = byEmail.get(u.email);
+      if (taken) plan.conflicts.push({ kind: "email déjà utilisé dans Neon", u, other: taken });
+      else plan.insert.push({ u, addresses: addressesOf(u.id) });
+      continue;
+    }
+
+    if (existing.role !== u.role) plan.roleDiffs.push({ u, neon: existing });
+
+    if (time(u.updated_at) > time(existing.updated_at)) {
+      if (u.email !== existing.email) {
+        const taken = byEmail.get(u.email);
+        if (taken && taken.id !== existing.id) {
+          plan.conflicts.push({ kind: "nouvel email Mongo déjà pris dans Neon", u, other: taken });
+          continue;
+        }
+      }
+      const changed = USER_SYNC_COLUMNS.filter((c) => !sameValue(u[c], existing[c]));
+      const newAddresses = addressesOf(u.id).filter((a) => !neonAddressMongoIds.has(a.mongo_id));
+      plan.newer.push({ u, neon: existing, changed, newAddresses });
+    } else {
+      plan.upToDate.push({ u, neon: existing });
+    }
+  }
+
+  for (const n of neon.users) {
+    if (!n.mongo_id) plan.neonCreated++;
+    else if (!mongoIds.has(n.mongo_id)) plan.neonOnly.push(n);
+  }
+  return plan;
+}
+
+function printUsersPlan(plan, writing) {
+  const r = R("users");
+  console.log(`\n=== Comptes Mongo -> Neon (--only=users, ${writing ? "APPLICATION" : "DRY-RUN"}) — base Mongo "${DB_NAME}" ===\n`);
+  console.table([
+    { catégorie: "lus dans Mongo", comptes: r.read },
+    { catégorie: "à créer dans Neon", comptes: plan.insert.length },
+    { catégorie: "plus récents dans Mongo", comptes: plan.newer.length },
+    { catégorie: "à jour (Neon aussi récent ou plus récent)", comptes: plan.upToDate.length },
+    { catégorie: "conflits d'email (ignorés)", comptes: plan.conflicts.length },
+    { catégorie: "invalides (ignorés)", comptes: plan.invalid.length },
+    { catégorie: "rôle différent (jamais modifié)", comptes: plan.roleDiffs.length },
+    { catégorie: "dans Neon, absents de Mongo", comptes: plan.neonOnly.length },
+    { catégorie: "créés directement dans Neon", comptes: plan.neonCreated },
+  ]);
+
+  if (plan.insert.length) {
+    console.log(`\n── À créer${writing ? "" : " (avec --apply)"} :`);
+    for (const { u, addresses } of plan.insert) {
+      console.log(`    - mongo_id ${u.mongo_id} -> uuid ${u.id} (${addresses.length} adresse(s))`);
+    }
+  }
+
+  if (plan.newer.length) {
+    const action = UPDATE_NEWER
+      ? (writing ? "mis à jour" : "serait mis à jour avec --apply --update-newer")
+      : "NON modifié (--update-newer absent)";
+    console.log(`\n── Plus récents dans Mongo : ${action}`);
+    for (const { u, neon, changed, newAddresses } of plan.newer) {
+      const fields = changed.map((c) => SENSITIVE_LABEL[c] ?? c).join(", ") || "aucun champ du compte";
+      console.log(
+        `    - mongo_id ${u.mongo_id} / uuid ${neon.id} : Mongo ${iso(u.updated_at)} > Neon ${iso(neon.updated_at)}` +
+        ` ; champs différents : ${fields} ; adresses à ajouter : ${newAddresses.length}`
+      );
+    }
+  }
+
+  if (plan.roleDiffs.length) {
+    console.log("\n── Rôle différent entre Mongo et Neon (jamais modifié par ce script, à vérifier à la main) :");
+    for (const { u, neon } of plan.roleDiffs) {
+      console.log(`    - mongo_id ${u.mongo_id} / uuid ${neon.id} : Mongo "${u.role}" / Neon "${neon.role}"`);
+    }
+  }
+
+  if (plan.conflicts.length) {
+    console.log("\n── Conflits d'email (aucune écriture, à arbitrer à la main) :");
+    for (const { kind, u, other } of plan.conflicts) {
+      console.log(
+        `    - ${kind} : ${u.email} — Mongo mongo_id ${u.mongo_id} ; Neon uuid ${other.id}` +
+        ` (${other.mongo_id ? `mongo_id ${other.mongo_id}` : "créé directement dans Neon"})`
+      );
+    }
+  }
+
+  if (plan.neonOnly.length) {
+    console.log("\n── Dans Neon mais absents de Mongo (supprimés dans Mongo ?) — aucune action :");
+    for (const n of plan.neonOnly) console.log(`    - uuid ${n.id} (mongo_id ${n.mongo_id})`);
+  }
+
+  const sections = [
+    ["❌ Violations (comptes ignorés)", r.violations],
+    ["🔗 Références orphelines", r.orphans],
+    ["⚠️  Champs non mappés (NON synchronisés)", [...r.unknown].map(([p, n]) => `${p} (${n} occurrence${n > 1 ? "s" : ""})`)],
+    ["ℹ️  Avertissements", r.warnings],
+  ].filter(([, list]) => list.length > 0);
+  for (const [title, list] of sections) {
+    console.log(`\n── ${title} :`);
+    for (const line of list) console.log(`    - ${maskEmails(line)}`);
+  }
+}
+
+/**
+ * insertRows ajoute le `detail` PostgreSQL au message d'erreur ; pour une violation de CHECK il
+ * contient « Failing row contains (…) », c'est-à-dire la ligne entière (hash du mot de passe,
+ * jetons). En mode --only=users, seul le message principal est gardé, emails masqués.
+ */
+async function insertRowsSafely(client, table, list) {
+  try {
+    return await insertRows(client, table, list);
+  } catch (err) {
+    throw new Error(maskEmails(String(err?.message ?? err).split(" — ")[0]));
+  }
+}
+
+async function applyUsersPlan(client, plan) {
+  const done = { users: 0, addresses: 0, updated: 0 };
+
+  for (const { u, addresses } of plan.insert) {
+    const n = await insertRowsSafely(client, "users", [u]);
+    if (n !== 1) throw new Error(`compte mongo_id ${u.mongo_id} : insertion refusée (déjà présent ?)`);
+    done.users += n;
+    done.addresses += await insertRowsSafely(client, "user_addresses", addresses);
+  }
+
+  if (UPDATE_NEWER) {
+    for (const { u, neon, changed, newAddresses } of plan.newer) {
+      if (changed.length > 0) {
+        const sets = changed.map((c, i) => `${qi(c)} = $${i + 3}`).join(", ");
+        const res = await client.query(
+          `UPDATE users SET ${sets} WHERE id = $1 AND updated_at < $2`,
+          [neon.id, u.updated_at, ...changed.map((c) => u[c])]
+        );
+        if (res.rowCount !== 1) {
+          throw new Error(`compte uuid ${neon.id} : plus récent dans Neon au moment de la mise à jour, synchronisation annulée`);
+        }
+        done.updated++;
+      }
+      for (const a of newAddresses) {
+        const res = await client.query(
+          `INSERT INTO user_addresses (id, mongo_id, user_id, position, label, full_name, street, zip, city, country)
+           SELECT $1, $2, $3::uuid, COALESCE(MAX(position) + 1, 0), $4, $5, $6, $7, $8, $9
+             FROM user_addresses WHERE user_id = $3::uuid
+           ON CONFLICT (mongo_id) DO NOTHING`,
+          [a.id, a.mongo_id, neon.id, a.label, a.full_name, a.street, a.zip, a.city, a.country]
+        );
+        done.addresses += res.rowCount;
+      }
+    }
+  }
+
+  // Vérification avant COMMIT : chaque compte créé doit être présent.
+  const created = plan.insert.map(({ u }) => u.mongo_id);
+  if (created.length > 0) {
+    const { rows: [{ n }] } = await client.query(
+      "SELECT count(*)::int AS n FROM users WHERE mongo_id = ANY($1::text[])", [created]
+    );
+    if (n !== created.length) throw new Error(`comptes manquants après insertion : ${n}/${created.length}`);
+  }
+  return done;
+}
+
+async function mainOnlyUsers() {
+  const writing = APPLY;
+  console.log(
+    `Mode : --only=users ${writing ? "APPLICATION (écritures Neon)" : "DRY-RUN (lecture seule de Mongo et de Neon)"}` +
+    `${UPDATE_NEWER ? " + --update-newer" : ""}`
+  );
+  console.log(`Base Mongo : "${DB_NAME}" (lecture seule)`);
+
+  const mongo = new MongoClient(MONGODB_URI, {
+    serverSelectionTimeoutMS: 15000,
+    ...(TLS_INSECURE ? { tls: true, tlsAllowInvalidCertificates: true } : {}),
+  });
+  let pool = null;
+  let pgClient = null;
+  let inTransaction = false;
+
+  try {
+    await mongo.connect();
+    const db = mongo.db(DB_NAME);
+    const present = (await db.listCollections({ name: "users" }, { nameOnly: true }).toArray()).length > 0;
+    const docs = present ? await db.collection("users").find({}).toArray() : [];
+    if (!present) console.log("⚠️  Collection users absente (traitée comme vide)");
+
+    pool = new Pool({ connectionString: DATABASE_URL, max: 1, connectionTimeoutMillis: 20000 });
+    pool.on("error", (err) => console.error(`⚠️  Erreur du pool Neon : ${sanitize(err?.message)}`));
+    pgClient = await pool.connect();
+
+    // Lecture et écriture dans la même transaction : READ ONLY en dry-run (annulée à la fin),
+    // verrou SHARE ROW EXCLUSIVE en application (aucune écriture concurrente sur les comptes).
+    await pgClient.query(writing ? "BEGIN" : "BEGIN TRANSACTION READ ONLY");
+    inTransaction = true;
+    if (writing) await pgClient.query("LOCK TABLE users, user_addresses IN SHARE ROW EXCLUSIVE MODE");
+
+    await preloadExisting(pgClient, ["users", "user_addresses"]);
+    transformUsers(docs);
+    const plan = classifyUsers(await loadNeonUsers(pgClient));
+    printUsersPlan(plan, writing);
+
+    const hasUnknown = R("users").unknown.size > 0;
+    if (!writing) {
+      await pgClient.query("ROLLBACK");
+      inTransaction = false;
+      console.log(
+        "\nDry-run terminé : rien n'a été écrit." +
+        "\nPour appliquer : --only=users --apply (création des comptes nouveaux)" +
+        " et, si voulu, --update-newer (comptes plus récents dans Mongo)."
+      );
+      process.exitCode = plan.invalid.length || hasUnknown ? 2 : 0;
+      return;
+    }
+
+    if (hasUnknown && !ALLOW_UNKNOWN) {
+      throw new Error("champ(s) Mongo non mappé(s) : relancez avec --allow-unknown-fields après vérification (rien n'a été écrit).");
+    }
+
+    console.log("\n=== Écriture dans Neon (transaction) ===\n");
+    const result = await applyUsersPlan(pgClient, plan);
+    await pgClient.query("COMMIT");
+    inTransaction = false;
+    console.log(
+      `✅ COMMIT effectué : ${result.users} compte(s) créé(s), ${result.updated} compte(s) mis à jour,` +
+      ` ${result.addresses} adresse(s) ajoutée(s).`
+    );
+    if (plan.conflicts.length || plan.invalid.length) {
+      console.log(`⚠️  ${plan.conflicts.length} conflit(s) et ${plan.invalid.length} compte(s) invalide(s) non traités (voir le rapport).`);
+    }
+  } catch (err) {
+    if (inTransaction && pgClient) await pgClient.query("ROLLBACK").catch(() => {});
+    throw err;
+  } finally {
+    await mongo.close().catch(() => {});
+    if (pgClient) pgClient.release();
+    if (pool) await pool.end().catch(() => {});
+  }
+}
+
 async function main() {
+  if (ONLY_USERS) return mainOnlyUsers();
+
   console.log(`Mode : ${DRY_RUN ? "DRY-RUN (aucune connexion à Neon)" : "MIGRATION RÉELLE"}`);
   console.log(`Base Mongo : "${DB_NAME}" (lecture seule)`);
 
