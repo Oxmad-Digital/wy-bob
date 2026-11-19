@@ -2,10 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/app/lib/require-admin";
-import { connectDB } from "@/app/lib/db";
-import Order    from "@/app/models/Order";
-import Customer from "@/app/models/Customer";
-import Product  from "@/app/models/Product";
+import { getAdminStatsAggregates } from "@/app/lib/repos/stats";
 
 // Cache in-memory par période, TTL 5 minutes
 const statsCache = new Map();
@@ -17,8 +14,6 @@ export async function GET(request) {
   if (guard instanceof Response) return guard;
 
   try {
-    await connectDB();
-
     const { searchParams } = new URL(request.url);
     const period  = searchParams.get("period") || "7";
     const daysAgo = parseInt(period);
@@ -43,7 +38,7 @@ export async function GET(request) {
     const prevPeriodStart = new Date(periodStart);
     prevPeriodStart.setDate(prevPeriodStart.getDate() - daysAgo);
 
-    const [
+    const {
       customersCount,
       newCustomers,
       ordersCount,
@@ -55,97 +50,18 @@ export async function GET(request) {
       dormantCustomers,
       lowStockProducts,
       outOfStockProducts,
-      stockValueAgg,
-      totalRevenueAgg,
-      periodRevenueAgg,
-      prevPeriodRevenueAgg,
-      salesEvolutionAgg,
-      topProductsAgg,
-      ordersByStatusAgg,
-      paymentAgg,
-      topCustomersAgg,
+      stockValue,
+      totalRevenue,
+      periodRevenue,
+      prevPeriodRevenue,
+      salesEvolution: salesEvolutionRows,
+      topProducts,
+      ordersByStatus,
+      payments,
+      topCustomers,
       recentOrders,
-    ] = await Promise.all([
-      Customer.countDocuments(),
-      Customer.countDocuments({ createdAt: { $gte: periodStart } }),
-      Order.countDocuments(),
-      Order.countDocuments({ createdAt: { $gte: periodStart } }),
-      Order.countDocuments({ createdAt: { $gte: today } }),
-      Order.countDocuments({ status: "cancelled" }),
-      Order.countDocuments({ status: "pending" }),
-      Customer.countDocuments({ totalOrders: { $gt: 1 } }),
-      Customer.countDocuments({ lastOrderAt: { $ne: null, $lt: thirtyDaysAgo }, status: "active" }),
-      Product.countDocuments({ stock: { $gt: 0, $lte: 3 } }),
-      Product.countDocuments({ stock: 0 }),
-      Product.aggregate([{ $group: { _id: null, total: { $sum: { $multiply: ["$stock", "$price"] } } } }]),
+    } = await getAdminStatsAggregates({ periodStart, prevPeriodStart, today, thirtyDaysAgo });
 
-      Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
-      Order.aggregate([
-        { $match: { createdAt: { $gte: periodStart } } },
-        { $group: { _id: null, total: { $sum: "$total" } } },
-      ]),
-      Order.aggregate([
-        { $match: { createdAt: { $gte: prevPeriodStart, $lt: periodStart } } },
-        { $group: { _id: null, total: { $sum: "$total" } } },
-      ]),
-
-      Order.aggregate([
-        { $match: { createdAt: { $gte: periodStart } } },
-        {
-          $group: {
-            _id: {
-              y: { $year: "$createdAt" },
-              m: { $month: "$createdAt" },
-              d: { $dayOfMonth: "$createdAt" },
-            },
-            revenue: { $sum: "$total" },
-            orders:  { $sum: 1 },
-          },
-        },
-        { $sort: { "_id.y": 1, "_id.m": 1, "_id.d": 1 } },
-      ]),
-
-      Order.aggregate([
-        { $unwind: "$products" },
-        { $group: { _id: "$products.product", totalQuantity: { $sum: "$products.quantity" } } },
-        { $sort: { totalQuantity: -1 } },
-        { $limit: 5 },
-        { $lookup: { from: "products", localField: "_id", foreignField: "_id", as: "p" } },
-        { $unwind: "$p" },
-        { $project: { name: "$p.name", quantity: "$totalQuantity" } },
-      ]),
-
-      Order.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
-      Order.aggregate([
-        { $group: { _id: { $ifNull: ["$payment", "cash"] }, count: { $sum: 1 } } },
-      ]),
-
-      Order.aggregate([
-        {
-          $group: {
-            _id: "$customer.email",
-            firstname:   { $first: "$customer.firstname" },
-            lastname:    { $first: "$customer.lastname" },
-            totalSpent:  { $sum: "$total" },
-            totalOrders: { $sum: 1 },
-          },
-        },
-        { $sort: { totalSpent: -1 } },
-        { $limit: 5 },
-        { $project: { _id: 0, firstname: 1, lastname: 1, totalSpent: 1, totalOrders: 1 } },
-      ]),
-
-      Order.find()
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .select("customer.firstname customer.lastname total status createdAt")
-        .lean(),
-    ]);
-
-    const stockValue        = stockValueAgg[0]?.total         || 0;
-    const totalRevenue      = totalRevenueAgg[0]?.total      || 0;
-    const periodRevenue     = periodRevenueAgg[0]?.total     || 0;
-    const prevPeriodRevenue = prevPeriodRevenueAgg[0]?.total || 0;
     const averageBasket     = ordersCount > 0 ? (totalRevenue / ordersCount).toFixed(2) : 0;
     const cancellationRate  = ordersCount > 0 ? ((cancelledOrders / ordersCount) * 100).toFixed(1) : 0;
     const loyaltyRate       = customersCount > 0 ? ((returningCustomers / customersCount) * 100).toFixed(1) : 0;
@@ -154,9 +70,8 @@ export async function GET(request) {
       : null;
 
     const evoMap = {};
-    salesEvolutionAgg.forEach(({ _id, revenue, orders }) => {
-      const key = `${_id.y}-${String(_id.m).padStart(2, "0")}-${String(_id.d).padStart(2, "0")}`;
-      evoMap[key] = { revenue, orders };
+    salesEvolutionRows.forEach(({ day, revenue, orders }) => {
+      evoMap[day] = { revenue, orders };
     });
     const salesEvolution = [];
     for (let i = daysAgo - 1; i >= 0; i--) {
@@ -177,13 +92,13 @@ export async function GET(request) {
       bank_transfer: "Virement",
     };
 
-    const statusDistribution = ordersByStatusAgg.map((item) => ({
-      name: item._id, value: item.count,
+    const statusDistribution = ordersByStatus.map((item) => ({
+      name: item.status, value: item.count,
     }));
 
-    const paymentDistribution = paymentAgg.map((item) => ({
-      name:  item._id || "cash",
-      label: PAYMENT_LABELS[item._id] || item._id || "Espèces",
+    const paymentDistribution = payments.map((item) => ({
+      name:  item.payment || "cash",
+      label: PAYMENT_LABELS[item.payment] || item.payment || "Espèces",
       value: item.count,
     }));
 
@@ -212,8 +127,8 @@ export async function GET(request) {
         neverSoldProducts: 0,
       },
       salesEvolution,
-      topProducts:        topProductsAgg,
-      topCustomers:       topCustomersAgg,
+      topProducts,
+      topCustomers,
       recentOrders,
       statusDistribution,
       paymentDistribution,
