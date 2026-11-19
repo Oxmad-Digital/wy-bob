@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { findCustomerById, updateCustomer, upsertCustomerForEmail } from "@/app/lib/repos/customers";
+import {
+  findCustomerById,
+  updateCustomer,
+  upsertCustomerForEmail,
+  deleteOrAnonymizeCustomer,
+} from "@/app/lib/repos/customers";
 import { findUserSummaryById } from "@/app/lib/repos/users";
 import { listOrdersByCustomerEmail } from "@/app/lib/repos/orders";
-// DELETE (suppression / anonymisation RGPD) : encore sur MongoDB, migré au lot 3f.
-import { connectDB } from "@/app/lib/db";
-import Customer from "@/app/models/Customer";
-import Order from "@/app/models/Order";
-import User from "@/app/models/User";
-import PromoCode from "@/app/models/PromoCode";
 
 // GET - Détails d'un client
 export async function GET(req, { params }) {
@@ -133,109 +132,58 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ message: "Accès refusé" }, { status: 401 });
     }
 
-    await connectDB();
-
-    const { id } = await params; // ✅ Correction ici aussi
+    const { id } = await params;
 
     const { searchParams } = new URL(req.url);
     const action = searchParams.get("action");
 
-    let customer = await Customer.findById(id);
+    // Résolution fiche / compte, contrôle admin, comptage des commandes, puis suppression ou
+    // anonymisation : tout dans une seule transaction (voir deleteOrAnonymizeCustomer).
+    const result = await deleteOrAnonymizeCustomer(id, action);
 
-    // Fallback : l'id est un User._id
-    if (!customer) {
-      const user = await User.findById(id);
-      if (!user) {
-        return NextResponse.json(
-          { success: false, message: "Client non trouvé" },
-          { status: 404 }
-        );
-      }
-      customer = await Customer.findOne({ email: user.email });
-      if (!customer) {
-        // Utilisateur sans fiche Customer et sans commandes → suppression directe du User
-        // et des codes de parrainage qu'il a générés (sinon ils restent orphelins).
-        await Promise.all([
-          User.findByIdAndDelete(id),
-          PromoCode.deleteMany({ referrerId: id, isReferral: true }),
-        ]);
-        return NextResponse.json({ success: true, message: "Utilisateur supprimé", action: "deleted" });
-      }
+    if (result.kind === "not_found") {
+      return NextResponse.json(
+        { success: false, message: "Client non trouvé" },
+        { status: 404 }
+      );
     }
 
-    const ordersCount = await Order.countDocuments({
-      "customer.email": customer.email,
-    });
+    if (result.kind === "admin") {
+      return NextResponse.json(
+        { success: false, message: "Impossible de supprimer un compte administrateur" },
+        { status: 400 }
+      );
+    }
 
-    if (ordersCount === 0) {
-      // Supprime la fiche CRM et le compte de connexion associé (même email) :
-      // sans ça, le User reste en base et réapparaît dans la liste au prochain
-      // chargement (jointure User ← Customer dans GET /api/customers).
-      const deletedUser = await User.findOneAndDelete({
-        email: customer.email,
-        role: { $ne: "admin" },
-      });
-
-      await Promise.all([
-        Customer.findByIdAndDelete(customer._id),
-        deletedUser
-          ? PromoCode.deleteMany({ referrerId: deletedUser._id, isReferral: true })
-          : Promise.resolve(),
-      ]);
+    if (result.kind === "deleted") {
+      // Fiche CRM et compte de connexion associé (même email) supprimés ensemble : sans ça,
+      // le compte réapparaîtrait dans la liste (jointure User ← Customer de GET /api/customers).
       return NextResponse.json({
         success: true,
-        message: "Client supprimé avec succès",
+        message: result.hadCustomer ? "Client supprimé avec succès" : "Utilisateur supprimé",
         action: "deleted",
       });
     }
 
-    if (action === "anonymize") {
-      const anonymizedEmail = `deleted_${id}@anonymized.local`;
-      const anonymizedData = {
-        firstname: "Client",
-        lastname: `Anonyme #${id.toString().slice(-6).toUpperCase()}`,
-        email: anonymizedEmail,
-        phone: null,
-        city: null,
-        address: null,
-        notes: `[ANONYMISÉ le ${new Date().toLocaleDateString("fr-FR")}] ${customer.notes || ""}`,
-        status: "deleted",
-        deletedAt: new Date(),
-      };
-
-      await Customer.findByIdAndUpdate(id, { $set: anonymizedData });
-
-      await Order.updateMany(
-        { "customer.email": customer.email },
-        { 
-          $set: { 
-            "customer.firstname": anonymizedData.firstname,
-            "customer.lastname": anonymizedData.lastname,
-            "customer.email": anonymizedEmail,
-            "customer.phone": "[ANONYMISÉ]",
-            "customer.isAnonymized": true,
-          } 
-        }
-      );
-
+    if (result.kind === "anonymized") {
       return NextResponse.json({
         success: true,
         message: `Client anonymisé avec succès.`,
         action: "anonymized",
-        ordersCount,
+        ordersCount: result.ordersCount,
       });
     }
 
     return NextResponse.json({
       success: false,
       message: `Action requise pour ce client avec commandes.`,
-      ordersCount,
+      ordersCount: result.ordersCount,
     }, { status: 400 });
 
   } catch (error) {
     console.error("DELETE CUSTOMER ERROR:", error);
     return NextResponse.json(
-      { success: false, message: error.message },
+      { success: false, message: "Erreur serveur" },
       { status: 500 }
     );
   }

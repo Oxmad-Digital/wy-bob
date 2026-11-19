@@ -1,7 +1,7 @@
 // Accès aux fiches clients CRM (table customers, liée aux users par email — pas de FK).
 // Lot 2a : mise à jour après commande. Lot 3e : liste admin, fiche, création, modification,
-// synchronisation depuis les commandes et les comptes.
-import { query, queryOne, isUuid } from "@/app/lib/neon";
+// synchronisation depuis les commandes et les comptes. Lot 3f : suppression / anonymisation RGPD.
+import { query, queryOne, withTransaction, isUuid } from "@/app/lib/neon";
 
 /** Forme d'un document Customer Mongoose (.lean()). */
 export function toCustomer(row) {
@@ -333,4 +333,118 @@ export async function recordCustomerOrder(client, { firstname, lastname, email, 
        address = CASE WHEN customers.address = '' AND EXCLUDED.address <> '' THEN EXCLUDED.address ELSE customers.address END`,
     [firstname, lastname ?? "", email, phone || "", city || "", address || "", total]
   );
+}
+
+// -----------------------------------------------------------------------------
+// Suppression / anonymisation RGPD (DELETE /api/customers/[id]) — lot 3f
+// -----------------------------------------------------------------------------
+
+/**
+ * Supprime le compte (adresses en cascade), la fiche client et les codes de parrainage jamais
+ * utilisés du parrain, dans la transaction `client`. Les codes de parrainage déjà utilisés
+ * restent (historique, used_count conservé) mais sont désactivés (active = false) ; leur
+ * referrer_id passe à NULL par la clé étrangère. L'ancien id Mongo
+ * du compte est effacé des usages de codes (promo_code_uses.user_mongo_id).
+ */
+async function removeAccountAndCustomer(client, { user, customer }) {
+  if (user) {
+    await client.query(
+      `DELETE FROM promo_codes p
+        WHERE p.is_referral AND p.referrer_id = $1 AND p.used_count = 0
+          AND NOT EXISTS (SELECT 1 FROM promo_code_uses x WHERE x.promo_code_id = p.id)`,
+      [user.id]
+    );
+    await client.query("UPDATE promo_codes SET active = false WHERE is_referral AND referrer_id = $1", [user.id]);
+    await client.query(
+      `UPDATE promo_code_uses SET user_mongo_id = NULL
+        WHERE user_id = $1 OR ($2::text IS NOT NULL AND user_mongo_id = $2)`,
+      [user.id, user.mongo_id]
+    );
+    await client.query("DELETE FROM users WHERE id = $1", [user.id]);
+  }
+  if (customer) {
+    await client.query("DELETE FROM customers WHERE id = $1", [customer.id]);
+  }
+}
+
+/**
+ * Équivalent du DELETE de /api/customers/[id], en une seule transaction. `id` = id de fiche
+ * client, ou id de compte (utilisateur sans fiche). Renvoie :
+ *   { kind: "not_found" }                       id mal formé, ni fiche ni compte
+ *   { kind: "admin" }                           compte administrateur lié : refusé
+ *   { kind: "deleted", hadCustomer }            aucune commande : compte + fiche supprimés
+ *   { kind: "needs_action", ordersCount }       commandes et action !== "anonymize"
+ *   { kind: "anonymized", ordersCount }         commandes anonymisées, compte + fiche supprimés
+ *
+ * Commandes concernées : email de commande égal à l'email du client (sans tenir compte de la
+ * casse), ou rattachées au compte (user_id, ou ancien id Mongo resté dans user_mongo_id).
+ * Anonymisation : seul le pays est conservé dans les coordonnées ; nom et email deviennent un
+ * pseudonyme ("Client" / "Anonyme #XXXXXX" / deleted_<id>@anonymized.local) ; téléphone,
+ * société, ville, adresse, code postal, point relais, numéro de suivi, user_id et user_mongo_id
+ * à NULL ; historique de suivi vidé ; étiquettes et preuves de livraison supprimées.
+ * Montants, remboursements, paiements complémentaires, payment_intent_id et factures (avec leur
+ * PDF) sont conservés.
+ */
+export async function deleteOrAnonymizeCustomer(id, action) {
+  if (!isUuid(id)) return { kind: "not_found" };
+
+  return withTransaction(async (client) => {
+    const one = async (sql, params) => (await client.query(sql, params)).rows[0] ?? null;
+
+    let customer = await one("SELECT id, email FROM customers WHERE id = $1 FOR UPDATE", [id]);
+    let user;
+    if (customer) {
+      user = await one("SELECT id, email, role, mongo_id FROM users WHERE email = $1 FOR UPDATE", [customer.email]);
+    } else {
+      // Fallback : l'id est celui d'un compte (utilisateur sans fiche client).
+      user = await one("SELECT id, email, role, mongo_id FROM users WHERE id = $1 FOR UPDATE", [id]);
+      if (!user) return { kind: "not_found" };
+      customer = await one("SELECT id, email FROM customers WHERE email = $1 FOR UPDATE", [user.email]);
+    }
+
+    if (user?.role === "admin") return { kind: "admin" };
+
+    const email = customer?.email ?? user.email;
+    const { rows: orderRows } = await client.query(
+      `SELECT id FROM orders
+        WHERE lower(customer_email) = lower($1)
+           OR ($2::uuid IS NOT NULL AND user_id = $2)
+           OR ($3::text IS NOT NULL AND user_mongo_id = $3)
+        FOR UPDATE`,
+      [email, user?.id ?? null, user?.mongo_id ?? null]
+    );
+    const ordersCount = orderRows.length;
+
+    if (ordersCount === 0) {
+      await removeAccountAndCustomer(client, { user, customer });
+      return { kind: "deleted", hadCustomer: customer !== null };
+    }
+
+    if (action !== "anonymize") return { kind: "needs_action", ordersCount };
+
+    const orderIds = orderRows.map((r) => r.id);
+    await client.query("DELETE FROM order_documents WHERE order_id = ANY($1::uuid[])", [orderIds]);
+    await client.query(
+      `UPDATE orders SET
+         customer_firstname       = 'Client',
+         customer_lastname        = $2,
+         customer_email           = $3,
+         customer_phone           = NULL,
+         customer_company         = NULL,
+         customer_city            = NULL,
+         customer_address         = NULL,
+         customer_postal_code     = NULL,
+         recipient_pickup_name    = '',
+         shipping_relay_point     = NULL,
+         shipping_skybill_number  = NULL,
+         shipping_tracking_events = '[]'::jsonb,
+         user_id                  = NULL,
+         user_mongo_id            = NULL
+       WHERE id = ANY($1::uuid[])`,
+      [orderIds, `Anonyme #${id.slice(-6).toUpperCase()}`, `deleted_${id}@anonymized.local`]
+    );
+
+    await removeAccountAndCustomer(client, { user, customer });
+    return { kind: "anonymized", ordersCount };
+  });
 }
