@@ -37,7 +37,11 @@ export async function proxy(request: NextRequest) {
 
   const host = request.headers.get('host') ?? ''
   if (host.endsWith('.vercel.app')) {
-    return NextResponse.next()
+    // Les URLs *.vercel.app (domaine par défaut et previews) ne doivent pas être
+    // indexées : seul wybob.shop doit apparaître dans Google.
+    const response = NextResponse.next()
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+    return response
   }
 
   let maintenanceActive = false
