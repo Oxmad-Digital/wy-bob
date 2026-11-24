@@ -33,14 +33,19 @@ export default function MentionsLegales() {
               , est édité par :
             </p>
             <ul className={styles.list}>
-              <li><span className={styles.label}>Dénomination :</span> Penelope WYBO (nom commercial : WYBOB)</li>
-              <li><span className={styles.label}>Forme juridique :</span> Entrepreneur individuel</li>
-              <li><span className={styles.label}>Siège social :</span> 10 rue André Lefebvre, 75015 Paris, France</li>
+              <li><span className={styles.label}>Dénomination :</span> Penelope WYBO EI (nom commercial : WYBOB)</li>
+              <li><span className={styles.label}>Forme juridique :</span> Entrepreneur individuel (EI)</li>
+              <li><span className={styles.label}>Adresse :</span> 10 rue André Lefebvre, 75015 Paris, France</li>
+              <li><span className={styles.label}>Téléphone :</span> <strong>[À COMPLÉTER : numéro de téléphone de l'éditrice]</strong></li>
+              <li>
+                <span className={styles.label}>Email :</span>{' '}
+                <a href="mailto:wybopenelopemarie@gmail.com" className={styles.link}>wybopenelopemarie@gmail.com</a>{' '}
+                <strong>[À COMPLÉTER : confirmer l'adresse email de contact unique, identique sur les mentions légales, la politique de confidentialité et les CGV]</strong>
+              </li>
               <li><span className={styles.label}>SIRET :</span> 106 049 539 00013</li>
               <li><span className={styles.label}>Immatriculation :</span> Registre National des Entreprises (RNE)</li>
               <li><span className={styles.label}>TVA :</span> TVA non applicable, article 293 B du Code général des impôts</li>
               <li><span className={styles.label}>Directrice de la publication :</span> Penelope WYBO</li>
-              <li><span className={styles.label}>Contact :</span> <a href="mailto:wybopenelopemarie@gmail.com" className={styles.link}>wybopenelopemarie@gmail.com</a></li>
             </ul>
           </section>
 
@@ -51,8 +56,23 @@ export default function MentionsLegales() {
               Hébergement
             </h2>
             <p className={styles.text}>
-              Le Site est hébergé par la société Vercel Inc., dont le siège social est situé au
-              340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis.
+              Le site est hébergé par :
+            </p>
+            <ul className={styles.list}>
+              <li><span className={styles.label}>Hébergeur :</span> Vercel Inc.</li>
+              <li><span className={styles.label}>Adresse :</span> <strong>[À COMPLÉTER : adresse postale actuelle de Vercel Inc., à vérifier sur vercel.com/legal]</strong></li>
+              <li><span className={styles.label}>Téléphone :</span> <strong>[À COMPLÉTER : numéro de téléphone de Vercel Inc.]</strong></li>
+              <li>
+                <span className={styles.label}>Site web :</span>{' '}
+                <a href="https://vercel.com" className={styles.link} target="_blank" rel="noopener noreferrer">
+                  https://vercel.com
+                </a>
+              </li>
+            </ul>
+            <p className={styles.text}>
+              Les données du site (comptes clients, commandes) sont stockées chez des prestataires
+              distincts, présentés dans notre{' '}
+              <a href="/politique-confidentialite" className={styles.link}>Politique de confidentialité</a>.
             </p>
           </section>
 
@@ -77,13 +97,26 @@ export default function MentionsLegales() {
               Protection des données personnelles (RGPD)
             </h2>
             <p className={styles.text}>
-              Conformément au Règlement (UE) 2016/679, l'Éditeur s'engage à protéger la vie privée
-              de ses utilisateurs.
+              Le traitement de vos données personnelles (responsable du traitement, finalités, bases
+              légales, destinataires, durées de conservation et procédure pour exercer vos droits) est
+              décrit en détail dans notre{' '}
+              <a href="/politique-confidentialite" className={styles.link}>Politique de confidentialité</a>.
             </p>
             <ul className={styles.list}>
-              <li><span className={styles.label}>Responsable du traitement :</span> Penelope WYBO</li>
-              <li><span className={styles.label}>Finalités :</span> Gestion des commandes, envois de newsletters (si applicable), amélioration de la navigation via cookies.</li>
-              <li><span className={styles.label}>Droits des utilisateurs :</span> Vous disposez d'un droit d'accès, de rectification, de suppression et d'opposition. Pour exercer ce droit, contactez-nous à : <a href="mailto:wybopenelopemarie@gmail.com" className={styles.link}>wybopenelopemarie@gmail.com</a>.</li>
+              <li>
+                <span className={styles.label}>Exercer vos droits :</span> Vous disposez notamment d'un droit
+                d'accès, de rectification, d'effacement, d'opposition, de limitation et de portabilité. Pour
+                les exercer, écrivez-nous à :{' '}
+                <a href="mailto:wybopenelopemarie@gmail.com" className={styles.link}>wybopenelopemarie@gmail.com</a>{' '}
+                <strong>[À COMPLÉTER : confirmer l'adresse email de contact unique]</strong>.
+              </li>
+              <li>
+                <span className={styles.label}>Réclamation :</span> Vous pouvez introduire une réclamation auprès de
+                la Commission nationale de l'informatique et des libertés (CNIL) :{' '}
+                <a href="https://www.cnil.fr" className={styles.link} target="_blank" rel="noopener noreferrer">
+                  https://www.cnil.fr
+                </a>.
+              </li>
             </ul>
           </section>
 
@@ -93,22 +126,28 @@ export default function MentionsLegales() {
               <span className={styles.numAccent}>5.</span>
               Politique de Cookies et Mesure d'Audience
             </h2>
-            <p className={styles.text}>
-              Le site utilise des cookies pour améliorer l'expérience utilisateur et réaliser des
-              statistiques de visites.
-            </p>
             <ul className={styles.list}>
-              <li><span className={styles.label}>Google Analytics :</span> Ce site utilise Google Analytics, un service d'analyse de site internet fourni par Google Inc. Cet outil utilise des cookies pour analyser votre navigation (pages vues, temps de session, etc.).</li>
-              <li><span className={styles.label}>Anonymisation :</span> Nous avons activé l'anonymisation de l'adresse IP. Cela signifie que votre adresse IP est abrégée par Google au sein des États membres de l'Union européenne avant d'être transmise aux États-Unis.</li>
-              <li><span className={styles.label}>Consentement :</span> Aucun cookie de mesure d'audience n'est déposé avant votre consentement explicite via le bandeau de cookies.</li>
               <li>
-                <span className={styles.label}>Désactivation :</span> Vous pouvez vous opposer à l'enregistrement de ces cookies en
-                configurant votre navigateur ou en utilisant le module de désactivation de Google :{' '}
-                <a href="https://tools.google.com/dlpage/gaoptout" className={styles.link} target="_blank" rel="noopener noreferrer">
-                  https://tools.google.com/dlpage/gaoptout
-                </a>.
+                <span className={styles.label}>Google Analytics :</span> Ce service de mesure d'audience, fourni
+                par Google Ireland Limited (avec des transferts possibles vers Google LLC aux États-Unis), n'est
+                chargé qu'après votre accord donné via le bandeau de cookies. Sans votre accord, aucun cookie
+                Google Analytics n'est déposé.
               </li>
-              <li><span className={styles.label}>Durée de conservation :</span> Les données collectées via ces cookies sont conservées pour une durée maximale de 13 mois.</li>
+              <li>
+                <span className={styles.label}>Statistiques internes :</span> Nous mesurons également la
+                fréquentation du site avec un outil interne, sans déposer de cookie ni rien enregistrer sur
+                votre appareil. Chaque visite est rattachée à un identifiant technique haché, non réversible et
+                renouvelé chaque jour, qui ne permet pas de suivre un visiteur d'un jour à l'autre.
+              </li>
+              <li>
+                <span className={styles.label}>Modifier votre choix :</span> À tout moment, via le bouton
+                « Gérer les cookies » situé en bas de chaque page.
+              </li>
+              <li>
+                <span className={styles.label}>En savoir plus :</span> La liste complète des cookies et
+                traceurs utilisés, ainsi que leurs durées de conservation, figure dans notre{' '}
+                <a href="/politique-confidentialite" className={styles.link}>Politique de confidentialité</a>.
+              </li>
             </ul>
           </section>
 
@@ -125,13 +164,19 @@ export default function MentionsLegales() {
             </p>
             <ul className={styles.list}>
               <li><span className={styles.label}>Organisme de médiation :</span> CM2C (Centre de la Médiation de la Consommation de Conciliateurs de Justice)</li>
+              <li><span className={styles.label}>Adresse :</span> <strong>[À COMPLÉTER : adresse postale du CM2C, à vérifier sur cm2c.net]</strong></li>
               <li>
-                <span className={styles.label}>Adresse / Site web :</span>{' '}
+                <span className={styles.label}>Site web :</span>{' '}
                 <a href="https://www.cm2c.net" className={styles.link} target="_blank" rel="noopener noreferrer">
                   https://www.cm2c.net
                 </a>
               </li>
+              <li><strong>[À COMPLÉTER : confirmer l'adhésion effective de WYBOB au CM2C]</strong></li>
             </ul>
+            <p className={styles.text}>
+              Avant de saisir le médiateur, vous devez avoir tenté de résoudre le litige directement
+              auprès de nous par une réclamation écrite.
+            </p>
           </section>
 
           {/* 7. Droit applicable */}
@@ -142,9 +187,16 @@ export default function MentionsLegales() {
             </h2>
             <p className={styles.text}>
               Les présentes mentions légales sont soumises au droit français. En cas de litige, et à
-              défaut d'accord amiable, les tribunaux français seront seuls compétents.
+              défaut d'accord amiable, les tribunaux français sont compétents. Si vous êtes
+              consommateur, vous conservez la possibilité de saisir la juridiction de votre lieu de
+              domicile et de bénéficier des dispositions protectrices du droit de votre pays de
+              résidence.
             </p>
           </section>
+
+          <p className={styles.text}>
+            Dernière mise à jour : novembre 2026.
+          </p>
 
         </div>
       </div>
