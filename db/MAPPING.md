@@ -1,5 +1,14 @@
 # Mapping MongoDB → PostgreSQL (Neon)
 
+> **Statut (lot 3g).** L'application ne dépend plus de MongoDB : `src/app/lib/db.ts`, les modèles
+> `src/app/models/*` et la dépendance `mongoose` ont été retirés ; toutes les routes passent par
+> `src/app/lib/neon.js` et les repos `src/app/lib/repos/*`. Ce document reste la référence du
+> mapping utilisé par `scripts/migrate-mongo-to-neon.mjs` (qui lit encore Mongo via le paquet
+> `mongodb` et `MONGODB_URI`, y compris en mode `--only=users`).
+> Conservés volontairement : les colonnes `mongo_id` et `isMongoId` (anciennes sessions JWT,
+> metadata Stripe des paiements créés avant la bascule, paniers enregistrés dans le navigateur,
+> idempotence du script). Les colonnes devenues inutiles ne sont pas supprimées pour l'instant.
+
 Règles communes à toutes les tables :
 
 | Mongo | SQL |
@@ -28,7 +37,7 @@ Le script de migration (phase 2) initialise les deux à partir de la collection 
 
 **Pourquoi deux approches.** Une séquence est atomique, ne pose pas de verrou et convient aux numéros de commande : un trou (rollback, erreur après `nextval`) n'a pas d'importance. Les factures, elles, doivent avoir une numérotation **continue sans trou** (obligation légale). Une séquence ne la garantit pas, puisque `nextval` n'est pas annulé en cas de rollback. On utilise donc une ligne par année, incrémentée par `INSERT … ON CONFLICT DO UPDATE … RETURNING seq` **dans la même transaction** que l'`INSERT` de la facture. Le verrou de ligne sérialise les émissions concurrentes. Avec quelques factures par jour, la contention est négligeable.
 
-Écart avec le code actuel : `createInvoiceForOrder` incrémente le compteur Mongo **hors transaction**. Si la génération du PDF ou la création de la facture échoue ensuite, un numéro est perdu. La phase 3 corrige ce point.
+✅ Fait (lot 2a) : `createInvoiceForOrder` incrémente `invoice_counters` (`nextInvoiceSequence`) dans la même transaction que l'`INSERT` de la facture. L'ancien code Mongo l'incrémentait hors transaction, ce qui pouvait perdre un numéro.
 
 ## users (5)
 
@@ -65,7 +74,7 @@ Index `{status, lastOrderAt}` → `customers_status_last_order_at_idx`.
 | variants[] | table **product_variants** (product_id FK CASCADE, `position`, `mongo_id` = variant._id) |
 | variants.{colorName,colorCode,textColor,description,image,stock,editionSize} | color_name, color_code, text_color, description, image, stock, edition_size |
 
-Le hook `pre('save')` (stock = somme des variantes) reste dans la couche applicative (phase 3).
+Le hook `pre('save')` (stock = somme des variantes) reste dans la couche applicative : ✅ fait dans `src/app/lib/repos/products.js` (stock global recalculé à chaque écriture des variantes).
 
 ## orders (2)
 
@@ -137,7 +146,7 @@ key, createdAt. L'index TTL (24 h) est remplacé par un index sur `created_at` e
 
 1. **`orders.userId` est un String sans `ref`.** Je le convertis en FK `user_id` lorsque la valeur correspond à un `users._id` existant. Sinon (utilisateur supprimé, valeur non ObjectId) : `user_id = NULL`, et la valeur brute est gardée dans `user_mongo_id`. Le dry-run listera ces cas.
 2. **IDs dans les sessions JWT (NextAuth). ✅ Décidé (lot 3d) : conversion, sans déconnexion.** Les tokens en cours contiennent `user._id` Mongo (`token.id` / `token.sub`). Le callback `jwt` de `src/auth.ts` le convertit en uuid via `users.mongo_id` ; Auth.js réécrit alors le cookie, donc la conversion n'a lieu qu'une fois par navigateur. `NEXTAUTH_SECRET` n'est **pas** changé (il est partagé entre Production et Preview). Compte introuvable dans Neon : session invalidée (reconnexion). Erreur de base pendant la conversion : jeton laissé tel quel, nouvel essai à la requête suivante (lever une erreur dans le callback ferait supprimer le cookie par Auth.js). Remplace la décision initiale « reconnexion forcée par changement de AUTH_SECRET ».
-3. **IDs Mongo dans Stripe.** La metadata des PaymentIntents/Checkout Sessions déjà créés contient `orderId` et `extraPaymentId` Mongo. Pour un webhook rejoué après la bascule, la phase 3 cherchera par `id` **ou** `mongo_id`. C'est pour ça que `mongo_id` est conservé sur `order_extra_payments`.
+3. **IDs Mongo dans Stripe.** La metadata des PaymentIntents/Checkout Sessions déjà créés contient `orderId` et `extraPaymentId` Mongo. Pour un webhook rejoué après la bascule, le code cherche par `id` **ou** `mongo_id` (✅ fait : `markExtraPaymentPaid` dans `src/app/lib/repos/orders.js` accepte l'uuid ou l'ancien ObjectId de la commande et du paiement complémentaire ; les paiements de commande sont retrouvés par `payment_intent_id`). C'est pour ça que `mongo_id` est conservé sur `order_extra_payments`.
 4. **`customers` ↔ `users` : aucun lien explicite.** La jointure se fait par email (GET /api/customers, suppression). Je n'ajoute pas de FK pour garder le comportement actuel. On pourrait plus tard ajouter `customers.user_id`.
 5. **`order.products.product` est `required`, mais le code tolère un produit supprimé** (`.filter(line => line.product)` après populate). `product_id` est donc nullable (ON DELETE SET NULL), et `product_mongo_id` garde la trace.
 6. **`orders.promoCode` est du texte, pas une référence.** Pas de FK, pour que l'historique reste figé même si le code promo est supprimé.
@@ -147,5 +156,5 @@ key, createdAt. L'index TTL (24 h) est remplacé par un index sur `created_at` e
 10. **Sous-documents sans `_id` exploité** (addresses, lineItems, refunds, order items) : l'`_id` est quand même conservé dans `mongo_id` quand il existe. L'ordre du tableau est conservé via `position`.
 11. **Contraintes ajoutées par rapport à Mongo ✅ Décidé : conservées** : `CHECK` minuscule sur les emails, `CHECK` majuscule/trim sur `code`, longueur de `users.name` (2–50, reprise du validateur Mongoose), `UNIQUE(year, sequence)` sur `invoices`, index sur `orders.customer_email` et `promo_codes.referrer_id`. Le dry-run vérifiera que les données actuelles les respectent.
 12. **Singletons ✅ Décidé : une seule ligne imposée** sur `site_settings` et `referral_configs`, avec `CREATE UNIQUE INDEX … ((true))`. Si Mongo contenait plus d'un document, le dry-run le signalerait comme bloquant.
-13. **`numeric` est renvoyé en chaîne par `pg`** : en phase 3, il faudra le parser (type parser global ou conversion dans les requêtes) pour que les réponses JSON restent identiques.
+13. **`numeric` est renvoyé en chaîne par `pg`** : ✅ fait, type parser global dans `src/app/lib/neon.js` (`numeric` et `bigint` convertis en nombres) pour que les réponses JSON restent identiques.
 14. **Valeurs `undefined` vs défauts.** Les vieux documents peuvent ne pas avoir certains champs ajoutés plus tard (`insurance`, `weight`, `recipientPickupName`…). Le script appliquera le défaut Mongoose (ce que Mongoose renvoyait déjà à la lecture). Il ne mettra jamais NULL dans une colonne NOT NULL.
